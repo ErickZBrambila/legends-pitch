@@ -34,18 +34,19 @@ export default function Home() {
     <>
       {/* Hero */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `repeating-linear-gradient(
-              45deg,
-              transparent,
-              transparent 40px,
-              rgba(255,255,255,0.05) 40px,
-              rgba(255,255,255,0.05) 80px
-            )`,
-          }}
-        />
+        {/* Background video */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/Legends_hero_video.mp4" type="video/mp4" />
+        </video>
+        {/* Dark overlay so text stays readable */}
+        <div className="absolute inset-0 bg-black/60" />
+
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center gap-4">
           <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden shadow-2xl border-4 border-[var(--color-accent)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}

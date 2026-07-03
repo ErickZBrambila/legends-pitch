@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import type { Match, Player, NewsPost } from "@/lib/types";
+import type { Match, Player, NewsPost, HighlightVideo } from "@/lib/types";
 import AdminRosterField from "@/components/AdminRosterField";
 
-const TABS = ["Schedule", "Roster", "News", "Setup"] as const;
+const TABS = ["Schedule", "Roster", "News", "Highlights", "Setup"] as const;
 type Tab = typeof TABS[number];
 
 const RESULT_BADGE: Record<string, string> = {
@@ -45,10 +45,12 @@ export default function AdminDashboard({
   matches,
   players: initialPlayers,
   posts,
+  highlights: initialHighlights,
 }: {
   matches: Match[];
   players: Player[];
   posts: NewsPost[];
+  highlights: HighlightVideo[];
 }) {
   const [tab, setTab] = useState<Tab>("Schedule");
   const [rosterView, setRosterView] = useState<"field" | "table">("field");
@@ -58,6 +60,10 @@ export default function AdminDashboard({
     name: "", number: "", position: "MID",
   });
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
+  const [highlights, setHighlights] = useState<HighlightVideo[]>(initialHighlights);
+  const [editingHighlight, setEditingHighlight] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editEvent, setEditEvent] = useState("");
   const router = useRouter();
 
   async function logout() {
@@ -286,6 +292,100 @@ export default function AdminDashboard({
                     </div>
                   </div>
                 ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Highlights ── */}
+        {tab === "Highlights" && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Highlight Videos</h2>
+              <a
+                href="/highlights"
+                target="_blank"
+                className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+              >
+                View page ↗
+              </a>
+            </div>
+            <div className="flex flex-col gap-3">
+              {highlights.map((v) => (
+                <div key={v.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                  {editingHighlight === v.id ? (
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Event</label>
+                        <input
+                          type="text"
+                          value={editEvent}
+                          onChange={(e) => setEditEvent(e.target.value)}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setHighlights((prev) =>
+                              prev.map((h) =>
+                                h.id === v.id ? { ...h, title: editTitle.trim() || h.title, event: editEvent.trim() || h.event } : h
+                              )
+                            );
+                            setEditingHighlight(null);
+                          }}
+                          className="px-4 py-1.5 bg-[var(--color-accent)] text-[#1c1c1e] text-xs font-bold rounded-lg"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingHighlight(null)}
+                          className="px-4 py-1.5 bg-gray-100 text-gray-600 text-xs font-semibold rounded-lg"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={`https://img.youtube.com/vi/${v.youtubeId}/mqdefault.jpg`}
+                        alt={v.title}
+                        className="w-24 h-14 object-cover rounded-lg flex-shrink-0 bg-gray-100"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-800 text-sm truncate">{v.title}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{v.event}</p>
+                        <a
+                          href={`https://youtu.be/${v.youtubeId}`}
+                          target="_blank"
+                          className="text-[11px] text-[var(--color-primary)] hover:underline"
+                        >
+                          youtu.be/{v.youtubeId}
+                        </a>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setEditingHighlight(v.id);
+                          setEditTitle(v.title);
+                          setEditEvent(v.event);
+                        }}
+                        className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors flex-shrink-0"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}

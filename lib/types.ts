@@ -41,6 +41,13 @@ export interface GalleryImage {
   alt: string;
 }
 
+export interface HighlightVideo {
+  id: string;
+  youtubeId: string;
+  title: string;
+  event: string;
+}
+
 export interface SeasonStats {
   wins: number;
   losses: number;

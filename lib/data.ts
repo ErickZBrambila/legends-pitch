@@ -1,4 +1,4 @@
-import type { Match, Player, NewsPost, GalleryEvent, SeasonStats } from "./types";
+import type { Match, Player, NewsPost, GalleryEvent, SeasonStats, HighlightVideo } from "./types";
 
 export const matches: Match[] = [
   {
@@ -206,6 +206,17 @@ export const galleryEvents: GalleryEvent[] = [
       },
     ],
   },
+];
+
+export const highlightVideos: HighlightVideo[] = [
+  { id: "1", youtubeId: "5p_cSNI9Rew", title: "Summer Clinic 2026 — Clip 1", event: "Summer Clinic 2026" },
+  { id: "2", youtubeId: "w3ACv8vYUaQ", title: "Summer Clinic 2026 — Clip 2", event: "Summer Clinic 2026" },
+  { id: "3", youtubeId: "E5a0H_U-5e8", title: "Summer Clinic 2026 — Clip 3", event: "Summer Clinic 2026" },
+  { id: "4", youtubeId: "wFdGVF05nkc", title: "Summer Clinic 2026 — Clip 4", event: "Summer Clinic 2026" },
+  { id: "5", youtubeId: "cj6WDclqmvw", title: "Summer Clinic 2026 — Clip 5", event: "Summer Clinic 2026" },
+  { id: "6", youtubeId: "yZuEUVsQ3lE", title: "Summer Clinic 2026 — Clip 6", event: "Summer Clinic 2026" },
+  { id: "7", youtubeId: "roE2bWokuio", title: "Summer Clinic 2026 — Clip 7", event: "Summer Clinic 2026" },
+  { id: "8", youtubeId: "3nchbDT_gbo", title: "Summer Clinic 2026 — Clip 8", event: "Summer Clinic 2026" },
 ];
 
 export function getSeasonStats(): SeasonStats {

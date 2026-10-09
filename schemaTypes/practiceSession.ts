@@ -57,6 +57,32 @@ export default defineType({
                 },
               ],
             }),
+            defineField({
+              name: "analytics",
+              title: "Analytics",
+              type: "object",
+              fields: [
+                defineField({ name: "fieldZones", title: "Field Zones (L→R)", type: "array", of: [{ type: "number" }] }),
+                defineField({ name: "goalPressureLeft", title: "Goal Pressure Left", type: "number" }),
+                defineField({ name: "goalPressureRight", title: "Goal Pressure Right", type: "number" }),
+                defineField({ name: "totalFrames", title: "Total Frames", type: "number" }),
+                defineField({ name: "dominantZone", title: "Dominant Zone (0-9)", type: "number" }),
+                defineField({
+                  name: "activityBuckets",
+                  title: "Activity Buckets",
+                  type: "array",
+                  of: [{
+                    type: "object",
+                    fields: [
+                      defineField({ name: "tStart", title: "Start (s)", type: "number" }),
+                      defineField({ name: "tEnd", title: "End (s)", type: "number" }),
+                      defineField({ name: "detections", title: "Detections", type: "number" }),
+                      defineField({ name: "frames", title: "Frames", type: "number" }),
+                    ],
+                  }],
+                }),
+              ],
+            }),
           ],
         },
       ],

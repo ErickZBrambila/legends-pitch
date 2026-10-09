@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import type { PracticeSession, SessionVideo } from "@/lib/types";
+import FieldHeatmap from "@/components/FieldHeatmap";
+import ActivityTimeline from "@/components/ActivityTimeline";
 
 function fmt(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -96,6 +98,18 @@ export default function SessionViewer({ session }: { session: PracticeSession })
               </button>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Analytics */}
+      {activeVideo.analytics && (
+        <section className="mb-8 space-y-6">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-1 h-5 rounded-full bg-emerald-500" />
+            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">Session Analytics</h2>
+          </div>
+          <FieldHeatmap analytics={activeVideo.analytics} />
+          <ActivityTimeline analytics={activeVideo.analytics} />
         </section>
       )}
 

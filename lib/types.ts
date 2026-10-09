@@ -70,6 +70,22 @@ export interface VideoClip {
   label: string;
 }
 
+export interface ActivityBucket {
+  tStart: number;
+  tEnd: number;
+  detections: number;
+  frames: number;
+}
+
+export interface VideoAnalytics {
+  fieldZones: number[];          // 10 values, left goal → right goal
+  activityBuckets: ActivityBucket[];
+  goalPressureLeft: number;
+  goalPressureRight: number;
+  totalFrames: number;
+  dominantZone: number;
+}
+
 export interface SessionVideo {
   id: string;
   fileName: string;
@@ -79,6 +95,7 @@ export interface SessionVideo {
   resolution: string;
   markers: VideoMarker[];
   clips: VideoClip[];
+  analytics: VideoAnalytics | null;
 }
 
 export interface PracticeSession {

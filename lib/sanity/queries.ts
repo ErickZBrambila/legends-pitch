@@ -174,6 +174,16 @@ export async function getTeamLabel(team: TeamSlug): Promise<string> {
   return result ? `${result.name}${result.season ? ` · ${result.season}` : ""}` : team === "u11" ? "Under 11" : "Under 12";
 }
 
+type RawActivityBucket = { _key: string; tStart: number; tEnd: number; detections: number; frames: number };
+type RawAnalytics = {
+  fieldZones: number[];
+  activityBuckets: RawActivityBucket[];
+  goalPressureLeft: number;
+  goalPressureRight: number;
+  totalFrames: number;
+  dominantZone: number;
+};
+
 type RawSessionVideo = {
   _key: string;
   fileName: string;
@@ -183,6 +193,7 @@ type RawSessionVideo = {
   resolution: string;
   markers: Array<{ _key: string; timeSeconds: number; label: string }>;
   clips: Array<{ _key: string; r2Url: string; startSeconds: number; endSeconds: number; label: string }>;
+  analytics?: RawAnalytics;
 };
 
 type RawSession = {
@@ -198,7 +209,11 @@ const SESSION_PROJECTION = `
   videos[]{
     _key, fileName, r2Url, thumbnailUrl, durationSeconds, resolution,
     markers[]{ _key, timeSeconds, label },
-    clips[]{ _key, r2Url, startSeconds, endSeconds, label }
+    clips[]{ _key, r2Url, startSeconds, endSeconds, label },
+    analytics{
+      fieldZones, goalPressureLeft, goalPressureRight, totalFrames, dominantZone,
+      activityBuckets[]{ _key, tStart, tEnd, detections, frames }
+    }
   }
 `;
 
@@ -223,6 +238,19 @@ function mapSession(s: RawSession): PracticeSession {
         endSeconds: c.endSeconds,
         label: c.label,
       })),
+      analytics: v.analytics ? {
+        fieldZones: v.analytics.fieldZones ?? [],
+        activityBuckets: (v.analytics.activityBuckets ?? []).map((b) => ({
+          tStart: b.tStart,
+          tEnd: b.tEnd,
+          detections: b.detections,
+          frames: b.frames,
+        })),
+        goalPressureLeft: v.analytics.goalPressureLeft ?? 0,
+        goalPressureRight: v.analytics.goalPressureRight ?? 0,
+        totalFrames: v.analytics.totalFrames ?? 0,
+        dominantZone: v.analytics.dominantZone ?? 0,
+      } : null,
     })),
   };
 }

@@ -23,7 +23,7 @@ export interface NewsPost {
   slug: string;
   title: string;
   excerpt: string;
-  body: unknown[];
+  body: unknown[] | string;
   publishedAt: string;
   author: string;
 }

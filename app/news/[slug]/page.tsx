@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { newsPosts, getPostBySlug } from "@/lib/data";
-
-export async function generateStaticParams() {
-  return newsPosts.map((p) => ({ slug: p.slug }));
-}
+import { PortableText } from "next-sanity";
+import { getPostBySlug } from "@/lib/sanity/queries";
 
 export async function generateMetadata({
   params,
@@ -13,25 +10,27 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
   return { title: post?.title ?? "Post not found" };
 }
 
 export default async function NewsPostPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ team?: string }>;
 }) {
-  const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const [{ slug }, { team }] = await Promise.all([params, searchParams]);
+  const post = await getPostBySlug(slug);
   if (!post) notFound();
 
-  const paragraphs = post.body.split("\n\n").filter(Boolean);
+  const backTeam = team === "u12" ? "u12" : "u11";
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <Link
-        href="/news"
+        href={`/news?team=${backTeam}`}
         className="inline-flex items-center gap-1.5 text-sm text-[var(--color-primary)] font-medium hover:underline mb-6"
       >
         ← Back to News
@@ -54,30 +53,13 @@ export default async function NewsPostPage({
         </header>
 
         <div className="prose prose-sm md:prose max-w-none text-gray-700 leading-relaxed">
-          {paragraphs.map((para, i) => {
-            if (para.startsWith("- ")) {
-              const items = para
-                .split("\n")
-                .filter((l) => l.startsWith("- "))
-                .map((l) => l.slice(2));
-              return (
-                <ul key={i} className="list-disc list-inside space-y-1 my-3">
-                  {items.map((item, j) => (
-                    <li key={j} dangerouslySetInnerHTML={{ __html: boldMarkdown(item) }} />
-                  ))}
-                </ul>
-              );
-            }
-            return (
-              <p key={i} className="mb-4" dangerouslySetInnerHTML={{ __html: boldMarkdown(para) }} />
-            );
-          })}
+          {post.body && post.body.length > 0 ? (
+            <PortableText value={post.body as Parameters<typeof PortableText>[0]["value"]} />
+          ) : (
+            <p className="text-gray-400">No content yet.</p>
+          )}
         </div>
       </article>
     </div>
   );
-}
-
-function boldMarkdown(text: string): string {
-  return text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }

@@ -1,6 +1,8 @@
 import { createImageUrlBuilder as imageUrlBuilder } from "@sanity/image-url";
-import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 import { sanityClient } from "./client";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SanityImageSource = any;
 
 const builder = imageUrlBuilder(sanityClient);
 

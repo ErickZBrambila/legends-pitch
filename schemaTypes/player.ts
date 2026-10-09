@@ -29,7 +29,8 @@ export default defineType({
   ],
   preview: {
     select: { title: "name", number: "number", media: "photo" },
-    prepare({ title, number, media }: { title: string; number: number; media: unknown }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    prepare({ title, number, media }: { title: string; number: number; media: any }) {
       return { title, subtitle: `#${number}`, media };
     },
   },

@@ -8,6 +8,7 @@ export default defineConfig({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
   dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
   plugins: [structureTool()],
-  schema: { types: schemaTypes },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  schema: { types: schemaTypes as any },
   basePath: "/studio",
 });

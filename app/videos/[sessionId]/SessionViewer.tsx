@@ -18,12 +18,12 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   const currentSrc = activeClipUrl ?? "";
 
   function seekTo(seconds: number) {
-    setActiveClipUrl(null);
-    if (videoRef.current) {
-      videoRef.current.src = activeVideo.r2Url;
-      videoRef.current.currentTime = seconds;
-      videoRef.current.play().catch(() => {});
-    }
+    // Find the clip whose window contains or is closest to this marker time
+    const clip = activeVideo.clips.reduce((best, c) => {
+      const dist = (t: typeof c) => Math.abs((t.startSeconds + t.endSeconds) / 2 - seconds);
+      return dist(c) < dist(best) ? c : best;
+    }, activeVideo.clips[0]);
+    if (clip) playClip(clip.r2Url);
   }
 
   function playClip(url: string) {

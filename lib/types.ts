@@ -23,7 +23,7 @@ export interface NewsPost {
   slug: string;
   title: string;
   excerpt: string;
-  body: string;
+  body: unknown[];
   publishedAt: string;
   author: string;
 }
@@ -54,4 +54,37 @@ export interface SeasonStats {
   draws: number;
   goalsFor: number;
   goalsAgainst: number;
+}
+
+export interface VideoMarker {
+  id: string;
+  timeSeconds: number;
+  label: string;
+}
+
+export interface VideoClip {
+  id: string;
+  r2Url: string;
+  startSeconds: number;
+  endSeconds: number;
+  label: string;
+}
+
+export interface SessionVideo {
+  id: string;
+  fileName: string;
+  r2Url: string;
+  thumbnailUrl: string;
+  durationSeconds: number;
+  resolution: string;
+  markers: VideoMarker[];
+  clips: VideoClip[];
+}
+
+export interface PracticeSession {
+  id: string;
+  sessionName: string;
+  sessionType: "PRACTICE" | "GAME";
+  sessionDate: string;
+  videos: SessionVideo[];
 }

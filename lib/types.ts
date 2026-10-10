@@ -69,6 +69,8 @@ export interface VideoClip {
   endSeconds: number;
   label: string;
   clipType?: "highlight" | "goal" | "celebration";
+  saveCount: number;
+  archived: boolean;
 }
 
 export interface ActivityBucket {

@@ -64,6 +64,8 @@ export default defineType({
                         { title: "Celebration", value: "celebration" },
                       ]},
                     }),
+                    defineField({ name: "saveCount", title: "Save Count", type: "number" }),
+                    defineField({ name: "archived", title: "Archived to local storage", type: "boolean" }),
                   ],
                 },
               ],

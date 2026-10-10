@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import type { PracticeSession, SessionVideo, VideoClip } from "@/lib/types";
 import FieldHeatmap from "@/components/FieldHeatmap";
 import ActivityTimeline from "@/components/ActivityTimeline";
+
+const SAVED_KEY = "nlfc_saved_clips";
 
 function fmt(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -11,7 +13,6 @@ function fmt(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-// 0–30 min = 1st half, 30–62 min = 2nd half, 62min+ = celebration
 function clipSection(clip: VideoClip): "celebration" | "second" | "first" {
   if (clip.clipType === "celebration") return "celebration";
   if (clip.clipType === "goal") return clip.startSeconds < 1800 ? "first" : "second";
@@ -21,8 +22,8 @@ function clipSection(clip: VideoClip): "celebration" | "second" | "first" {
 }
 
 const SECTION_META = {
-  first:       { label: "1st Half",    color: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200" },
-  second:      { label: "2nd Half",    color: "bg-orange-500", badge: "bg-orange-50 text-orange-700 border-orange-200" },
+  first:       { label: "1st Half",       color: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200" },
+  second:      { label: "2nd Half",       color: "bg-orange-500", badge: "bg-orange-50 text-orange-700 border-orange-200" },
   celebration: { label: "Celebration 🎉", color: "bg-yellow-400", badge: "bg-yellow-50 text-yellow-800 border-yellow-200" },
 };
 
@@ -32,12 +33,97 @@ const TYPE_BADGE: Record<string, string> = {
   highlight:   "",
 };
 
+function SaveButton({
+  clip,
+  sessionId,
+  videoKey,
+  saved,
+  onSave,
+}: {
+  clip: VideoClip;
+  sessionId: string;
+  videoKey: string;
+  saved: boolean;
+  onSave: (clipId: string) => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [localCount, setLocalCount] = useState(clip.saveCount);
+
+  async function handleSave(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (saved || saving) return;
+    setSaving(true);
+    setLocalCount((n) => n + 1);
+    onSave(clip.id);
+    try {
+      await fetch("/api/clip-save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, videoKey, clipKey: clip.id }),
+      });
+    } catch {
+      // optimistic count stays — Sanity will sync next page load
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-100">
+      <span className="text-[10px] text-gray-400">
+        {localCount > 0 ? `${localCount} saved` : "Be the first"}
+      </span>
+      <button
+        onClick={handleSave}
+        disabled={saved}
+        className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-1 transition-all ${
+          saved
+            ? "text-red-500 bg-red-50"
+            : "text-gray-400 hover:text-red-400 hover:bg-red-50 active:scale-110"
+        }`}
+        title={saved ? "Saved" : "Save this clip"}
+      >
+        <svg
+          className="w-3.5 h-3.5"
+          fill={saved ? "currentColor" : "none"}
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+        {saved ? "Saved" : "Save"}
+      </button>
+    </div>
+  );
+}
+
 export default function SessionViewer({ session }: { session: PracticeSession }) {
   const [activeVideo, setActiveVideo] = useState<SessionVideo>(session.videos[0]);
   const [activeClipUrl, setActiveClipUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [savedClips, setSavedClips] = useState<Set<string>>(new Set());
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
+
+  // Load saved clips from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SAVED_KEY);
+      if (raw) setSavedClips(new Set(JSON.parse(raw) as string[]));
+    } catch {}
+  }, []);
+
+  const handleSave = useCallback((clipId: string) => {
+    setSavedClips((prev) => {
+      const next = new Set(prev);
+      next.add(clipId);
+      try {
+        localStorage.setItem(SAVED_KEY, JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   function seekTo(seconds: number) {
     const clip = activeVideo.clips.reduce((best, c) => {
@@ -61,17 +147,13 @@ export default function SessionViewer({ session }: { session: PracticeSession })
 
   if (!activeVideo) return null;
 
-  // Group clips by section
   const sections = (["first", "second", "celebration"] as const).map((key) => ({
     key,
     ...SECTION_META[key],
     clips: activeVideo.clips.filter((c) => clipSection(c) === key),
   })).filter((s) => s.clips.length > 0);
 
-  // Goals only
   const goals = activeVideo.clips.filter((c) => c.clipType === "goal");
-
-  // Full-game Drive URL — use first video that has one
   const driveUrl = session.videos.find((v) => v.driveUrl)?.driveUrl;
 
   return (
@@ -84,7 +166,6 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           rel="noopener noreferrer"
           className="flex items-center gap-4 mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#1a73e8] to-[#0d47a1] text-white shadow-lg hover:shadow-xl hover:brightness-110 transition-all group"
         >
-          {/* Drive icon */}
           <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors">
             <svg className="w-7 h-7" viewBox="0 0 87.3 78" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L27.5 53H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
@@ -95,12 +176,10 @@ export default function SessionViewer({ session }: { session: PracticeSession })
               <path d="M73.4 26.5L60.2 4c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.8 53h27.3c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
             </svg>
           </div>
-
           <div className="flex-1 min-w-0">
             <p className="font-black text-base leading-tight">Full Game · Google Drive</p>
             <p className="text-white/75 text-sm mt-0.5">18 GB · original 4K quality · tap to open</p>
           </div>
-
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full group-hover:bg-white/30 transition-colors">
               Open ↗
@@ -141,7 +220,6 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           onWaiting={() => setIsLoading(true)}
           onProgress={() => { if (isLoading && videoRef.current && videoRef.current.readyState >= 3) setIsLoading(false); }}
         />
-        {/* Loading overlay */}
         {isLoading && activeClipUrl && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none">
             <div className="flex flex-col items-center gap-3">
@@ -150,7 +228,6 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             </div>
           </div>
         )}
-        {/* Tap-to-play hint when nothing selected */}
         {!activeClipUrl && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
@@ -174,7 +251,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         )}
       </div>
 
-      {/* Goals quick-access — only if goals are tagged */}
+      {/* Goals quick-access */}
       {goals.length > 0 && (
         <section className="mb-8 p-4 bg-green-50 border border-green-200 rounded-2xl">
           <div className="flex items-center gap-2 mb-3">
@@ -248,6 +325,38 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             {section.clips.map((clip) => {
               const isPlaying = activeClipUrl === clip.r2Url;
               const typeBadge = TYPE_BADGE[clip.clipType ?? "highlight"];
+              const isSaved = savedClips.has(clip.id);
+
+              // Archived clip — greyed out card
+              if (clip.archived) {
+                return (
+                  <div key={clip.id} className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 opacity-60">
+                    <div className="p-3">
+                      {typeBadge && (
+                        <span className={`inline-block text-[10px] font-black px-1.5 py-0.5 rounded-full border mb-1.5 ${section.badge}`}>
+                          {typeBadge}
+                        </span>
+                      )}
+                      <p className="font-semibold text-gray-500 text-xs leading-snug">{clip.label}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{fmt(clip.startSeconds)} – {fmt(clip.endSeconds)}</p>
+                      <div className="mt-2 w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-semibold bg-gray-200 text-gray-400">
+                        Archived · {clip.saveCount} saved
+                      </div>
+                    </div>
+                    {driveUrl && (
+                      <a
+                        href={driveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1 py-1.5 border-t border-gray-200 text-[10px] font-semibold text-gray-400 hover:bg-gray-100 transition-colors"
+                      >
+                        Full game on Drive ↗
+                      </a>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <div
                   key={clip.id}
@@ -279,6 +388,16 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                       {isPlaying ? "Playing" : "Play"}
                     </div>
                   </button>
+
+                  {/* Save button row */}
+                  <SaveButton
+                    clip={clip}
+                    sessionId={session.id}
+                    videoKey={activeVideo.id}
+                    saved={isSaved}
+                    onSave={handleSave}
+                  />
+
                   <a
                     href={clip.r2Url}
                     download

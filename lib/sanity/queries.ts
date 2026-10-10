@@ -194,6 +194,7 @@ type RawSessionVideo = {
   _key: string;
   fileName: string;
   r2Url: string;
+  driveUrl?: string;
   thumbnailUrl: string;
   durationSeconds: number;
   resolution: string;
@@ -213,7 +214,7 @@ type RawSession = {
 const SESSION_PROJECTION = `
   _id, sessionName, sessionType, sessionDate,
   videos[]{
-    _key, fileName, r2Url, thumbnailUrl, durationSeconds, resolution,
+    _key, fileName, r2Url, driveUrl, thumbnailUrl, durationSeconds, resolution,
     markers[]{ _key, timeSeconds, label },
     clips[]{ _key, r2Url, startSeconds, endSeconds, label, clipType },
     analytics{
@@ -236,6 +237,7 @@ function mapSession(s: RawSession): PracticeSession {
       id: v._key,
       fileName: v.fileName ?? "",
       r2Url: v.r2Url ?? "",
+      driveUrl: v.driveUrl,
       thumbnailUrl: v.thumbnailUrl ?? "",
       durationSeconds: v.durationSeconds ?? 0,
       resolution: v.resolution ?? "",

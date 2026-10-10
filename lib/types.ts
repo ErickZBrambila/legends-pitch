@@ -97,6 +97,7 @@ export interface SessionVideo {
   id: string;
   fileName: string;
   r2Url: string;
+  driveUrl?: string;
   thumbnailUrl: string;
   durationSeconds: number;
   resolution: string;

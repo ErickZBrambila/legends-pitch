@@ -24,6 +24,7 @@ export default defineType({
           fields: [
             defineField({ name: "fileName", title: "File Name", type: "string" }),
             defineField({ name: "r2Url", title: "Video URL (R2)", type: "url" }),
+            defineField({ name: "driveUrl", title: "Full Game (Google Drive)", type: "url" }),
             defineField({ name: "thumbnailUrl", title: "Thumbnail URL", type: "url" }),
             defineField({ name: "durationSeconds", title: "Duration (s)", type: "number" }),
             defineField({ name: "resolution", title: "Resolution", type: "string" }),

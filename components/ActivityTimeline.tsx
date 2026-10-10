@@ -56,6 +56,9 @@ export default function ActivityTimeline({
       </div>
 
       <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+        <p className="text-[9px] text-gray-400 mb-1 uppercase tracking-wide font-semibold">
+          Player/ball detections per minute ↑
+        </p>
         {/* Bar chart */}
         <svg
           viewBox={`0 0 ${W} ${H}`}
@@ -104,13 +107,13 @@ export default function ActivityTimeline({
             </g>
           )}
 
-          {/* Key moment markers (small ticks) */}
+          {/* Key moment markers — full-height amber line + dot at top */}
           {markers.map((m) => {
             const x = timeToX(m.timeSeconds);
             return (
               <g key={m.id}>
-                <line x1={x} y1={H * 0.25} x2={x} y2={H} stroke="rgba(251,191,36,0.7)" strokeWidth="1" />
-                <circle cx={x} cy={H * 0.25} r={2.5} fill="#f59e0b">
+                <line x1={x} y1={0} x2={x} y2={H} stroke="rgba(245,158,11,0.5)" strokeWidth="1.5" />
+                <circle cx={x} cy={4} r={3.5} fill="#f59e0b" stroke="white" strokeWidth="1">
                   <title>{m.label} — {fmtSec(m.timeSeconds)}</title>
                 </circle>
               </g>

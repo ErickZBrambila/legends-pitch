@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import TeamTabs from "@/components/TeamTabs";
-import { getSessionsByTeam } from "@/lib/sanity/queries";
+import { getSessionsByTeam, getHighlightVideosByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
-import type { PracticeSession } from "@/lib/types";
+import type { PracticeSession, HighlightVideo } from "@/lib/types";
 
 export const metadata: Metadata = { title: "KickReel · Match Videos" };
 
@@ -41,7 +41,16 @@ export default async function VideosPage({
 }) {
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
-  const sessions = await getSessionsByTeam(team);
+  const [sessions, highlightVideos] = await Promise.all([
+    getSessionsByTeam(team),
+    getHighlightVideosByTeam(team),
+  ]);
+
+  // Group YouTube highlights by event
+  const ytByEvent = highlightVideos.reduce<Record<string, HighlightVideo[]>>((acc, v) => {
+    (acc[v.event] ??= []).push(v);
+    return acc;
+  }, {});
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -143,6 +152,64 @@ export default async function VideosPage({
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {/* YouTube Collections */}
+      {Object.keys(ytByEvent).length > 0 && (
+        <div className="mt-16">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-1 h-7 rounded-full bg-[var(--color-accent)]" />
+            <h2 className="text-2xl font-black text-gray-900">360° Collections</h2>
+            <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">YouTube</span>
+          </div>
+
+          {Object.entries(ytByEvent).map(([event, clips]) => (
+            <section key={event} className="mb-12">
+              <div className="flex items-center gap-3 mb-5">
+                <h3 className="text-lg font-black text-gray-800">{event}</h3>
+                <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                  {clips.length} clips
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {clips.map((v) => (
+                  <a
+                    key={v.id}
+                    href={`https://youtu.be/${v.youtubeId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md hover:border-[var(--color-accent)]/30 transition-all"
+                  >
+                    <div className="relative w-full overflow-hidden bg-gray-900" style={{ paddingBottom: "56.25%" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://img.youtube.com/vi/${v.youtubeId}/mqdefault.jpg`}
+                        alt={v.title}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                        <div className="w-14 h-14 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg transition-all group-hover:scale-110">
+                          <svg className="w-6 h-6 text-[var(--color-primary)] ml-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-black px-2 py-0.5 rounded-full tracking-wider">
+                        360°
+                      </div>
+                    </div>
+                    <div className="px-4 py-3">
+                      <p className="text-sm font-semibold text-gray-800 leading-snug">{v.title}</p>
+                      <p className="text-xs text-[var(--color-primary)] mt-1 font-medium group-hover:underline">
+                        Watch on YouTube →
+                      </p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       )}
     </div>

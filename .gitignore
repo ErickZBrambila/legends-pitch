@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# video files — served from R2, never commit locally
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.m4v

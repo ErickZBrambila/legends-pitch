@@ -16,15 +16,19 @@ interface Player {
   position: Position;
 }
 
+interface PracticeSlot {
+  day: string;
+  time: string;
+  location: string;
+}
+
 interface FormState {
   team: TeamSlug;
   headCoachName: string;
   headCoachRole: string;
   headCoachEmail: string;
   assistants: AssistantCoach[];
-  practiceDay: string;
-  practiceTime: string;
-  practiceLocation: string;
+  practiceSlots: PracticeSlot[];
   players: Player[];
 }
 
@@ -34,9 +38,10 @@ const emptyForm = (team: TeamSlug): FormState => ({
   headCoachRole: "Head Coach",
   headCoachEmail: "",
   assistants: [{ name: "", role: "Assistant Coach" }],
-  practiceDay: "",
-  practiceTime: "",
-  practiceLocation: "",
+  practiceSlots: [
+    { day: "", time: "", location: "" },
+    { day: "", time: "", location: "" },
+  ],
   players: Array.from({ length: 3 }, () => ({ name: "", number: "", position: "MID" as Position })),
 });
 
@@ -53,6 +58,12 @@ export default function CoachForm() {
 
   function update(patch: Partial<FormState>) {
     setForms((prev) => ({ ...prev, [activeTeam]: { ...prev[activeTeam], ...patch } }));
+  }
+
+  function updateSlot(i: number, field: keyof PracticeSlot, value: string) {
+    const next = [...form.practiceSlots];
+    next[i] = { ...next[i], [field]: value };
+    update({ practiceSlots: next });
   }
 
   function updateAssistant(i: number, field: keyof AssistantCoach, value: string) {
@@ -144,6 +155,7 @@ export default function CoachForm() {
         {(["u11", "u12"] as TeamSlug[]).map((t) => (
           <button
             key={t}
+            type="button"
             onClick={() => { setActiveTeam(t); setStatus("idle"); }}
             className={`flex-1 py-4 text-lg font-bold transition-colors ${
               activeTeam === t
@@ -205,23 +217,29 @@ export default function CoachForm() {
         </section>
 
         {/* Practice Schedule */}
-        <section className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+        <section className="bg-white rounded-2xl shadow-sm p-6 space-y-6">
           <h2 className="text-xl font-bold text-gray-800">Practice Schedule</h2>
-          <div>
-            <label className={labelCls}>Day(s)</label>
-            <input className={inputCls} placeholder="e.g. Tuesdays & Thursdays" value={form.practiceDay}
-              onChange={(e) => update({ practiceDay: e.target.value })} />
-          </div>
-          <div>
-            <label className={labelCls}>Time</label>
-            <input className={inputCls} placeholder="e.g. 5:30 PM – 7:00 PM" value={form.practiceTime}
-              onChange={(e) => update({ practiceTime: e.target.value })} />
-          </div>
-          <div>
-            <label className={labelCls}>Location / Field</label>
-            <input className={inputCls} placeholder="e.g. Cesar Chavez Park, Field 3" value={form.practiceLocation}
-              onChange={(e) => update({ practiceLocation: e.target.value })} />
-          </div>
+          {form.practiceSlots.map((slot, i) => (
+            <div key={i} className="space-y-3">
+              <p className="text-sm font-bold text-blue-600 uppercase tracking-wide">Day {i + 1}</p>
+              <div>
+                <label className={labelCls}>Day</label>
+                <input className={inputCls} placeholder="e.g. Tuesday" value={slot.day}
+                  onChange={(e) => updateSlot(i, "day", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Time</label>
+                <input className={inputCls} placeholder="e.g. 5:30 PM – 7:00 PM" value={slot.time}
+                  onChange={(e) => updateSlot(i, "time", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Location / Field</label>
+                <input className={inputCls} placeholder="e.g. Cesar Chavez Park, Field 3" value={slot.location}
+                  onChange={(e) => updateSlot(i, "location", e.target.value)} />
+              </div>
+              {i < form.practiceSlots.length - 1 && <hr className="border-gray-100" />}
+            </div>
+          ))}
         </section>
 
         {/* Roster */}

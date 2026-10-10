@@ -21,9 +21,7 @@ export async function POST(req: NextRequest) {
       headCoachRole: string;
       headCoachEmail: string;
       assistants: Array<{ name: string; role: string }>;
-      practiceDay: string;
-      practiceTime: string;
-      practiceLocation: string;
+      practiceSlots: Array<{ day: string; time: string; location: string }>;
       players: Array<{ name: string; number: string; position: "GK" | "DEF" | "MID" | "FWD" }>;
     };
 

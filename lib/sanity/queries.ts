@@ -105,7 +105,11 @@ export async function getGalleryEventsByTeam(team: TeamSlug): Promise<GalleryEve
       _id: string;
       title: string;
       date: string;
-      images: Array<{ _key: string; image: { asset: { _ref: string } }; alt: string }>;
+      images: Array<{
+        _key: string;
+        alt: string;
+        image: { _type?: string; asset?: { _ref: string }; url?: string } | null;
+      }>;
     }>
   >(
     `*[_type == "galleryEvent" && team->ageGroup == $team]{
@@ -118,11 +122,17 @@ export async function getGalleryEventsByTeam(team: TeamSlug): Promise<GalleryEve
     id: e._id,
     title: e.title,
     date: e.date,
-    images: (e.images ?? []).map((img) => ({
-      id: img._key,
-      url: img.image ? urlForImage(img.image) : "",
-      alt: img.alt ?? "",
-    })),
+    images: (e.images ?? []).flatMap((img) => {
+      if (!img.image) return [];
+      // Support both Sanity asset references and plain externalImage URLs
+      const url = img.image._type === "externalImage" && img.image.url
+        ? img.image.url
+        : img.image.asset
+          ? urlForImage(img.image)
+          : null;
+      if (!url) return [];
+      return [{ id: img._key, url, alt: img.alt ?? "" }];
+    }),
   }));
 }
 

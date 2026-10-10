@@ -1,25 +1,56 @@
 import type { Metadata } from "next";
+import TeamTabs from "@/components/TeamTabs";
+import type { TeamSlug } from "@/lib/sanity/queries";
 
 export const metadata: Metadata = { title: "Contact" };
 
-const PRACTICE_SCHEDULE = [
-  { day: "Tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
-  { day: "Thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
-];
-
-const COACHING_STAFF = [
-  { name: "Head Coach (TBD)", role: "Head Coach" },
-  { name: "Assistant Coach (TBD)", role: "Assistant Coach" },
-];
-
-const CONTACT_EMAIL = "northlegends@gmail.com";
 const FIELD_ADDRESS = "Frost Elementary School, 711 Lakeway Dr, Georgetown, TX 78628";
 const MAPS_EMBED = `https://maps.google.com/maps?q=${encodeURIComponent(FIELD_ADDRESS)}&output=embed&z=15`;
 
-export default function ContactPage() {
+const TEAM_INFO: Record<TeamSlug, {
+  email: string;
+  coaches: { name: string; role: string }[];
+  practice: { day: string; time: string; location: string }[];
+}> = {
+  u11: {
+    email: "northlegends@gmail.com",
+    coaches: [
+      { name: "Head Coach (TBD)", role: "Head Coach" },
+      { name: "Assistant Coach (TBD)", role: "Assistant Coach" },
+    ],
+    practice: [
+      { day: "Tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+      { day: "Thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+    ],
+  },
+  u12: {
+    email: "northlegends@gmail.com",
+    coaches: [
+      { name: "Head Coach (TBD)", role: "Head Coach" },
+      { name: "Assistant Coach (TBD)", role: "Assistant Coach" },
+    ],
+    practice: [
+      { day: "Tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+      { day: "Thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+    ],
+  },
+};
+
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ team?: string }>;
+}) {
+  const { team: teamParam } = await searchParams;
+  const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
+  const info = TEAM_INFO[team];
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-3xl font-black text-gray-900 mb-8">Contact & Info</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-black text-gray-900">Contact & Info</h1>
+        <TeamTabs activeTeam={team} />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Practice schedule */}
@@ -33,7 +64,7 @@ export default function ContactPage() {
             Practice Schedule
           </h2>
           <div className="flex flex-col gap-3">
-            {PRACTICE_SCHEDULE.map((s, i) => (
+            {info.practice.map((s, i) => (
               <div key={i} className="flex flex-col gap-0.5">
                 <p className="font-semibold text-gray-700 text-sm">{s.day}</p>
                 <p className="text-gray-500 text-sm">{s.time}</p>
@@ -54,7 +85,7 @@ export default function ContactPage() {
             Coaching Staff
           </h2>
           <div className="flex flex-col gap-3">
-            {COACHING_STAFF.map((c, i) => (
+            {info.coaches.map((c, i) => (
               <div key={i}>
                 <p className="font-semibold text-gray-700 text-sm">{c.name}</p>
                 <p className="text-gray-400 text-xs">{c.role}</p>
@@ -77,10 +108,10 @@ export default function ContactPage() {
             Questions about the team, schedule, or anything else? Reach out!
           </p>
           <a
-            href={`mailto:${CONTACT_EMAIL}`}
+            href={`mailto:${info.email}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors"
           >
-            {CONTACT_EMAIL}
+            {info.email}
           </a>
         </div>
 
@@ -108,7 +139,7 @@ export default function ContactPage() {
         </div>
       </div>
 
-      {/* Map embed placeholder */}
+      {/* Map embed */}
       <div className="rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 h-64 md:h-80 flex items-center justify-center">
         <iframe
           src={MAPS_EMBED}

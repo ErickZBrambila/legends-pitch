@@ -136,7 +136,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           controls
           playsInline
           className="w-full max-h-[70vh]"
-          preload="auto"
+          preload={activeClipUrl ? "auto" : "none"}
           onCanPlay={() => setIsLoading(false)}
           onWaiting={() => setIsLoading(true)}
           onProgress={() => { if (isLoading && videoRef.current && videoRef.current.readyState >= 3) setIsLoading(false); }}

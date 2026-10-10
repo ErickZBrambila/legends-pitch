@@ -79,10 +79,16 @@ export interface ActivityBucket {
 }
 
 export interface VideoAnalytics {
-  fieldZones: number[];          // 10 values, left goal → right goal
+  fieldZones: number[];              // 10 values, normalized full-game
+  fieldZonesFirstHalf?: number[];    // 1st half only
+  fieldZonesSecondHalf?: number[];   // 2nd half only (same orientation as 1st)
   activityBuckets: ActivityBucket[];
   goalPressureLeft: number;
   goalPressureRight: number;
+  goalPressureLeftH1?: number;
+  goalPressureRightH1?: number;
+  goalPressureLeftH2?: number;
+  goalPressureRightH2?: number;
   totalFrames: number;
   dominantZone: number;
 }

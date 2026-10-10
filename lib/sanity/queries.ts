@@ -177,9 +177,15 @@ export async function getTeamLabel(team: TeamSlug): Promise<string> {
 type RawActivityBucket = { _key: string; tStart: number; tEnd: number; detections: number; frames: number };
 type RawAnalytics = {
   fieldZones: number[];
+  fieldZonesFirstHalf?: number[];
+  fieldZonesSecondHalf?: number[];
   activityBuckets: RawActivityBucket[];
   goalPressureLeft: number;
   goalPressureRight: number;
+  goalPressureLeftH1?: number;
+  goalPressureRightH1?: number;
+  goalPressureLeftH2?: number;
+  goalPressureRightH2?: number;
   totalFrames: number;
   dominantZone: number;
 };
@@ -211,7 +217,10 @@ const SESSION_PROJECTION = `
     markers[]{ _key, timeSeconds, label },
     clips[]{ _key, r2Url, startSeconds, endSeconds, label, clipType },
     analytics{
-      fieldZones, goalPressureLeft, goalPressureRight, totalFrames, dominantZone,
+      fieldZones, fieldZonesFirstHalf, fieldZonesSecondHalf,
+      goalPressureLeft, goalPressureRight,
+      goalPressureLeftH1, goalPressureRightH1, goalPressureLeftH2, goalPressureRightH2,
+      totalFrames, dominantZone,
       activityBuckets[]{ _key, tStart, tEnd, detections, frames }
     }
   }
@@ -241,6 +250,8 @@ function mapSession(s: RawSession): PracticeSession {
       })),
       analytics: v.analytics ? {
         fieldZones: v.analytics.fieldZones ?? [],
+        fieldZonesFirstHalf: v.analytics.fieldZonesFirstHalf,
+        fieldZonesSecondHalf: v.analytics.fieldZonesSecondHalf,
         activityBuckets: (v.analytics.activityBuckets ?? []).map((b) => ({
           tStart: b.tStart,
           tEnd: b.tEnd,
@@ -249,6 +260,10 @@ function mapSession(s: RawSession): PracticeSession {
         })),
         goalPressureLeft: v.analytics.goalPressureLeft ?? 0,
         goalPressureRight: v.analytics.goalPressureRight ?? 0,
+        goalPressureLeftH1: v.analytics.goalPressureLeftH1,
+        goalPressureRightH1: v.analytics.goalPressureRightH1,
+        goalPressureLeftH2: v.analytics.goalPressureLeftH2,
+        goalPressureRightH2: v.analytics.goalPressureRightH2,
         totalFrames: v.analytics.totalFrames ?? 0,
         dominantZone: v.analytics.dominantZone ?? 0,
       } : null,

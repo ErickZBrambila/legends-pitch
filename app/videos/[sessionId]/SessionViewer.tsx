@@ -37,6 +37,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   const [activeClipUrl, setActiveClipUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
 
   function seekTo(seconds: number) {
     const clip = activeVideo.clips.reduce((best, c) => {
@@ -55,6 +56,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       vid.load();
       vid.play().catch(() => {});
     }
+    playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   if (!activeVideo) return null;
@@ -91,16 +93,17 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       )}
 
       {/* Player */}
-      <div className="relative rounded-2xl overflow-hidden bg-black shadow-xl">
+      <div ref={playerRef} className="relative rounded-2xl overflow-hidden bg-black shadow-xl">
         <video
           ref={videoRef}
           poster={activeVideo.thumbnailUrl || undefined}
           controls
           playsInline
           className="w-full max-h-[70vh]"
-          preload="none"
+          preload="auto"
           onCanPlay={() => setIsLoading(false)}
           onWaiting={() => setIsLoading(true)}
+          onProgress={() => { if (isLoading && videoRef.current && videoRef.current.readyState >= 3) setIsLoading(false); }}
         />
         {/* Loading overlay */}
         {isLoading && activeClipUrl && (

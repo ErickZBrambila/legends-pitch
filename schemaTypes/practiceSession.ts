@@ -73,8 +73,14 @@ export default defineType({
               type: "object",
               fields: [
                 defineField({ name: "fieldZones", title: "Field Zones (L→R)", type: "array", of: [{ type: "number" }] }),
+                defineField({ name: "fieldZonesFirstHalf", title: "Field Zones 1st Half", type: "array", of: [{ type: "number" }] }),
+                defineField({ name: "fieldZonesSecondHalf", title: "Field Zones 2nd Half", type: "array", of: [{ type: "number" }] }),
                 defineField({ name: "goalPressureLeft", title: "Goal Pressure Left", type: "number" }),
                 defineField({ name: "goalPressureRight", title: "Goal Pressure Right", type: "number" }),
+                defineField({ name: "goalPressureLeftH1", title: "Goal Pressure Left H1", type: "number" }),
+                defineField({ name: "goalPressureRightH1", title: "Goal Pressure Right H1", type: "number" }),
+                defineField({ name: "goalPressureLeftH2", title: "Goal Pressure Left H2", type: "number" }),
+                defineField({ name: "goalPressureRightH2", title: "Goal Pressure Right H2", type: "number" }),
                 defineField({ name: "totalFrames", title: "Total Frames", type: "number" }),
                 defineField({ name: "dominantZone", title: "Dominant Zone (0-9)", type: "number" }),
                 defineField({

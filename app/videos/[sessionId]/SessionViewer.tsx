@@ -105,6 +105,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   const [savedClips, setSavedClips] = useState<Set<string>>(new Set());
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
+  const pendingPlay = useRef(false);
 
   // Load saved clips from localStorage on mount
   useEffect(() => {
@@ -136,11 +137,11 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   function playClip(url: string) {
     setActiveClipUrl(url);
     setIsLoading(true);
+    pendingPlay.current = true;
     const vid = videoRef.current;
     if (vid) {
       vid.src = url;
       vid.load();
-      vid.play().catch(() => {});
     }
     playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -216,9 +217,16 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           playsInline
           className="w-full max-h-[70vh]"
           preload={activeClipUrl ? "auto" : "none"}
-          onCanPlay={() => setIsLoading(false)}
+          onCanPlay={() => {
+            setIsLoading(false);
+            if (pendingPlay.current) {
+              pendingPlay.current = false;
+              videoRef.current?.play().catch(() => {});
+            }
+          }}
+          onPlaying={() => setIsLoading(false)}
           onWaiting={() => setIsLoading(true)}
-          onProgress={() => { if (isLoading && videoRef.current && videoRef.current.readyState >= 3) setIsLoading(false); }}
+          onStalled={() => setIsLoading(true)}
         />
         {isLoading && activeClipUrl && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none">

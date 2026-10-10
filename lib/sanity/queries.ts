@@ -1,6 +1,6 @@
 import { sanityClient } from "./client";
 import { urlForImage } from "./image";
-import type { Match, Player, NewsPost, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession } from "@/lib/types";
+import type { Match, Player, NewsPost, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
 
 export type TeamSlug = "u11" | "u12";
 
@@ -192,7 +192,7 @@ type RawSessionVideo = {
   durationSeconds: number;
   resolution: string;
   markers: Array<{ _key: string; timeSeconds: number; label: string }>;
-  clips: Array<{ _key: string; r2Url: string; startSeconds: number; endSeconds: number; label: string }>;
+  clips: Array<{ _key: string; r2Url: string; startSeconds: number; endSeconds: number; label: string; clipType?: string }>;
   analytics?: RawAnalytics;
 };
 
@@ -209,7 +209,7 @@ const SESSION_PROJECTION = `
   videos[]{
     _key, fileName, r2Url, thumbnailUrl, durationSeconds, resolution,
     markers[]{ _key, timeSeconds, label },
-    clips[]{ _key, r2Url, startSeconds, endSeconds, label },
+    clips[]{ _key, r2Url, startSeconds, endSeconds, label, clipType },
     analytics{
       fieldZones, goalPressureLeft, goalPressureRight, totalFrames, dominantZone,
       activityBuckets[]{ _key, tStart, tEnd, detections, frames }
@@ -237,6 +237,7 @@ function mapSession(s: RawSession): PracticeSession {
         startSeconds: c.startSeconds,
         endSeconds: c.endSeconds,
         label: c.label,
+        clipType: (c.clipType as VideoClip["clipType"]) ?? "highlight",
       })),
       analytics: v.analytics ? {
         fieldZones: v.analytics.fieldZones ?? [],

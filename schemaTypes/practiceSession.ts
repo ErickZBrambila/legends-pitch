@@ -53,6 +53,16 @@ export default defineType({
                     defineField({ name: "startSeconds", title: "Start (s)", type: "number" }),
                     defineField({ name: "endSeconds", title: "End (s)", type: "number" }),
                     defineField({ name: "label", title: "Label", type: "string" }),
+                    defineField({
+                      name: "clipType",
+                      title: "Type",
+                      type: "string",
+                      options: { list: [
+                        { title: "Highlight", value: "highlight" },
+                        { title: "Goal", value: "goal" },
+                        { title: "Celebration", value: "celebration" },
+                      ]},
+                    }),
                   ],
                 },
               ],

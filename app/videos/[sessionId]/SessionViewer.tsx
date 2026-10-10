@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { PracticeSession, SessionVideo } from "@/lib/types";
+import type { PracticeSession, SessionVideo, VideoClip } from "@/lib/types";
 import FieldHeatmap from "@/components/FieldHeatmap";
 import ActivityTimeline from "@/components/ActivityTimeline";
 
@@ -11,16 +11,34 @@ function fmt(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// 0–30 min = 1st half, 30–62 min = 2nd half, 62min+ = celebration
+function clipSection(clip: VideoClip): "celebration" | "second" | "first" {
+  if (clip.clipType === "celebration") return "celebration";
+  if (clip.clipType === "goal") return clip.startSeconds < 1800 ? "first" : "second";
+  if (clip.startSeconds >= 3720) return "celebration";
+  if (clip.startSeconds >= 1800) return "second";
+  return "first";
+}
+
+const SECTION_META = {
+  first:       { label: "1st Half",    color: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200" },
+  second:      { label: "2nd Half",    color: "bg-orange-500", badge: "bg-orange-50 text-orange-700 border-orange-200" },
+  celebration: { label: "Celebration 🎉", color: "bg-yellow-400", badge: "bg-yellow-50 text-yellow-800 border-yellow-200" },
+};
+
+const TYPE_BADGE: Record<string, string> = {
+  goal:        "⚽ Goal",
+  celebration: "🎉 Celebration",
+  highlight:   "",
+};
+
 export default function SessionViewer({ session }: { session: PracticeSession }) {
   const [activeVideo, setActiveVideo] = useState<SessionVideo>(session.videos[0]);
-  const firstClip = session.videos[0]?.clips[0]?.r2Url ?? null;
-  const [activeClipUrl, setActiveClipUrl] = useState<string | null>(firstClip);
+  const [activeClipUrl, setActiveClipUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const currentSrc = activeClipUrl ?? "";
-
   function seekTo(seconds: number) {
-    // Find the clip whose window contains or is closest to this marker time
     const clip = activeVideo.clips.reduce((best, c) => {
       const dist = (t: typeof c) => Math.abs((t.startSeconds + t.endSeconds) / 2 - seconds);
       return dist(c) < dist(best) ? c : best;
@@ -30,18 +48,30 @@ export default function SessionViewer({ session }: { session: PracticeSession })
 
   function playClip(url: string) {
     setActiveClipUrl(url);
-    if (videoRef.current) {
-      videoRef.current.src = url;
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => {});
+    setIsLoading(true);
+    const vid = videoRef.current;
+    if (vid) {
+      vid.src = url;
+      vid.load();
+      vid.play().catch(() => {});
     }
   }
 
   if (!activeVideo) return null;
 
+  // Group clips by section
+  const sections = (["first", "second", "celebration"] as const).map((key) => ({
+    key,
+    ...SECTION_META[key],
+    clips: activeVideo.clips.filter((c) => clipSection(c) === key),
+  })).filter((s) => s.clips.length > 0);
+
+  // Goals only
+  const goals = activeVideo.clips.filter((c) => c.clipType === "goal");
+
   return (
     <div>
-      {/* Video selector tabs (only if multiple videos) */}
+      {/* Video selector tabs */}
       {session.videos.length > 1 && (
         <div className="flex gap-2 mb-4 flex-wrap">
           {session.videos.map((v, i) => (
@@ -64,28 +94,80 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       <div className="relative rounded-2xl overflow-hidden bg-black shadow-xl">
         <video
           ref={videoRef}
-          key={currentSrc}
-          src={currentSrc}
+          poster={activeVideo.thumbnailUrl || undefined}
           controls
           playsInline
           className="w-full max-h-[70vh]"
-          preload="metadata"
+          preload="none"
+          onCanPlay={() => setIsLoading(false)}
+          onWaiting={() => setIsLoading(true)}
         />
+        {/* Loading overlay */}
+        {isLoading && activeClipUrl && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+              <span className="text-white text-sm font-semibold">Loading clip…</span>
+            </div>
+          </div>
+        )}
+        {/* Tap-to-play hint when nothing selected */}
+        {!activeClipUrl && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+                <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+              <p className="text-white/80 text-sm font-medium">Tap a clip to play</p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Video info */}
-      <div className="flex items-center mt-3 mb-6">
-        <p className="text-sm text-gray-500">
-          {activeClipUrl ? "Playing highlight clip — tap Download to save" : "Select a highlight clip below"}
-        </p>
+      {/* Now playing label */}
+      <div className="mt-2 mb-6 h-5">
+        {activeClipUrl && !isLoading && (
+          <p className="text-xs text-gray-400 font-medium">
+            {activeVideo.clips.find(c => c.r2Url === activeClipUrl)?.label ?? "Playing"} · tap ↓ to download
+          </p>
+        )}
       </div>
 
-      {/* Markers — quick seek chips */}
+      {/* Goals quick-access — only if goals are tagged */}
+      {goals.length > 0 && (
+        <section className="mb-8 p-4 bg-green-50 border border-green-200 rounded-2xl">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">⚽</span>
+            <h2 className="text-sm font-black text-green-800 uppercase tracking-wide">Goals</h2>
+            <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">{goals.length}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {goals.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => playClip(c.r2Url)}
+                className={`px-3 py-1.5 border text-sm font-semibold rounded-full transition-colors ${
+                  activeClipUrl === c.r2Url
+                    ? "bg-green-600 text-white border-green-600"
+                    : "bg-white text-green-800 border-green-300 hover:bg-green-100"
+                }`}
+              >
+                ⚽ {c.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Marker chips */}
       {activeVideo.markers.length > 0 && (
         <section className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-1 h-5 rounded-full bg-[var(--color-accent)]" />
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">Jump to Marker</h2>
+            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">All Moments</h2>
+            <span className="text-xs text-gray-400">{activeVideo.markers.length} highlights · tap to jump</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {activeVideo.markers.map((m) => (
@@ -103,108 +185,78 @@ export default function SessionViewer({ session }: { session: PracticeSession })
 
       {/* Analytics */}
       {activeVideo.analytics && (
-        <section className="mb-8 space-y-6">
+        <section className="mb-10 space-y-6">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-1 h-5 rounded-full bg-emerald-500" />
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">Session Analytics</h2>
+            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">Game Analytics</h2>
           </div>
           <FieldHeatmap analytics={activeVideo.analytics} />
           <ActivityTimeline analytics={activeVideo.analytics} />
         </section>
       )}
 
-      {/* Highlight clips grid */}
-      {activeVideo.clips.length > 0 && (
-        <section>
+      {/* Clips grouped by half */}
+      {sections.map((section) => (
+        <section key={section.key} className="mb-10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-1 h-5 rounded-full bg-[var(--color-primary)]" />
-            <h2 className="text-base font-black text-gray-800">Highlight Clips</h2>
+            <div className={`w-1 h-5 rounded-full ${section.color}`} />
+            <h2 className="text-base font-black text-gray-800">{section.label}</h2>
             <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-              {activeVideo.clips.length} clips
+              {section.clips.length} clips
             </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeVideo.clips.map((clip) => {
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {section.clips.map((clip) => {
               const isPlaying = activeClipUrl === clip.r2Url;
+              const typeBadge = TYPE_BADGE[clip.clipType ?? "highlight"];
               return (
                 <div
                   key={clip.id}
                   className={`bg-white rounded-xl overflow-hidden border transition-all shadow-sm ${
                     isPlaying
-                      ? "border-[var(--color-primary)] shadow-md"
-                      : "border-gray-100 hover:shadow-md hover:border-[var(--color-accent)]/40"
+                      ? "border-[var(--color-primary)] shadow-md ring-2 ring-[var(--color-primary)]/20"
+                      : "border-gray-100 hover:shadow-md hover:border-gray-300"
                   }`}
                 >
-                  <div className="p-4">
-                    <p className="font-semibold text-gray-800 text-sm">{clip.label}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {fmt(clip.startSeconds)} – {fmt(clip.endSeconds)}
-                    </p>
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={() => playClip(clip.r2Url)}
-                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                          isPlaying
-                            ? "bg-[var(--color-primary)] text-white"
-                            : "bg-red-50 text-[var(--color-primary)] hover:bg-red-100"
-                        }`}
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                        {isPlaying ? "Playing" : "Play"}
-                      </button>
-                      <a
-                        href={clip.r2Url}
-                        download
-                        className="px-3 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                        title="Download clip"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                      </a>
+                  <button
+                    onClick={() => playClip(clip.r2Url)}
+                    className="w-full p-3 text-left"
+                  >
+                    {typeBadge && (
+                      <span className={`inline-block text-[10px] font-black px-1.5 py-0.5 rounded-full border mb-1.5 ${section.badge}`}>
+                        {typeBadge}
+                      </span>
+                    )}
+                    <p className="font-semibold text-gray-800 text-xs leading-snug">{clip.label}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{fmt(clip.startSeconds)} – {fmt(clip.endSeconds)}</p>
+                    <div className={`mt-2 w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      isPlaying
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                      {isPlaying ? "Playing" : "Play"}
                     </div>
-                  </div>
+                  </button>
+                  <a
+                    href={clip.r2Url}
+                    download
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center justify-center gap-1 py-1.5 border-t border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-gray-50 transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download
+                  </a>
                 </div>
               );
             })}
           </div>
         </section>
-      )}
-
-      {/* Other videos in the session */}
-      {session.videos.length > 1 && (
-        <section className="mt-10">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-1 h-5 rounded-full bg-gray-300" />
-            <h2 className="text-base font-black text-gray-800">All Session Videos</h2>
-          </div>
-          <div className="flex flex-col gap-3">
-            {session.videos.map((v, i) => (
-              <div
-                key={v.id}
-                className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                  activeVideo.id === v.id
-                    ? "border-[var(--color-primary)] bg-red-50"
-                    : "border-gray-100 bg-white hover:border-gray-200"
-                }`}
-              >
-                <div>
-                  <p className="font-semibold text-gray-800 text-sm">Video {i + 1}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{v.resolution} · {fmt(v.durationSeconds)}</p>
-                </div>
-                <button
-                  onClick={() => { setActiveVideo(v); setActiveClipUrl(null); }}
-                  className="px-3 py-1.5 bg-[var(--color-primary)] text-white text-xs font-semibold rounded-lg hover:bg-[var(--color-primary-dark)] transition-colors"
-                >
-                  View clips
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      ))}
     </div>
   );
 }

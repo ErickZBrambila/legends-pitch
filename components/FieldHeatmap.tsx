@@ -3,26 +3,19 @@
 import { useState } from "react";
 import type { VideoAnalytics } from "@/lib/types";
 
-function heatColor(ratio: number): string {
-  if (ratio < 0.33) {
-    const t = ratio / 0.33;
-    const r = Math.round(59 + t * (234 - 59));
-    const g = Math.round(130 + t * (179 - 130));
-    const b = Math.round(246 + t * (8 - 246));
-    return `rgb(${r},${g},${b})`;
-  } else if (ratio < 0.66) {
-    const t = (ratio - 0.33) / 0.33;
-    const r = Math.round(234 + t * (239 - 234));
-    const g = Math.round(179 + t * (68 - 179));
-    const b = Math.round(8 + t * (68 - 8));
-    return `rgb(${r},${g},${b})`;
-  } else {
-    const t = (ratio - 0.66) / 0.34;
-    const r = Math.round(239 + t * (185 - 239));
-    const g = Math.round(68 + t * (28 - 68));
-    const b = Math.round(68 + t * (28 - 68));
-    return `rgb(${r},${g},${b})`;
+const FIELD_W = 460;
+const FIELD_H = 160;
+const M = 12; // margin
+const ZONES = 10;
+const ZONE_W = (FIELD_W - 2 * M) / ZONES;
+
+function bubbleColor(ratio: number): string {
+  if (ratio < 0.5) {
+    const t = ratio / 0.5;
+    return `rgb(${Math.round(59 + t * 250)},${Math.round(130 + t * 180)},${Math.round(246 + t * (20 - 246))})`;
   }
+  const t = (ratio - 0.5) / 0.5;
+  return `rgb(${Math.round(250 + t * (220 - 250))},${Math.round(204 + t * (38 - 204))},${Math.round(20 + t * 18)})`;
 }
 
 function HeatField({ zones, pressureLeft, pressureRight }: {
@@ -31,58 +24,88 @@ function HeatField({ zones, pressureLeft, pressureRight }: {
   pressureRight: number;
 }) {
   const maxVal = Math.max(...zones, 1);
+  const total = pressureLeft + pressureRight;
+  const leftPct = total > 0 ? Math.round((pressureLeft / total) * 100) : 0;
+  const rightPct = total > 0 ? 100 - leftPct : 0;
+
   return (
-    <div className="relative rounded-xl overflow-hidden border border-gray-100">
-      <svg viewBox="0 0 400 140" className="w-full" style={{ background: "#2d5a1e" }}>
-        <rect x="0" y="0" width="400" height="140" fill="#2d5a1e" />
-        <rect x="10" y="10" width="380" height="120" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-        <line x1="200" y1="10" x2="200" y2="130" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-        <circle cx="200" cy="70" r="25" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-        <circle cx="200" cy="70" r="2" fill="rgba(255,255,255,0.6)" />
-        <rect x="10" y="40" width="55" height="60" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-        <rect x="10" y="55" width="20" height="30" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-        <rect x="335" y="40" width="55" height="60" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-        <rect x="370" y="55" width="20" height="30" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+    <div>
+      {/* Field with bubbles */}
+      <div className="rounded-xl overflow-hidden">
+        <svg viewBox={`0 0 ${FIELD_W} ${FIELD_H}`} className="w-full" style={{ background: "#2d5a1e" }}>
+          {/* Field lines */}
+          <rect x={M} y={M} width={FIELD_W - 2*M} height={FIELD_H - 2*M} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+          <line x1={FIELD_W/2} y1={M} x2={FIELD_W/2} y2={FIELD_H - M} stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+          <circle cx={FIELD_W/2} cy={FIELD_H/2} r={22} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+          <circle cx={FIELD_W/2} cy={FIELD_H/2} r={2} fill="rgba(255,255,255,0.55)" />
+          <rect x={M} y={FIELD_H/2 - 28} width={52} height={56} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+          <rect x={M} y={FIELD_H/2 - 13} width={20} height={26} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+          <rect x={FIELD_W - M - 52} y={FIELD_H/2 - 28} width={52} height={56} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+          <rect x={FIELD_W - M - 20} y={FIELD_H/2 - 13} width={20} height={26} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
 
-        {zones.map((count, i) => (
-          <rect
-            key={i}
-            x={10 + i * 38}
-            y={10}
-            width={38}
-            height={120}
-            fill={heatColor(count / maxVal)}
-            opacity={0.55}
-          />
-        ))}
-
-        <rect x="10" y="10" width="380" height="120" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-        <line x1="200" y1="10" x2="200" y2="130" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-        <circle cx="200" cy="70" r="25" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-        <rect x="10" y="40" width="55" height="60" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-        <rect x="335" y="40" width="55" height="60" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-
-        {pressureLeft > 0 && (
-          <text x="40" y="75" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold" opacity="0.9">
-            {pressureLeft.toLocaleString()}
-          </text>
-        )}
-        {pressureRight > 0 && (
-          <text x="360" y="75" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold" opacity="0.9">
-            {pressureRight.toLocaleString()}
-          </text>
-        )}
-      </svg>
-
-      <div className="flex justify-between px-3 py-1.5 bg-gray-800/90 text-xs text-gray-300">
-        <span>◀ Left goal</span>
-        <span className="flex items-center gap-2">
-          <span className="inline-block w-3 h-3 rounded-sm bg-blue-400 opacity-70" /> Low
-          <span className="inline-block w-3 h-3 rounded-sm bg-yellow-400 opacity-70" /> Medium
-          <span className="inline-block w-3 h-3 rounded-sm bg-red-500 opacity-70" /> High
-        </span>
-        <span>Right goal ▶</span>
+          {/* Activity bubbles — size + color = how much action happened in that zone */}
+          {zones.map((count, i) => {
+            const ratio = count / maxVal;
+            const cx = M + i * ZONE_W + ZONE_W / 2;
+            const cy = FIELD_H / 2;
+            const r = 5 + ratio * 28;
+            return (
+              <g key={i}>
+                <circle cx={cx} cy={cy} r={r} fill={bubbleColor(ratio)} opacity={0.85} />
+                {ratio >= 0.2 && (
+                  <text x={cx} y={cy + 0.5} textAnchor="middle" dominantBaseline="middle"
+                    fill="white" fontSize="7.5" fontWeight="bold" opacity="0.95">
+                    {Math.round(ratio * 100)}%
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </svg>
       </div>
+
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-4 mt-2 text-[10px] text-gray-500">
+        <span className="flex items-center gap-1">
+          <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgb(59,130,246)" /></svg> Low activity
+        </span>
+        <span className="flex items-center gap-1">
+          <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgb(250,204,20)" /></svg> Medium
+        </span>
+        <span className="flex items-center gap-1">
+          <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgb(220,38,38)" /></svg> High
+        </span>
+        <span className="text-gray-400">· bubble size = relative activity</span>
+      </div>
+
+      {/* Goal pressure bar */}
+      {total > 0 && (
+        <div className="mt-4">
+          <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mb-1.5">
+            Goal pressure — where attacks were directed
+          </p>
+          <div className="flex rounded-full overflow-hidden h-7 text-xs font-black shadow-sm">
+            <div
+              className="bg-blue-600 text-white flex items-center px-3 gap-1 transition-all"
+              style={{ width: `${leftPct}%` }}
+            >
+              <span>◀</span>
+              {leftPct >= 15 && <span>{leftPct}%</span>}
+            </div>
+            <div
+              className="bg-red-600 text-white flex items-center justify-end px-3 gap-1 transition-all"
+              style={{ width: `${rightPct}%` }}
+            >
+              {rightPct >= 15 && <span>{rightPct}%</span>}
+              <span>▶</span>
+            </div>
+          </div>
+          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+            <span>Left goal</span>
+            <span>Right goal</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

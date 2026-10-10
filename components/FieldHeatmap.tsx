@@ -43,9 +43,11 @@ function HeatField({ zones, pressureLeft, pressureRight }: {
           <rect x={FIELD_W - M - 52} y={FIELD_H/2 - 28} width={52} height={56} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
           <rect x={FIELD_W - M - 20} y={FIELD_H/2 - 13} width={20} height={26} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
 
-          {/* Activity bubbles — size + color = how much action happened in that zone */}
+          {/* Activity bubbles — size/color = relative to busiest zone; label = share of total */}
           {zones.map((count, i) => {
-            const ratio = count / maxVal;
+            const totalDetections = zones.reduce((s, v) => s + v, 0) || 1;
+            const ratio = count / maxVal;          // for size + color
+            const sharePct = Math.round((count / totalDetections) * 100); // for label (sums to ~100)
             const cx = M + i * ZONE_W + ZONE_W / 2;
             const cy = FIELD_H / 2;
             const r = 5 + ratio * 28;
@@ -55,7 +57,7 @@ function HeatField({ zones, pressureLeft, pressureRight }: {
                 {ratio >= 0.2 && (
                   <text x={cx} y={cy + 0.5} textAnchor="middle" dominantBaseline="middle"
                     fill="white" fontSize="7.5" fontWeight="bold" opacity="0.95">
-                    {Math.round(ratio * 100)}%
+                    {sharePct}%
                   </text>
                 )}
               </g>
@@ -75,7 +77,7 @@ function HeatField({ zones, pressureLeft, pressureRight }: {
         <span className="flex items-center gap-1">
           <svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgb(220,38,38)" /></svg> High
         </span>
-        <span className="text-gray-400">· bubble size = relative activity</span>
+        <span className="text-gray-400">· % = share of total action · size = intensity</span>
       </div>
 
       {/* Goal pressure bar */}

@@ -1,6 +1,6 @@
 "use client";
 
-import type { VideoAnalytics } from "@/lib/types";
+import type { VideoAnalytics, VideoClip, VideoMarker } from "@/lib/types";
 
 function fmtSec(s: number) {
   const m = Math.floor(s / 60);
@@ -11,7 +11,15 @@ function fmtSec(s: number) {
 const W = 560;
 const H = 80;
 
-export default function ActivityTimeline({ analytics }: { analytics: VideoAnalytics }) {
+export default function ActivityTimeline({
+  analytics,
+  clips = [],
+  markers = [],
+}: {
+  analytics: VideoAnalytics;
+  clips?: VideoClip[];
+  markers?: VideoMarker[];
+}) {
   const buckets = analytics.activityBuckets;
   if (!buckets || buckets.length === 0) return null;
 
@@ -21,7 +29,12 @@ export default function ActivityTimeline({ analytics }: { analytics: VideoAnalyt
   const halftimeIdx = buckets.findIndex((b) => b.tStart >= 1800);
   const barW = W / n;
 
-  const totalSec = buckets[n - 1]?.tEnd ?? 0;
+  const totalSec = buckets[n - 1]?.tEnd ?? 1;
+  const goals = clips.filter((c) => c.clipType === "goal");
+  // convert time → x position in the SVG
+  function timeToX(sec: number) {
+    return Math.min(W - 1, (sec / totalSec) * W);
+  }
   const total = analytics.goalPressureLeft + analytics.goalPressureRight;
   const leftPct = total > 0 ? Math.round((analytics.goalPressureLeft / total) * 100) : 0;
   const rightPct = total > 0 ? 100 - leftPct : 0;
@@ -90,6 +103,33 @@ export default function ActivityTimeline({ analytics }: { analytics: VideoAnalyt
               <text x={halftimeIdx * barW + 3} y={8} fill="#6b7280" fontSize="8" fontWeight="600">HT</text>
             </g>
           )}
+
+          {/* Key moment markers (small ticks) */}
+          {markers.map((m) => {
+            const x = timeToX(m.timeSeconds);
+            return (
+              <g key={m.id}>
+                <line x1={x} y1={H * 0.25} x2={x} y2={H} stroke="rgba(251,191,36,0.7)" strokeWidth="1" />
+                <circle cx={x} cy={H * 0.25} r={2.5} fill="#f59e0b">
+                  <title>{m.label} — {fmtSec(m.timeSeconds)}</title>
+                </circle>
+              </g>
+            );
+          })}
+
+          {/* Goal markers — prominent green line + ⚽ label */}
+          {goals.map((c, gi) => {
+            const x = timeToX(c.startSeconds);
+            return (
+              <g key={c.id}>
+                <line x1={x} y1={0} x2={x} y2={H} stroke="#16a34a" strokeWidth="2" />
+                <rect x={x - 10} y={0} width={20} height={12} rx="2" fill="#16a34a" />
+                <text x={x} y={8.5} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="7" fontWeight="bold">
+                  ⚽{gi + 1}
+                </text>
+              </g>
+            );
+          })}
         </svg>
 
         {/* X-axis labels */}
@@ -108,20 +148,32 @@ export default function ActivityTimeline({ analytics }: { analytics: VideoAnalyt
           })}
         </div>
 
-        {/* Half legend */}
-        {halftimeIdx > 0 && (
-          <div className="flex gap-3 mt-2 text-[10px]">
-            <span className="flex items-center gap-1 text-indigo-600">
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-indigo-400" /> 1st Half
+        {/* Legend */}
+        <div className="flex flex-wrap gap-3 mt-2 text-[10px]">
+          {halftimeIdx > 0 && (
+            <>
+              <span className="flex items-center gap-1 text-indigo-600">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-indigo-400" /> 1st Half
+              </span>
+              <span className="flex items-center gap-1 text-orange-600">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm bg-orange-400" /> 2nd Half
+              </span>
+            </>
+          )}
+          <span className="flex items-center gap-1 text-red-700">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm bg-red-600" /> Peak
+          </span>
+          {goals.length > 0 && (
+            <span className="flex items-center gap-1 text-green-700">
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-green-600" /> Goal
             </span>
-            <span className="flex items-center gap-1 text-orange-600">
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-orange-400" /> 2nd Half
+          )}
+          {markers.length > 0 && (
+            <span className="flex items-center gap-1 text-amber-600">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400" /> Key moment
             </span>
-            <span className="flex items-center gap-1 text-red-700">
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-red-600" /> Peak moment
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Goal pressure explanation */}

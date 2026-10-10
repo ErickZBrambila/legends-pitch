@@ -230,7 +230,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">Game Analytics</h2>
           </div>
           <FieldHeatmap analytics={activeVideo.analytics} />
-          <ActivityTimeline analytics={activeVideo.analytics} />
+          <ActivityTimeline analytics={activeVideo.analytics} clips={activeVideo.clips} markers={activeVideo.markers} />
         </section>
       )}
 

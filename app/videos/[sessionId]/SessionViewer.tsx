@@ -140,6 +140,9 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     pendingPlay.current = true;
     const vid = videoRef.current;
     if (vid) {
+      vid.pause();
+      vid.removeAttribute("src");
+      vid.load(); // cancel any in-flight request
       vid.src = url;
       vid.load();
     }
@@ -407,8 +410,8 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                   />
 
                   <a
-                    href={clip.r2Url}
-                    download
+                    href={`/api/clip-download?url=${encodeURIComponent(clip.r2Url)}&filename=${encodeURIComponent(clip.label + ".mp4")}`}
+                    download={clip.label + ".mp4"}
                     onClick={(e) => e.stopPropagation()}
                     className="flex items-center justify-center gap-1 py-1.5 border-t border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-gray-50 transition-colors"
                   >

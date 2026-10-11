@@ -5,6 +5,8 @@ import RosterView from "@/components/RosterView";
 import { getPlayersByTeam, getTeamLabel } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
+export const revalidate = 0;
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Roster");
   return { title: t("metaTitle") };

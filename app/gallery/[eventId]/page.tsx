@@ -5,6 +5,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import GalleryLightbox from "@/components/GalleryLightbox";
 import { getGalleryEventById } from "@/lib/sanity/queries";
 
+export const revalidate = 0;
+
 export async function generateMetadata({
   params,
 }: {

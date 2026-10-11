@@ -5,6 +5,8 @@ import TeamTabs from "@/components/TeamTabs";
 import { getGalleryEventsByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
+export const revalidate = 0; // always fetch fresh from Sanity
+
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Gallery");
   return { title: t("metaTitle") };

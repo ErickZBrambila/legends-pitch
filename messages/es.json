@@ -81,7 +81,13 @@
     "colT": "E",
     "colGF": "GF",
     "colGA": "GC",
-    "colPts": "Pts"
+    "colPts": "Pts",
+    "addToCalendar": "Agregar al Calendario",
+    "calSubscribeHint": "Suscríbete — los cambios se sincronizan automáticamente",
+    "calDownload": "Descargar archivo .ics",
+    "calGoogle": "Agregar a Google Calendar",
+    "calCopied": "¡Copiado!",
+    "calCopy": "Copiar URL del calendario"
   },
   "Roster": {
     "metaTitle": "Alineación",

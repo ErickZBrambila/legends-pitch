@@ -81,7 +81,13 @@
     "colT": "T",
     "colGF": "GF",
     "colGA": "GA",
-    "colPts": "Pts"
+    "colPts": "Pts",
+    "addToCalendar": "Add to Calendar",
+    "calSubscribeHint": "Subscribe — updates push automatically to your phone",
+    "calDownload": "Download .ics file",
+    "calGoogle": "Add to Google Calendar",
+    "calCopied": "Copied!",
+    "calCopy": "Copy calendar URL"
   },
   "Roster": {
     "metaTitle": "Roster",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
+import CalendarSubscribe from "@/components/CalendarSubscribe";
 import { getGotSportData } from "@/lib/data/gotsport";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
@@ -159,6 +160,21 @@ export default async function SchedulePage({
             </tbody>
           </table>
         </div>
+      </section>
+
+      {/* Calendar subscribe */}
+      <section className="mb-10">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-4">
+          {t("addToCalendar")}
+        </h2>
+        <CalendarSubscribe
+          team={team}
+          labelSubscribe={t("calSubscribeHint")}
+          labelDownload={t("calDownload")}
+          labelGoogle={t("calGoogle")}
+          labelCopied={t("calCopied")}
+          labelCopy={t("calCopy")}
+        />
       </section>
 
       {/* Results */}

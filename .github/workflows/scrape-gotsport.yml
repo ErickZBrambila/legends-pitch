@@ -1,0 +1,42 @@
+name: Scrape GotSport Standings
+
+on:
+  schedule:
+    # Every Monday at 4:00 AM UTC (Sunday 11 PM CDT) — after weekend results are posted
+    - cron: "0 4 * * 1"
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Scrape GotSport
+        run: node scripts/scrape-gotsport.mjs
+
+      - name: Commit updated standings
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/data/gotsport.ts
+          if git diff --staged --quiet; then
+            echo "No changes — standings up to date."
+          else
+            git commit -m "chore: update GotSport standings and schedule [skip ci]"
+            git push
+          fi

@@ -29,7 +29,7 @@ export async function GET(
   const team: TeamSlug = raw === "u12" ? "u12" : "u11";
   const label = team === "u12" ? "U12" : "U11";
 
-  const { matches } = getGotSportData(team);
+  const { matches } = await getGotSportData(team);
 
   const vevents = matches.map((m) => {
     const start = icalDate(m.date);

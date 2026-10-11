@@ -23,10 +23,15 @@ const formatDate = (iso: string, locale: string) =>
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "America/Chicago",
   });
 
 const formatTime = (iso: string, locale: string) =>
-  new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
+  new Date(iso).toLocaleTimeString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/Chicago",
+  });
 
 const mapsUrl = (address: string) =>
   `https://maps.google.com/?q=${encodeURIComponent(address)}`;
@@ -47,7 +52,7 @@ export default async function SchedulePage({
   const t = await getTranslations("Schedule");
   const locale = await getLocale();
 
-  const { standings, matches } = getGotSportData(team);
+  const { standings, matches } = await getGotSportData(team);
 
   const now = new Date();
   const upcoming = matches

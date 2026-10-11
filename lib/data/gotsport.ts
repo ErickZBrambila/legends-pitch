@@ -1,5 +1,6 @@
 import type { TeamSlug } from "@/lib/sanity/queries";
 import type { Match } from "@/lib/types";
+import { fetchSportsYouGames } from "./sportsyou";
 
 export interface StandingRow {
   rank: number;
@@ -38,20 +39,17 @@ const U12_STANDINGS: StandingRow[] = [
   { rank: 7, team: "Liberty United",              gp: 4, w: 0, l: 4, t: 0, gf: 5,  ga: 12, pts: 0,  isNorthLegends: false },
 ];
 
-let u11Id = 0;
-let u12Id = 0;
+// U11 match results keyed by SportsYou short UID (last 8 chars before @).
+// Add a new entry here after each game to populate the results table.
+const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; result: "W" | "L" | "D" }> = {
+  "3bd5311d": { goalsFor: 1,  goalsAgainst: 2, result: "L" }, // Sep 12 vs Elgin United (Hernandez)
+  "9183d02e": { goalsFor: 15, goalsAgainst: 0, result: "W" }, // Sep 19 vs Elgin United (Ramirez)
+  "e11c25d1": { goalsFor: 7,  goalsAgainst: 0, result: "W" }, // Sep 26 vs Storm 16B Black
+  "bc0eae72": { goalsFor: 4,  goalsAgainst: 2, result: "W" }, // Sep 27 vs T&C Soccer Inter Milan
+  "3ed13cc0": { goalsFor: 4,  goalsAgainst: 3, result: "W" }, // Oct 10 vs Elgin United (Ramirez)
+};
 
-const U11_MATCHES: Match[] = [
-  { id: `gs-u11-${++u11Id}`, date: "2026-09-12T15:00:00-05:00", opponent: "Elgin United (Ramirez)", location: "Shenandoah Field 2",       homeAway: "away", goalsFor: 1,  goalsAgainst: 2, result: "L" },
-  { id: `gs-u11-${++u11Id}`, date: "2026-09-19T11:30:00-05:00", opponent: "Elgin United (Hernandez)", location: "WCRP North",             homeAway: "home", goalsFor: 15, goalsAgainst: 0, result: "W" },
-  { id: `gs-u11-${++u11Id}`, date: "2026-09-26T13:00:00-05:00", opponent: "Storm Black",              location: "Crossroads Park",         homeAway: "away", goalsFor: 7,  goalsAgainst: 0, result: "W" },
-  { id: `gs-u11-${++u11Id}`, date: "2026-09-27T11:30:00-05:00", opponent: "T&C Soccer Inter Milan",   location: "Town & Country Field 23W",homeAway: "away", goalsFor: 4,  goalsAgainst: 2, result: "W" },
-  { id: `gs-u11-${++u11Id}`, date: "2026-10-10T08:30:00-05:00", opponent: "Elgin United (Ramirez)", location: "WCRP South",               homeAway: "home", goalsFor: 4,  goalsAgainst: 3, result: "W" },
-  { id: `gs-u11-${++u11Id}`, date: "2026-10-17T11:30:00-05:00", opponent: "Storm Black",              location: "WCRP North",              homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
-  { id: `gs-u11-${++u11Id}`, date: "2026-10-18T11:00:00-05:00", opponent: "Elgin United (Hernandez)", location: "Shenandoah Field 2",     homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
-  { id: `gs-u11-${++u11Id}`, date: "2026-10-24T11:30:00-05:00", opponent: "T&C Soccer Inter Milan",   location: "WCRP South",             homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
-  { id: `gs-u11-${++u11Id}`, date: "2026-10-31T11:00:00-05:00", opponent: "WBSA United",              location: "Wells Branch Soccer",     homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
-];
+let u12Id = 0;
 
 const U12_MATCHES: Match[] = [
   { id: `gs-u12-${++u12Id}`, date: "2026-09-12T11:30:00-05:00", opponent: "Leander FC Rattlers",      location: "WCRP South",              homeAway: "home", goalsFor: 7,  goalsAgainst: 2,  result: "W" },
@@ -65,10 +63,12 @@ const U12_MATCHES: Match[] = [
 ];
 
 export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
+  "WCRP":                     { lat: 30.5407, lng: -97.8742 }, // alias used by SportsYou data
   "WCRP North":               { lat: 30.5407, lng: -97.8742 },
   "WCRP South":               { lat: 30.5407, lng: -97.8742 },
   "Shenandoah Field 2":       { lat: 30.3490, lng: -97.3690 },
   "Crossroads Park":          { lat: 31.0982, lng: -97.3428 },
+  "Heritage Park":            { lat: 31.0956, lng: -97.4665 }, // Heritage Park Belton
   "Town & Country Field 23W": { lat: 30.4414, lng: -97.7553 },
   "Wells Branch Soccer":      { lat: 30.4380, lng: -97.6760 },
   "Serna Athletic Fields":    { lat: 30.5775, lng: -97.8530 },
@@ -93,12 +93,30 @@ const LOCATION_ADDRESSES: Record<string, string> = {
 function withAddress(matches: Match[]): Match[] {
   return matches.map((m) => ({
     ...m,
-    locationAddress: LOCATION_ADDRESSES[m.location],
+    locationAddress: m.locationAddress ?? LOCATION_ADDRESSES[m.location],
   }));
 }
 
-export function getGotSportData(team: TeamSlug): GotSportData {
-  return team === "u12"
-    ? { standings: U12_STANDINGS, matches: withAddress(U12_MATCHES) }
-    : { standings: U11_STANDINGS, matches: withAddress(U11_MATCHES) };
+export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
+  const standings = team === "u12" ? U12_STANDINGS : U11_STANDINGS;
+
+  if (team === "u11") {
+    const sportsYouGames = await fetchSportsYouGames("u11");
+    if (sportsYouGames.length > 0) {
+      const matches: Match[] = sportsYouGames.map((g) => ({
+        id: `sy-u11-${g.uid}`,
+        date: g.iso,
+        opponent: g.opponent,
+        location: g.locationName,
+        locationAddress: g.locationAddress,
+        homeAway: g.homeAway,
+        ...(U11_RESULTS[g.uid] ?? { goalsFor: null, goalsAgainst: null, result: null }),
+      }));
+      return { standings, matches };
+    }
+  }
+
+  // Fallback: static data for U12 (or U11 if SportsYou fetch fails)
+  const staticMatches = team === "u12" ? U12_MATCHES : [];
+  return { standings, matches: withAddress(staticMatches) };
 }

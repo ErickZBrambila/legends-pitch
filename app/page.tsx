@@ -11,10 +11,15 @@ const formatDate = (iso: string, locale: string) =>
     weekday: "short",
     month: "short",
     day: "numeric",
+    timeZone: "America/Chicago",
   });
 
 const formatTime = (iso: string, locale: string) =>
-  new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
+  new Date(iso).toLocaleTimeString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/Chicago",
+  });
 
 const resultColors: Record<string, string> = {
   W: "bg-green-100 text-green-800 border border-green-200",
@@ -35,7 +40,7 @@ export default async function Home({
 
   const [latestNews] = await Promise.all([getPostsByTeam(team)]);
 
-  const { matches } = getGotSportData(team);
+  const { matches } = await getGotSportData(team);
   const now = new Date();
   const played = matches.filter((m) => m.result !== null);
   const stats = {

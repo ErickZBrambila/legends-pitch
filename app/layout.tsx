@@ -6,6 +6,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import MobileNav from "@/components/MobileNav";
 import Footer from "@/components/Footer";
+import LanguagePickerModal from "@/components/LanguagePickerModal";
 import { Analytics } from "@vercel/analytics/next";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
@@ -30,6 +31,7 @@ export default async function RootLayout({
     <html lang={locale} className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col pb-14 md:pb-0">
         <NextIntlClientProvider>
+          <LanguagePickerModal />
           <Nav />
           <main className="flex-1">{children}</main>
           <Footer />

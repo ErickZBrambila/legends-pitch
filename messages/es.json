@@ -111,7 +111,14 @@
     "headCoachTbd": "Entrenador Principal (por definir)",
     "assistantCoachTbd": "Entrenador Asistente (por definir)",
     "tuesday": "Martes",
-    "thursday": "Jueves"
+    "thursday": "Jueves",
+    "coachHugoName": "Entrenador Hugo",
+    "coachHugoBio": "El Entrenador Hugo es un coach de clase mundial y un verdadero hombre de familia. Aporta una gran experiencia, habiendo jugado fútbol desde su adolescencia hasta los 28 años. Su historial es extraordinario: llevó clubes juveniles a campeonatos y logró rachas invictas durante cinco temporadas seguidas. Cada sesión de entrenamiento está diseñada para mejorar al equipo en conjunto e individualmente, construyendo confianza real en el campo. Para el Entrenador Hugo, lo más importante no es siempre ganar, sino asegurarse de que los niños mejoren y se diviertan jugando este hermoso deporte.",
+    "meetTheCoach": "Conoce al Entrenador",
+    "coachingPhilosophy": "Filosofía de Entrenamiento",
+    "coachingPhilosophyBody": "Nuestras sesiones están basadas en situaciones reales de partido. Creamos escenarios que ocurrirán en el juego para que los niños sepan cómo reaccionar y adaptarse a lo que sucede dentro del campo — desarrollando habilidades prácticas y comprensión táctica en cada jugador.",
+    "parentTestimonial": "\"Ver el crecimiento y la confianza de nuestro hijo florecer bajo la guía del Entrenador Hugo ha sido verdaderamente inspirador. Su enfoque del juego es exactamente lo que los jóvenes jugadores necesitan.\"",
+    "parentTestimonialAuthor": "— Un padre de North Legends FC"
   },
   "Videos": {
     "metaTitle": "KickReel · Videos de Partidos",

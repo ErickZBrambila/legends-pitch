@@ -100,6 +100,7 @@
     "heading": "Contact & Info",
     "practiceSchedule": "Practice Schedule",
     "coachingStaff": "Coaching Staff",
+    "meetTheCoach": "Meet the Coach",
     "getInTouch": "Get in Touch",
     "getInTouchBody": "Questions about the team, schedule, or anything else? Reach out!",
     "homeField": "Home Field",
@@ -111,7 +112,13 @@
     "headCoachTbd": "Head Coach (TBD)",
     "assistantCoachTbd": "Assistant Coach (TBD)",
     "tuesday": "Tuesday",
-    "thursday": "Thursday"
+    "thursday": "Thursday",
+    "coachHugoName": "Coach Hugo",
+    "coachHugoBio": "Coach Hugo is a world-class coach and a true family man. He brings a wealth of experience, having played soccer from his teen years up to age 28. His coaching history is remarkable — leading youth clubs to championships and achieving undefeated streaks for five straight seasons. Every training session is designed to improve the team as a whole and each player individually, building real confidence on the field. For Coach Hugo, the most important thing isn't always winning, but ensuring kids get better and have fun playing this beautiful game.",
+    "coachingPhilosophy": "Coaching Philosophy",
+    "coachingPhilosophyBody": "Our training sessions are based on real game-day situations. We create scenarios that will happen in a game so kids know how to react and adapt to what's going on inside the field — building practical skills and tactical understanding for every player.",
+    "parentTestimonial": "\"Witnessing our child's growth and confidence blossom under Coach Hugo's guidance has been truly inspiring. Their approach to the game is exactly what young players need.\"",
+    "parentTestimonialAuthor": "— A North Legends FC parent"
   },
   "Videos": {
     "metaTitle": "KickReel · Match Videos",

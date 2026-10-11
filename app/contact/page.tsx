@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import type { TeamSlug } from "@/lib/sanity/queries";
@@ -11,31 +12,30 @@ export async function generateMetadata(): Promise<Metadata> {
 const FIELD_ADDRESS = "Frost Elementary School, 711 Lakeway Dr, Georgetown, TX 78628";
 const MAPS_EMBED = `https://maps.google.com/maps?q=${encodeURIComponent(FIELD_ADDRESS)}&output=embed&z=15`;
 
-// Day / role values are translation keys; time + location + name are literal data.
 const TEAM_INFO: Record<TeamSlug, {
   email: string;
-  coaches: { nameKey: string; roleKey: string }[];
+  coaches: { name: string; roleKey: string }[];
   practice: { dayKey: string; time: string; location: string }[];
 }> = {
   u11: {
     email: "northlegends@gmail.com",
     coaches: [
-      { nameKey: "headCoachTbd", roleKey: "headCoach" },
-      { nameKey: "assistantCoachTbd", roleKey: "assistantCoach" },
+      { name: "Coach Hugo", roleKey: "headCoach" },
+      { name: "—", roleKey: "assistantCoach" },
     ],
     practice: [
-      { dayKey: "tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+      { dayKey: "tuesday",  time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
       { dayKey: "thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
     ],
   },
   u12: {
     email: "northlegends@gmail.com",
     coaches: [
-      { nameKey: "headCoachTbd", roleKey: "headCoach" },
-      { nameKey: "assistantCoachTbd", roleKey: "assistantCoach" },
+      { name: "Coach Hugo", roleKey: "headCoach" },
+      { name: "—", roleKey: "assistantCoach" },
     ],
     practice: [
-      { dayKey: "tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+      { dayKey: "tuesday",  time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
       { dayKey: "thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
     ],
   },
@@ -59,6 +59,46 @@ export default async function ContactPage({
         <TeamTabs activeTeam={team} />
       </div>
 
+      {/* Coach Hugo — full-width feature card */}
+      <div className="bg-[var(--color-navy)] text-white rounded-2xl overflow-hidden shadow-lg mb-8">
+        <div className="flex flex-col md:flex-row">
+          <div className="relative w-full md:w-56 h-56 md:h-auto flex-shrink-0">
+            <Image
+              src="/coach-hugo.jpg"
+              alt="Coach Hugo"
+              fill
+              className="object-cover object-top"
+              sizes="(max-width: 768px) 100vw, 224px"
+            />
+          </div>
+          <div className="p-6 md:p-8 flex flex-col justify-between gap-5">
+            <div>
+              <p className="text-[var(--color-accent)] text-xs uppercase tracking-widest font-semibold mb-1">
+                {t("meetTheCoach")}
+              </p>
+              <h2 className="text-2xl font-black mb-3">{t("coachHugoName")}</h2>
+              <p className="text-gray-300 text-sm leading-relaxed">{t("coachHugoBio")}</p>
+            </div>
+
+            {/* Philosophy */}
+            <div className="border-t border-white/10 pt-5">
+              <p className="text-[var(--color-accent)] text-xs uppercase tracking-widest font-semibold mb-2">
+                {t("coachingPhilosophy")}
+              </p>
+              <p className="text-gray-300 text-sm leading-relaxed italic">
+                {t("coachingPhilosophyBody")}
+              </p>
+            </div>
+
+            {/* Testimonial */}
+            <div className="bg-white/5 rounded-xl px-5 py-4">
+              <p className="text-gray-200 text-sm italic leading-relaxed">{t("parentTestimonial")}</p>
+              <p className="text-gray-400 text-xs mt-2">{t("parentTestimonialAuthor")}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Practice schedule */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
@@ -73,7 +113,7 @@ export default async function ContactPage({
           <div className="flex flex-col gap-3">
             {info.practice.map((s, i) => (
               <div key={i} className="flex flex-col gap-0.5">
-                <p className="font-semibold text-gray-700 text-sm">{t(s.dayKey)}</p>
+                <p className="font-semibold text-gray-700 text-sm">{t(s.dayKey as Parameters<typeof t>[0])}</p>
                 <p className="text-gray-500 text-sm">{s.time}</p>
                 <p className="text-gray-400 text-xs">{s.location}</p>
               </div>
@@ -94,8 +134,8 @@ export default async function ContactPage({
           <div className="flex flex-col gap-3">
             {info.coaches.map((c, i) => (
               <div key={i}>
-                <p className="font-semibold text-gray-700 text-sm">{t(c.nameKey)}</p>
-                <p className="text-gray-400 text-xs">{t(c.roleKey)}</p>
+                <p className="font-semibold text-gray-700 text-sm">{c.name}</p>
+                <p className="text-gray-400 text-xs">{t(c.roleKey as Parameters<typeof t>[0])}</p>
               </div>
             ))}
           </div>
@@ -111,9 +151,7 @@ export default async function ContactPage({
             </span>
             {t("getInTouch")}
           </h2>
-          <p className="text-gray-500 text-sm mb-3">
-            {t("getInTouchBody")}
-          </p>
+          <p className="text-gray-500 text-sm mb-3">{t("getInTouchBody")}</p>
           <a
             href={`mailto:${info.email}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors"
@@ -147,7 +185,7 @@ export default async function ContactPage({
       </div>
 
       {/* Map embed */}
-      <div className="rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 h-64 md:h-80 flex items-center justify-center">
+      <div className="rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50 h-64 md:h-80">
         <iframe
           src={MAPS_EMBED}
           width="100%"

@@ -60,6 +60,7 @@
   "Schedule": {
     "metaTitle": "Calendario",
     "heading": "Calendario y Resultados",
+    "leagueStandings": "Tabla de Posiciones",
     "upcomingFixtures": "Próximos Partidos",
     "results": "Resultados",
     "home": "Local",
@@ -73,7 +74,14 @@
     "colHomeAway": "L/V",
     "colKickoff": "Inicio",
     "colScore": "Marcador",
-    "colResult": "Resultado"
+    "colResult": "Resultado",
+    "colGP": "PJ",
+    "colW": "G",
+    "colL": "P",
+    "colT": "E",
+    "colGF": "GF",
+    "colGA": "GC",
+    "colPts": "Pts"
   },
   "Roster": {
     "metaTitle": "Alineación",

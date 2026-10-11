@@ -53,12 +53,13 @@ export async function getPostsByTeam(team: TeamSlug): Promise<NewsPost[]> {
       excerpt: string;
       excerpt_es?: string;
       body: unknown[];
+      body_es?: unknown[];
       publishedAt: string;
       author: string;
     }>
   >(
     `*[_type == "post" && team->ageGroup == $team]{
-      _id, title, title_es, slug, excerpt, excerpt_es, body, publishedAt, author
+      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author
     } | order(publishedAt desc)`,
     { team }
   );
@@ -70,6 +71,7 @@ export async function getPostsByTeam(team: TeamSlug): Promise<NewsPost[]> {
     excerpt: p.excerpt ?? "",
     excerpt_es: p.excerpt_es,
     body: p.body ?? [],
+    body_es: p.body_es,
     publishedAt: p.publishedAt,
     author: p.author ?? "",
   }));
@@ -84,12 +86,13 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
     excerpt: string;
     excerpt_es?: string;
     body: unknown[];
+    body_es?: unknown[];
     publishedAt: string;
     author: string;
     team: { ageGroup: string };
   } | null>(
     `*[_type == "post" && slug.current == $slug][0]{
-      _id, title, title_es, slug, excerpt, excerpt_es, body, publishedAt, author, team->{ ageGroup }
+      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, team->{ ageGroup }
     }`,
     { slug }
   );
@@ -102,6 +105,7 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
     excerpt: p.excerpt ?? "",
     excerpt_es: p.excerpt_es,
     body: p.body ?? [],
+    body_es: p.body_es,
     publishedAt: p.publishedAt,
     author: p.author ?? "",
   };

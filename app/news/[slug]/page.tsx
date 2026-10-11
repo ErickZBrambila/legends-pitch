@@ -59,11 +59,14 @@ export default async function NewsPostPage({
         </header>
 
         <div className="prose prose-sm md:prose max-w-none text-gray-700 leading-relaxed">
-          {post.body && post.body.length > 0 ? (
-            <PortableText value={post.body as Parameters<typeof PortableText>[0]["value"]} />
-          ) : (
-            <p className="text-gray-400">{t("noContent")}</p>
-          )}
+          {(() => {
+            const activeBody = locale === "es" && post.body_es && post.body_es.length > 0 ? post.body_es : post.body;
+            return activeBody && (activeBody as unknown[]).length > 0 ? (
+              <PortableText value={activeBody as Parameters<typeof PortableText>[0]["value"]} />
+            ) : (
+              <p className="text-gray-400">{t("noContent")}</p>
+            );
+          })()}
         </div>
       </article>
     </div>

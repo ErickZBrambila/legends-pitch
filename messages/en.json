@@ -60,6 +60,7 @@
   "Schedule": {
     "metaTitle": "Schedule",
     "heading": "Schedule & Results",
+    "leagueStandings": "League Standings",
     "upcomingFixtures": "Upcoming Fixtures",
     "results": "Results",
     "home": "Home",
@@ -73,7 +74,14 @@
     "colHomeAway": "H/A",
     "colKickoff": "Kick-off",
     "colScore": "Score",
-    "colResult": "Result"
+    "colResult": "Result",
+    "colGP": "GP",
+    "colW": "W",
+    "colL": "L",
+    "colT": "T",
+    "colGF": "GF",
+    "colGA": "GA",
+    "colPts": "Pts"
   },
   "Roster": {
     "metaTitle": "Roster",

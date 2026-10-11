@@ -26,6 +26,7 @@ export interface NewsPost {
   excerpt: string;
   excerpt_es?: string;
   body: unknown[] | string;
+  body_es?: unknown[];
   publishedAt: string;
   author: string;
 }

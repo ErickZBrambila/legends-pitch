@@ -2,13 +2,9 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import CountdownTimerClient from "@/components/CountdownTimerClient";
 import TeamTabs from "@/components/TeamTabs";
-import {
-  getMatchesByTeam,
-  getPostsByTeam,
-  getSeasonStatsByTeam,
-  getNextMatchByTeam,
-} from "@/lib/sanity/queries";
+import { getPostsByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
+import { getGotSportData } from "@/lib/data/gotsport";
 
 const formatDate = (iso: string, locale: string) =>
   new Date(iso).toLocaleDateString(locale, {
@@ -37,15 +33,23 @@ export default async function Home({
   const t = await getTranslations("Home");
   const locale = await getLocale();
 
-  const [nextMatch, stats, matches, latestNews] = await Promise.all([
-    getNextMatchByTeam(team),
-    getSeasonStatsByTeam(team),
-    getMatchesByTeam(team),
-    getPostsByTeam(team),
-  ]);
+  const [latestNews] = await Promise.all([getPostsByTeam(team)]);
 
-  const recentResults = matches
-    .filter((m) => m.result !== null)
+  const { matches } = getGotSportData(team);
+  const now = new Date();
+  const played = matches.filter((m) => m.result !== null);
+  const stats = {
+    wins: played.filter((m) => m.result === "W").length,
+    losses: played.filter((m) => m.result === "L").length,
+    draws: played.filter((m) => m.result === "D").length,
+    goalsFor: played.reduce((s, m) => s + (m.goalsFor ?? 0), 0),
+    goalsAgainst: played.reduce((s, m) => s + (m.goalsAgainst ?? 0), 0),
+  };
+  const nextMatch =
+    matches
+      .filter((m) => m.result === null && new Date(m.date) > now)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] ?? null;
+  const recentResults = played
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 3);
 

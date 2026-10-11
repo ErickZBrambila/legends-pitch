@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
-import { getMatchesByTeam } from "@/lib/sanity/queries";
+import { getGotSportData } from "@/lib/data/gotsport";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,7 +37,8 @@ export default async function SchedulePage({
   const t = await getTranslations("Schedule");
   const locale = await getLocale();
 
-  const matches = await getMatchesByTeam(team);
+  const { standings, matches } = getGotSportData(team);
+
   const now = new Date();
   const upcoming = matches
     .filter((m) => m.result === null && new Date(m.date) > now)
@@ -52,6 +53,53 @@ export default async function SchedulePage({
         <h1 className="text-3xl font-black text-gray-900">{t("heading")}</h1>
         <TeamTabs activeTeam={team} />
       </div>
+
+      {/* League Standings */}
+      <section className="mb-10">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-4">
+          {t("leagueStandings")}
+        </h2>
+        <div className="overflow-hidden rounded-xl border border-gray-100 shadow-sm">
+          <table className="w-full text-sm">
+            <thead className="bg-[var(--color-navy)] text-[var(--color-accent)] uppercase text-xs tracking-wider">
+              <tr>
+                <th className="px-3 py-3 text-left w-8">#</th>
+                <th className="px-3 py-3 text-left">Team</th>
+                <th className="px-3 py-3 text-center">{t("colGP")}</th>
+                <th className="px-3 py-3 text-center">{t("colW")}</th>
+                <th className="px-3 py-3 text-center">{t("colL")}</th>
+                <th className="px-3 py-3 text-center">{t("colT")}</th>
+                <th className="px-3 py-3 text-center hidden sm:table-cell">{t("colGF")}</th>
+                <th className="px-3 py-3 text-center hidden sm:table-cell">{t("colGA")}</th>
+                <th className="px-3 py-3 text-center font-bold">{t("colPts")}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 bg-white">
+              {standings.map((row) => (
+                <tr
+                  key={row.rank}
+                  className={row.isNorthLegends ? "bg-green-50 font-semibold" : "hover:bg-gray-50/60 transition-colors"}
+                >
+                  <td className="px-3 py-2.5 text-gray-400 text-xs">{row.rank}</td>
+                  <td className={`px-3 py-2.5 ${row.isNorthLegends ? "text-green-800 font-bold" : "text-gray-800"}`}>
+                    {row.isNorthLegends && <span className="mr-1.5">⚽</span>}
+                    {row.team}
+                  </td>
+                  <td className="px-3 py-2.5 text-center text-gray-600">{row.gp}</td>
+                  <td className="px-3 py-2.5 text-center text-gray-600">{row.w}</td>
+                  <td className="px-3 py-2.5 text-center text-gray-600">{row.l}</td>
+                  <td className="px-3 py-2.5 text-center text-gray-600">{row.t}</td>
+                  <td className="px-3 py-2.5 text-center text-gray-400 hidden sm:table-cell">{row.gf}</td>
+                  <td className="px-3 py-2.5 text-center text-gray-400 hidden sm:table-cell">{row.ga}</td>
+                  <td className={`px-3 py-2.5 text-center font-bold ${row.isNorthLegends ? "text-green-700" : "text-gray-800"}`}>
+                    {row.pts}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {/* Upcoming */}
       <section className="mb-10">
@@ -78,7 +126,7 @@ export default async function SchedulePage({
 
         <div className="hidden md:block overflow-hidden rounded-xl border border-gray-100 shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
+            <thead className="bg-[var(--color-navy)] text-[var(--color-accent)] uppercase text-xs tracking-wider">
               <tr>
                 <th className="px-4 py-3 text-left">{t("colDate")}</th>
                 <th className="px-4 py-3 text-left">{t("colOpponent")}</th>
@@ -142,7 +190,7 @@ export default async function SchedulePage({
 
         <div className="hidden md:block overflow-hidden rounded-xl border border-gray-100 shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
+            <thead className="bg-[var(--color-navy)] text-[var(--color-accent)] uppercase text-xs tracking-wider">
               <tr>
                 <th className="px-4 py-3 text-left">{t("colDate")}</th>
                 <th className="px-4 py-3 text-left">{t("colOpponent")}</th>

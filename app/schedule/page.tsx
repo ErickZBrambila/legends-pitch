@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import CalendarSubscribe from "@/components/CalendarSubscribe";
-import { getGotSportData } from "@/lib/data/gotsport";
+import GameWeather from "@/components/GameWeather";
+import { getGotSportData, LOCATION_COORDS } from "@/lib/data/gotsport";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,6 +30,11 @@ const formatTime = (iso: string, locale: string) =>
 
 const mapsUrl = (address: string) =>
   `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+
+const withinForecastWindow = (iso: string) => {
+  const diff = (new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+  return diff >= -0.5 && diff <= 7;
+};
 
 export default async function SchedulePage({
   searchParams,
@@ -130,6 +136,13 @@ export default async function SchedulePage({
               ) : (
                 <p className="text-xs text-gray-500 mt-0.5">{m.location}</p>
               )}
+              {withinForecastWindow(m.date) && LOCATION_COORDS[m.location] && (
+                <GameWeather
+                  lat={LOCATION_COORDS[m.location].lat}
+                  lng={LOCATION_COORDS[m.location].lng}
+                  gameIso={m.date}
+                />
+              )}
             </div>
           ))}
           {upcoming.length === 0 && <p className="text-gray-400 text-sm">{t("noUpcoming")}</p>}
@@ -144,6 +157,7 @@ export default async function SchedulePage({
                 <th className="px-4 py-3 text-left">{t("colLocation")}</th>
                 <th className="px-4 py-3 text-center">{t("colHomeAway")}</th>
                 <th className="px-4 py-3 text-right">{t("colKickoff")}</th>
+                <th className="px-4 py-3 text-left">{t("colWeather")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
@@ -165,11 +179,20 @@ export default async function SchedulePage({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right text-gray-500">{formatTime(m.date, locale)}</td>
+                  <td className="px-4 py-3">
+                    {withinForecastWindow(m.date) && LOCATION_COORDS[m.location] && (
+                      <GameWeather
+                        lat={LOCATION_COORDS[m.location].lat}
+                        lng={LOCATION_COORDS[m.location].lng}
+                        gameIso={m.date}
+                      />
+                    )}
+                  </td>
                 </tr>
               ))}
               {upcoming.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                     {t("noUpcoming")}
                   </td>
                 </tr>

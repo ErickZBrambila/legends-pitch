@@ -64,6 +64,19 @@ const U12_MATCHES: Match[] = [
   { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",             location: "Bastrop Youth Soccer",    homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
 ];
 
+export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
+  "WCRP North":               { lat: 30.5407, lng: -97.8742 },
+  "WCRP South":               { lat: 30.5407, lng: -97.8742 },
+  "Shenandoah Field 2":       { lat: 30.3490, lng: -97.3690 },
+  "Crossroads Park":          { lat: 31.0982, lng: -97.3428 },
+  "Town & Country Field 23W": { lat: 30.4414, lng: -97.7553 },
+  "Wells Branch Soccer":      { lat: 30.4380, lng: -97.6760 },
+  "Serna Athletic Fields":    { lat: 30.5775, lng: -97.8530 },
+  "Bastrop Youth Soccer":     { lat: 30.1119, lng: -97.3160 },
+  "Riverwalk #3":             { lat: 30.5440, lng: -97.5490 },
+  "Jarrell Elementary School":{ lat: 30.8195, lng: -97.6040 },
+};
+
 const LOCATION_ADDRESSES: Record<string, string> = {
   "WCRP North":              "3005 Co Rd 175, Leander, TX 78641",
   "WCRP South":              "3005 Co Rd 175, Leander, TX 78641",

@@ -82,6 +82,7 @@
     "colGF": "GF",
     "colGA": "GC",
     "colPts": "Pts",
+    "colWeather": "Clima",
     "addToCalendar": "Agregar al Calendario",
     "calSubscribeHint": "Suscríbete — los cambios se sincronizan automáticamente",
     "calDownload": "Descargar archivo .ics",

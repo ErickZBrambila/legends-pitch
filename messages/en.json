@@ -82,6 +82,7 @@
     "colGF": "GF",
     "colGA": "GA",
     "colPts": "Pts",
+    "colWeather": "Weather",
     "addToCalendar": "Add to Calendar",
     "calSubscribeHint": "Subscribe — updates push automatically to your phone",
     "calDownload": "Download .ics file",

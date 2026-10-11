@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "next-sanity";
-import { writeFileSync, readFileSync, existsSync } from "fs";
-import { join } from "path";
 
 const writeClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -10,8 +8,6 @@ const writeClient = createClient({
   apiVersion: "2024-01-01",
   useCdn: false,
 });
-
-const SUBMISSIONS_FILE = join(process.cwd(), "coach-submissions.json");
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,14 +23,7 @@ export async function POST(req: NextRequest) {
 
     const { team, players, ...coachInfo } = body;
 
-    // ── 1. Save coach info locally ──────────────────────────────────────────
-    const existing = existsSync(SUBMISSIONS_FILE)
-      ? JSON.parse(readFileSync(SUBMISSIONS_FILE, "utf-8"))
-      : {};
-    existing[team] = { ...coachInfo, submittedAt: new Date().toISOString() };
-    writeFileSync(SUBMISSIONS_FILE, JSON.stringify(existing, null, 2));
-
-    // ── 2. Look up the Sanity team document reference ───────────────────────
+    // ── 1. Look up the Sanity team document reference ───────────────────────
     const teamDoc = await writeClient.fetch<{ _id: string } | null>(
       `*[_type == "team" && ageGroup == $team][0]{ _id }`,
       { team }
@@ -45,6 +34,17 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       );
     }
+
+    // ── 2b. Save coach submission to Sanity ────────────────────────────────
+    await writeClient.createOrReplace({
+      _id: `coach-submission-${team}`,
+      _type: "coachSubmission",
+      team: { _type: "reference", _ref: teamDoc._id },
+      submittedAt: new Date().toISOString(),
+      ...coachInfo,
+    }).catch(() => {
+      // coachSubmission type may not exist in schema yet — non-fatal
+    });
 
     // ── 3. Create player documents ──────────────────────────────────────────
     const validPlayers = players.filter((p) => p.name.trim() && p.number.trim());

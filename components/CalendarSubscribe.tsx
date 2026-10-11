@@ -63,9 +63,7 @@ export default function CalendarSubscribe({
           className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-white border border-gray-200 text-gray-700 text-sm font-semibold hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
         >
           <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0C5.372 0 0 5.373 0 12s5.372 12 12 12 12-5.373 12-12S18.628 0 12 0zm5.82 9.254h-1.636v-.818H12.82v.818h-1.637v.818h1.637v3.273c0 .904.732 1.636 1.636 1.636h1.364v-.818H14.82a.82.82 0 01-.818-.818V10.07h3.818V9.254zm-7.638 5.727H8.546V9.254H7.728v6.545h2.454v-.818z" fill="none"/>
-            <path d="M21.805 10.023H20v-.636h-1.6v.636H16.8v.8h1.6v3.2c0 .884.716 1.6 1.6 1.6h1.333v-.8H20a.8.8 0 01-.8-.8v-3.2h2.605v-.8zM6.4 16.023H4.8V10.18H4v6.644h2.4v-.8z" fill="none"/>
-            <path d="M19 3H5C3.346 3 2 4.346 2 6v12c0 1.654 1.346 3 3 3h14c1.654 0 3-1.346 3-3V6c0-1.654-1.346-3-3-3zm-9 13H8v-6h2v6zm4 0h-2v-6h2v6zm4 0h-2v-6h2v6zM7 9a1 1 0 110-2 1 1 0 010 2zm5 0a1 1 0 110-2 1 1 0 010 2zm5 0a1 1 0 110-2 1 1 0 010 2z" fill="none"/>
+            <path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
           </svg>
           {labelGoogle}
         </a>

@@ -150,6 +150,43 @@ export async function getGalleryEventsByTeam(team: TeamSlug): Promise<GalleryEve
   }));
 }
 
+export async function getGalleryEventById(id: string): Promise<GalleryEvent | null> {
+  const raw = await sanityClient.fetch<{
+    _id: string;
+    title: string;
+    title_es?: string;
+    date: string;
+    images: Array<{
+      _key: string;
+      alt: string;
+      image: { _type?: string; asset?: { _ref: string }; url?: string } | null;
+    }>;
+  } | null>(
+    `*[_type == "galleryEvent" && _id == $id][0]{
+      _id, title, title_es, date,
+      images[]{ _key, image, alt }
+    }`,
+    { id }
+  );
+  if (!raw) return null;
+  return {
+    id: raw._id,
+    title: raw.title,
+    title_es: raw.title_es,
+    date: raw.date,
+    images: (raw.images ?? []).flatMap((img) => {
+      if (!img.image) return [];
+      const url = img.image._type === "externalImage" && img.image.url
+        ? img.image.url
+        : img.image.asset
+          ? urlForImage(img.image)
+          : null;
+      if (!url) return [];
+      return [{ id: img._key, url, alt: img.alt ?? "" }];
+    }),
+  };
+}
+
 export async function getHighlightVideosByTeam(team: TeamSlug): Promise<HighlightVideo[]> {
   const raw = await sanityClient.fetch<
     Array<{

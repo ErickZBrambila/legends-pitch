@@ -187,7 +187,10 @@
   "Gallery": {
     "metaTitle": "Gallery",
     "heading": "Photo Gallery",
-    "noPhotos": "No photos yet — add them in the Studio."
+    "subtitle": "Albums from games and events",
+    "noPhotos": "No photos yet — add them in the Studio.",
+    "photoCount": "{count, plural, one {# photo} other {# photos}}",
+    "backToGallery": "← Back to Gallery"
   },
   "Highlights": {
     "metaTitle": "Highlights",

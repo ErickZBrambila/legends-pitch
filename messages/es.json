@@ -187,7 +187,10 @@
   "Gallery": {
     "metaTitle": "Galería",
     "heading": "Galería de Fotos",
-    "noPhotos": "Aún no hay fotos — agrégalas en el Studio."
+    "subtitle": "Álbumes de partidos y eventos",
+    "noPhotos": "Aún no hay fotos — agrégalas en el Studio.",
+    "photoCount": "{count, plural, one {# foto} other {# fotos}}",
+    "backToGallery": "← Volver a la Galería"
   },
   "Highlights": {
     "metaTitle": "Jugadas Destacadas",

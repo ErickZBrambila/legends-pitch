@@ -37,7 +37,10 @@ export async function GET(
     const homeAway = m.homeAway === "home" ? "🏠 Home" : "✈️ Away";
     const score = m.result ? ` · ${m.goalsFor}–${m.goalsAgainst} (${m.result})` : "";
     const summary = `North Legends FC ${label} vs ${m.opponent}`;
-    const description = `${homeAway}${score}\\n${m.location}`;
+    const fullLocation = m.locationAddress
+      ? `${m.location}, ${m.locationAddress}`
+      : m.location;
+    const description = `${homeAway}${score}\\n${fullLocation}`;
 
     return [
       "BEGIN:VEVENT",
@@ -46,7 +49,7 @@ export async function GET(
       fold(`DTSTART:${start}`),
       fold(`DTEND:${end}`),
       fold(`SUMMARY:${esc(summary)}`),
-      fold(`LOCATION:${esc(m.location)}`),
+      fold(`LOCATION:${esc(fullLocation)}`),
       fold(`DESCRIPTION:${esc(description)}`),
       "END:VEVENT",
     ].join("\r\n");

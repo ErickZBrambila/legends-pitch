@@ -27,6 +27,9 @@ const formatDate = (iso: string, locale: string) =>
 const formatTime = (iso: string, locale: string) =>
   new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
 
+const mapsUrl = (address: string) =>
+  `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+
 export default async function SchedulePage({
   searchParams,
 }: {
@@ -119,7 +122,14 @@ export default async function SchedulePage({
               </div>
               <p className="font-bold text-gray-800 text-base">{t("versus", { opponent: m.opponent })}</p>
               <p className="text-xs text-gray-400 mt-0.5">{formatDate(m.date, locale)}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{m.location}</p>
+              {m.locationAddress ? (
+                <a href={mapsUrl(m.locationAddress)} target="_blank" rel="noopener noreferrer"
+                  className="text-xs text-[var(--color-primary)] hover:underline mt-0.5 inline-flex items-center gap-0.5">
+                  📍 {m.location}
+                </a>
+              ) : (
+                <p className="text-xs text-gray-500 mt-0.5">{m.location}</p>
+              )}
             </div>
           ))}
           {upcoming.length === 0 && <p className="text-gray-400 text-sm">{t("noUpcoming")}</p>}
@@ -141,7 +151,14 @@ export default async function SchedulePage({
                 <tr key={m.id} className="hover:bg-green-50/40 transition-colors">
                   <td className="px-4 py-3 font-medium text-gray-800">{formatDate(m.date, locale)}</td>
                   <td className="px-4 py-3 font-semibold text-gray-900">{t("versus", { opponent: m.opponent })}</td>
-                  <td className="px-4 py-3 text-gray-500">{m.location}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {m.locationAddress ? (
+                      <a href={mapsUrl(m.locationAddress)} target="_blank" rel="noopener noreferrer"
+                        className="text-[var(--color-primary)] hover:underline inline-flex items-center gap-0.5">
+                        📍 {m.location}
+                      </a>
+                    ) : m.location}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
                       {m.homeAway === "home" ? t("home") : t("away")}

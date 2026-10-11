@@ -64,8 +64,28 @@ const U12_MATCHES: Match[] = [
   { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",             location: "Bastrop Youth Soccer",    homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
 ];
 
+const LOCATION_ADDRESSES: Record<string, string> = {
+  "WCRP North":              "3005 Co Rd 175, Leander, TX 78641",
+  "WCRP South":              "3005 Co Rd 175, Leander, TX 78641",
+  "Shenandoah Field 2":      "1490 N Avenue C, Elgin, TX 78621",
+  "Crossroads Park":         "1020 Research Pkwy, Temple, TX 76502",
+  "Town & Country Field 23W":"9100 Meadowheath Dr, Austin, TX 78729",
+  "Wells Branch Soccer":     "3908 Shoreline Dr, Austin, TX 78728",
+  "Serna Athletic Fields":   "601 S Bagdad Rd, Leander, TX 78641",
+  "Bastrop Youth Soccer":    "1603 Pine St, Bastrop, TX 78602",
+  "Riverwalk #3":            "1 Riverwalk Dr, Hutto, TX 78634",
+  "Jarrell Elementary School":"1615 CR 313, Jarrell, TX 76537",
+};
+
+function withAddress(matches: Match[]): Match[] {
+  return matches.map((m) => ({
+    ...m,
+    locationAddress: LOCATION_ADDRESSES[m.location],
+  }));
+}
+
 export function getGotSportData(team: TeamSlug): GotSportData {
   return team === "u12"
-    ? { standings: U12_STANDINGS, matches: U12_MATCHES }
-    : { standings: U11_STANDINGS, matches: U11_MATCHES };
+    ? { standings: U12_STANDINGS, matches: withAddress(U12_MATCHES) }
+    : { standings: U11_STANDINGS, matches: withAddress(U11_MATCHES) };
 }

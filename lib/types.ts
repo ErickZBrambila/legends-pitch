@@ -5,6 +5,7 @@ export interface Match {
   date: string; // ISO string
   opponent: string;
   location: string;
+  locationAddress?: string;
   homeAway: "home" | "away";
   goalsFor: number | null;
   goalsAgainst: number | null;

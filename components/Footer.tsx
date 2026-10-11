@@ -1,7 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export default function Footer() {
+  const t = useTranslations("Footer");
+  const year = new Date().getFullYear();
   return (
     <footer className="bg-[var(--color-navy)] text-red-300 mt-auto">
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -10,20 +13,20 @@ export default function Footer() {
             <Image src="/logo.jpg" alt="North Legends FC crest" width={32} height={32} className="rounded-full object-cover" />
             <div>
               <p className="font-semibold text-white text-sm">North Legends FC</p>
-              <p className="text-xs text-red-400">Developing Players, Building Leaders</p>
+              <p className="text-xs text-red-400">{t("tagline")}</p>
             </div>
           </div>
 
           <nav className="flex gap-5 text-sm">
-            <Link href="/schedule" className="hover:text-white transition-colors">Schedule</Link>
-            <Link href="/roster" className="hover:text-white transition-colors">Roster</Link>
-            <Link href="/news" className="hover:text-white transition-colors">News</Link>
-            <Link href="/gallery" className="hover:text-white transition-colors">Gallery</Link>
-            <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
+            <Link href="/schedule" className="hover:text-white transition-colors">{t("schedule")}</Link>
+            <Link href="/roster" className="hover:text-white transition-colors">{t("roster")}</Link>
+            <Link href="/news" className="hover:text-white transition-colors">{t("news")}</Link>
+            <Link href="/gallery" className="hover:text-white transition-colors">{t("gallery")}</Link>
+            <Link href="/contact" className="hover:text-white transition-colors">{t("contact")}</Link>
           </nav>
 
           <p className="text-xs text-red-600">
-            © {new Date().getFullYear()} North Legends FC
+            {t("copyright", { year })}
           </p>
         </div>
       </div>

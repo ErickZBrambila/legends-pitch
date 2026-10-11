@@ -48,23 +48,27 @@ export async function getPostsByTeam(team: TeamSlug): Promise<NewsPost[]> {
     Array<{
       _id: string;
       title: string;
+      title_es?: string;
       slug: { current: string };
       excerpt: string;
+      excerpt_es?: string;
       body: unknown[];
       publishedAt: string;
       author: string;
     }>
   >(
     `*[_type == "post" && team->ageGroup == $team]{
-      _id, title, slug, excerpt, body, publishedAt, author
+      _id, title, title_es, slug, excerpt, excerpt_es, body, publishedAt, author
     } | order(publishedAt desc)`,
     { team }
   );
   return raw.map((p) => ({
     id: p._id,
     title: p.title,
+    title_es: p.title_es,
     slug: p.slug.current,
     excerpt: p.excerpt ?? "",
+    excerpt_es: p.excerpt_es,
     body: p.body ?? [],
     publishedAt: p.publishedAt,
     author: p.author ?? "",
@@ -75,15 +79,17 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
   const p = await sanityClient.fetch<{
     _id: string;
     title: string;
+    title_es?: string;
     slug: { current: string };
     excerpt: string;
+    excerpt_es?: string;
     body: unknown[];
     publishedAt: string;
     author: string;
     team: { ageGroup: string };
   } | null>(
     `*[_type == "post" && slug.current == $slug][0]{
-      _id, title, slug, excerpt, body, publishedAt, author, team->{ ageGroup }
+      _id, title, title_es, slug, excerpt, excerpt_es, body, publishedAt, author, team->{ ageGroup }
     }`,
     { slug }
   );
@@ -91,8 +97,10 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
   return {
     id: p._id,
     title: p.title,
+    title_es: p.title_es,
     slug: p.slug.current,
     excerpt: p.excerpt ?? "",
+    excerpt_es: p.excerpt_es,
     body: p.body ?? [],
     publishedAt: p.publishedAt,
     author: p.author ?? "",
@@ -104,6 +112,7 @@ export async function getGalleryEventsByTeam(team: TeamSlug): Promise<GalleryEve
     Array<{
       _id: string;
       title: string;
+      title_es?: string;
       date: string;
       images: Array<{
         _key: string;
@@ -113,7 +122,7 @@ export async function getGalleryEventsByTeam(team: TeamSlug): Promise<GalleryEve
     }>
   >(
     `*[_type == "galleryEvent" && team->ageGroup == $team]{
-      _id, title, date,
+      _id, title, title_es, date,
       images[]{ _key, image, alt }
     } | order(date desc)`,
     { team }
@@ -121,6 +130,7 @@ export async function getGalleryEventsByTeam(team: TeamSlug): Promise<GalleryEve
   return raw.map((e) => ({
     id: e._id,
     title: e.title,
+    title_es: e.title_es,
     date: e.date,
     images: (e.images ?? []).flatMap((img) => {
       if (!img.image) return [];

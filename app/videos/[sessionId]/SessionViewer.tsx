@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import type { PracticeSession, SessionVideo, VideoClip } from "@/lib/types";
 import FieldHeatmap from "@/components/FieldHeatmap";
 import ActivityTimeline from "@/components/ActivityTimeline";
@@ -21,15 +22,15 @@ function clipSection(clip: VideoClip): "celebration" | "second" | "first" {
   return "first";
 }
 
-const SECTION_META = {
-  first:       { label: "1st Half",       color: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200" },
-  second:      { label: "2nd Half",       color: "bg-orange-500", badge: "bg-orange-50 text-orange-700 border-orange-200" },
-  celebration: { label: "Celebration 🎉", color: "bg-yellow-400", badge: "bg-yellow-50 text-yellow-800 border-yellow-200" },
-};
+const SECTION_STYLE = {
+  first:       { labelKey: "firstHalf",   color: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200" },
+  second:      { labelKey: "secondHalf",  color: "bg-orange-500", badge: "bg-orange-50 text-orange-700 border-orange-200" },
+  celebration: { labelKey: "celebration", color: "bg-yellow-400", badge: "bg-yellow-50 text-yellow-800 border-yellow-200" },
+} as const;
 
-const TYPE_BADGE: Record<string, string> = {
-  goal:        "⚽ Goal",
-  celebration: "🎉 Celebration",
+const TYPE_BADGE_KEY: Record<string, string> = {
+  goal:        "goalBadge",
+  celebration: "celebrationBadge",
   highlight:   "",
 };
 
@@ -46,6 +47,7 @@ function SaveButton({
   saved: boolean;
   onSave: (clipId: string) => void;
 }) {
+  const t = useTranslations("Session");
   const [saving, setSaving] = useState(false);
   const [localCount, setLocalCount] = useState(clip.saveCount);
 
@@ -71,7 +73,7 @@ function SaveButton({
   return (
     <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-100">
       <span className="text-[10px] text-gray-400">
-        {localCount > 0 ? `${localCount} saved` : "Be the first"}
+        {localCount > 0 ? t("savedCount", { count: localCount }) : t("beFirst")}
       </span>
       <button
         onClick={handleSave}
@@ -81,7 +83,7 @@ function SaveButton({
             ? "text-red-500 bg-red-50"
             : "text-gray-400 hover:text-red-400 hover:bg-red-50 active:scale-110"
         }`}
-        title={saved ? "Saved" : "Save this clip"}
+        title={saved ? t("savedTitle") : t("saveTitle")}
       >
         <svg
           className="w-3.5 h-3.5"
@@ -92,13 +94,14 @@ function SaveButton({
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
         </svg>
-        {saved ? "Saved" : "Save"}
+        {saved ? t("saved") : t("save")}
       </button>
     </div>
   );
 }
 
 export default function SessionViewer({ session }: { session: PracticeSession }) {
+  const t = useTranslations("Session");
   const [activeVideo, setActiveVideo] = useState<SessionVideo>(session.videos[0]);
   const [activeClipUrl, setActiveClipUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -153,7 +156,9 @@ export default function SessionViewer({ session }: { session: PracticeSession })
 
   const sections = (["first", "second", "celebration"] as const).map((key) => ({
     key,
-    ...SECTION_META[key],
+    label: t(SECTION_STYLE[key].labelKey),
+    color: SECTION_STYLE[key].color,
+    badge: SECTION_STYLE[key].badge,
     clips: activeVideo.clips.filter((c) => clipSection(c) === key),
   })).filter((s) => s.clips.length > 0);
 
@@ -181,12 +186,12 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-black text-base leading-tight">Full Game · Google Drive</p>
-            <p className="text-white/75 text-sm mt-0.5">18 GB · original 4K quality · tap to open</p>
+            <p className="font-black text-base leading-tight">{t("fullGameDrive")}</p>
+            <p className="text-white/75 text-sm mt-0.5">{t("fullGameDriveMeta")}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full group-hover:bg-white/30 transition-colors">
-              Open ↗
+              {t("open")}
             </span>
           </div>
         </a>
@@ -205,7 +210,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              Video {i + 1} · {v.resolution} · {fmt(v.durationSeconds)}
+              {t("videoLabel", { index: i + 1, resolution: v.resolution, duration: fmt(v.durationSeconds) })}
             </button>
           ))}
         </div>
@@ -245,7 +250,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </div>
-                <p className="text-white/80 text-sm font-medium">Tap a clip to play</p>
+                <p className="text-white/80 text-sm font-medium">{t("tapClip")}</p>
               </div>
             </div>
           </div>
@@ -254,7 +259,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none">
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-              <span className="text-white text-sm font-semibold">Loading clip…</span>
+              <span className="text-white text-sm font-semibold">{t("loadingClip")}</span>
             </div>
           </div>
         )}
@@ -264,7 +269,9 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       <div className="mt-2 mb-6 h-5">
         {activeClipUrl && !isLoading && (
           <p className="text-xs text-gray-400 font-medium">
-            {activeVideo.clips.find(c => c.r2Url === activeClipUrl)?.label ?? "Playing"} · tap ↓ to download
+            {t("nowPlaying", {
+              label: activeVideo.clips.find(c => c.r2Url === activeClipUrl)?.label ?? t("playing"),
+            })}
           </p>
         )}
       </div>
@@ -274,7 +281,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         <section className="mb-8 p-4 bg-green-50 border border-green-200 rounded-2xl">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-lg">⚽</span>
-            <h2 className="text-sm font-black text-green-800 uppercase tracking-wide">Goals</h2>
+            <h2 className="text-sm font-black text-green-800 uppercase tracking-wide">{t("goals")}</h2>
             <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">{goals.length}</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -300,8 +307,8 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         <section className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-1 h-5 rounded-full bg-[var(--color-accent)]" />
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">All Moments</h2>
-            <span className="text-xs text-gray-400">{activeVideo.markers.length} highlights · tap to jump</span>
+            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">{t("allMoments")}</h2>
+            <span className="text-xs text-gray-400">{t("momentsHint", { count: activeVideo.markers.length })}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {activeVideo.markers.map((m) => (
@@ -322,7 +329,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         <section className="mb-10 space-y-6">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-1 h-5 rounded-full bg-emerald-500" />
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">Game Analytics</h2>
+            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">{t("gameAnalytics")}</h2>
           </div>
           <FieldHeatmap analytics={activeVideo.analytics} />
           <ActivityTimeline analytics={activeVideo.analytics} clips={activeVideo.clips} markers={activeVideo.markers} />
@@ -336,13 +343,14 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             <div className={`w-1 h-5 rounded-full ${section.color}`} />
             <h2 className="text-base font-black text-gray-800">{section.label}</h2>
             <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-              {section.clips.length} clips
+              {t("clipsCount", { count: section.clips.length })}
             </span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {section.clips.map((clip) => {
               const isPlaying = activeClipUrl === clip.r2Url;
-              const typeBadge = TYPE_BADGE[clip.clipType ?? "highlight"];
+              const typeBadgeKey = TYPE_BADGE_KEY[clip.clipType ?? "highlight"];
+              const typeBadge = typeBadgeKey ? t(typeBadgeKey) : "";
               const isSaved = savedClips.has(clip.id);
 
               // Archived clip — greyed out card
@@ -358,7 +366,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                       <p className="font-semibold text-gray-500 text-xs leading-snug">{clip.label}</p>
                       <p className="text-[10px] text-gray-400 mt-0.5">{fmt(clip.startSeconds)} – {fmt(clip.endSeconds)}</p>
                       <div className="mt-2 w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-semibold bg-gray-200 text-gray-400">
-                        Archived · {clip.saveCount} saved
+                        {t("archived", { count: clip.saveCount })}
                       </div>
                     </div>
                     {driveUrl && (
@@ -368,7 +376,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-1 py-1.5 border-t border-gray-200 text-[10px] font-semibold text-gray-400 hover:bg-gray-100 transition-colors"
                       >
-                        Full game on Drive ↗
+                        {t("fullGameOnDrive")}
                       </a>
                     )}
                   </div>
@@ -403,7 +411,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z" />
                       </svg>
-                      {isPlaying ? "Playing" : "Play"}
+                      {isPlaying ? t("playing") : t("play")}
                     </div>
                   </button>
 
@@ -425,7 +433,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Download
+                    {t("download")}
                   </a>
                 </div>
               );

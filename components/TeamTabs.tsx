@@ -2,19 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
-const TEAMS: { slug: TeamSlug; label: string }[] = [
-  { slug: "u11", label: "Under 11" },
-  { slug: "u12", label: "Under 12" },
-];
+const TEAMS: TeamSlug[] = ["u11", "u12"];
 
 export default function TeamTabs({ activeTeam }: { activeTeam: TeamSlug }) {
   const pathname = usePathname();
+  const t = useTranslations("Teams");
 
   return (
     <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-      {TEAMS.map(({ slug, label }) => (
+      {TEAMS.map((slug) => (
         <Link
           key={slug}
           href={`${pathname}?team=${slug}`}
@@ -24,7 +23,7 @@ export default function TeamTabs({ activeTeam }: { activeTeam: TeamSlug }) {
               : "text-gray-500 hover:text-gray-800"
           }`}
         >
-          {label}
+          {t(slug)}
         </Link>
       ))}
     </div>

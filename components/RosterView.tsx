@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { Player } from "@/lib/types";
 import RosterField from "./RosterField";
 
@@ -11,16 +12,17 @@ const POSITION_COLORS: Record<string, string> = {
   FWD: "bg-red-100 text-red-800 border-red-200",
 };
 
-const POSITION_LABELS: Record<string, string> = {
-  GK: "Goalkeeper",
-  DEF: "Defender",
-  MID: "Midfielder",
-  FWD: "Forward",
+const POSITION_LABEL_KEYS: Record<string, string> = {
+  GK: "goalkeepers",
+  DEF: "defenders",
+  MID: "midfielders",
+  FWD: "forwards",
 };
 
 const POS_ORDER = ["GK", "DEF", "MID", "FWD"];
 
 export default function RosterView({ players }: { players: Player[] }) {
+  const t = useTranslations("Roster");
   const [view, setView] = useState<"field" | "list">("field");
 
   const byPosition = POS_ORDER.map((pos) => ({
@@ -36,13 +38,13 @@ export default function RosterView({ players }: { players: Player[] }) {
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all capitalize ${
+            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
               view === v
                 ? "bg-[var(--color-accent)] text-[#1c1c1e] shadow-sm"
                 : "text-gray-500 hover:text-gray-800"
             }`}
           >
-            {v === "field" ? "⚽ Field" : "☰ List"}
+            {v === "field" ? t("viewField") : t("viewList")}
           </button>
         ))}
       </div>
@@ -51,7 +53,7 @@ export default function RosterView({ players }: { players: Player[] }) {
         <div className="flex flex-col items-center">
           <RosterField players={players} />
           <p className="text-xs text-gray-400 mt-4 text-center">
-            {players.length} players · Summer 2026
+            {t("playersSeason", { count: players.length })}
           </p>
         </div>
       ) : (
@@ -61,7 +63,7 @@ export default function RosterView({ players }: { players: Player[] }) {
             return (
               <section key={pos} className="mb-10">
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-4">
-                  {POSITION_LABELS[pos]}s
+                  {t(POSITION_LABEL_KEYS[pos])}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                   {group.map((player) => (

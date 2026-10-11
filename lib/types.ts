@@ -22,7 +22,9 @@ export interface NewsPost {
   id: string;
   slug: string;
   title: string;
+  title_es?: string;
   excerpt: string;
+  excerpt_es?: string;
   body: unknown[] | string;
   publishedAt: string;
   author: string;
@@ -31,6 +33,7 @@ export interface NewsPost {
 export interface GalleryEvent {
   id: string;
   title: string;
+  title_es?: string;
   date: string;
   images: GalleryImage[];
 }

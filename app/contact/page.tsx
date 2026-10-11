@@ -1,37 +1,42 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
-export const metadata: Metadata = { title: "Contact" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Contact");
+  return { title: t("metaTitle") };
+}
 
 const FIELD_ADDRESS = "Frost Elementary School, 711 Lakeway Dr, Georgetown, TX 78628";
 const MAPS_EMBED = `https://maps.google.com/maps?q=${encodeURIComponent(FIELD_ADDRESS)}&output=embed&z=15`;
 
+// Day / role values are translation keys; time + location + name are literal data.
 const TEAM_INFO: Record<TeamSlug, {
   email: string;
-  coaches: { name: string; role: string }[];
-  practice: { day: string; time: string; location: string }[];
+  coaches: { nameKey: string; roleKey: string }[];
+  practice: { dayKey: string; time: string; location: string }[];
 }> = {
   u11: {
     email: "northlegends@gmail.com",
     coaches: [
-      { name: "Head Coach (TBD)", role: "Head Coach" },
-      { name: "Assistant Coach (TBD)", role: "Assistant Coach" },
+      { nameKey: "headCoachTbd", roleKey: "headCoach" },
+      { nameKey: "assistantCoachTbd", roleKey: "assistantCoach" },
     ],
     practice: [
-      { day: "Tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
-      { day: "Thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+      { dayKey: "tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+      { dayKey: "thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
     ],
   },
   u12: {
     email: "northlegends@gmail.com",
     coaches: [
-      { name: "Head Coach (TBD)", role: "Head Coach" },
-      { name: "Assistant Coach (TBD)", role: "Assistant Coach" },
+      { nameKey: "headCoachTbd", roleKey: "headCoach" },
+      { nameKey: "assistantCoachTbd", roleKey: "assistantCoach" },
     ],
     practice: [
-      { day: "Tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
-      { day: "Thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+      { dayKey: "tuesday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
+      { dayKey: "thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
     ],
   },
 };
@@ -45,10 +50,12 @@ export default async function ContactPage({
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
   const info = TEAM_INFO[team];
 
+  const t = await getTranslations("Contact");
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-black text-gray-900">Contact & Info</h1>
+        <h1 className="text-3xl font-black text-gray-900">{t("heading")}</h1>
         <TeamTabs activeTeam={team} />
       </div>
 
@@ -61,12 +68,12 @@ export default async function ContactPage({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </span>
-            Practice Schedule
+            {t("practiceSchedule")}
           </h2>
           <div className="flex flex-col gap-3">
             {info.practice.map((s, i) => (
               <div key={i} className="flex flex-col gap-0.5">
-                <p className="font-semibold text-gray-700 text-sm">{s.day}</p>
+                <p className="font-semibold text-gray-700 text-sm">{t(s.dayKey)}</p>
                 <p className="text-gray-500 text-sm">{s.time}</p>
                 <p className="text-gray-400 text-xs">{s.location}</p>
               </div>
@@ -82,13 +89,13 @@ export default async function ContactPage({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </span>
-            Coaching Staff
+            {t("coachingStaff")}
           </h2>
           <div className="flex flex-col gap-3">
             {info.coaches.map((c, i) => (
               <div key={i}>
-                <p className="font-semibold text-gray-700 text-sm">{c.name}</p>
-                <p className="text-gray-400 text-xs">{c.role}</p>
+                <p className="font-semibold text-gray-700 text-sm">{t(c.nameKey)}</p>
+                <p className="text-gray-400 text-xs">{t(c.roleKey)}</p>
               </div>
             ))}
           </div>
@@ -102,10 +109,10 @@ export default async function ContactPage({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </span>
-            Get in Touch
+            {t("getInTouch")}
           </h2>
           <p className="text-gray-500 text-sm mb-3">
-            Questions about the team, schedule, or anything else? Reach out!
+            {t("getInTouchBody")}
           </p>
           <a
             href={`mailto:${info.email}`}
@@ -124,9 +131,9 @@ export default async function ContactPage({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </span>
-            Home Field
+            {t("homeField")}
           </h2>
-          <p className="text-gray-700 text-sm font-semibold mb-1">Frost Elementary School</p>
+          <p className="text-gray-700 text-sm font-semibold mb-1">{t("fieldName")}</p>
           <p className="text-gray-400 text-xs mb-3">711 Lakeway Dr, Georgetown, TX 78628</p>
           <a
             href={`https://maps.google.com/?q=${encodeURIComponent(FIELD_ADDRESS)}`}
@@ -134,7 +141,7 @@ export default async function ContactPage({
             rel="noopener noreferrer"
             className="text-[var(--color-accent)] text-sm font-semibold hover:underline"
           >
-            Open in Maps →
+            {t("openInMaps")}
           </a>
         </div>
       </div>
@@ -149,7 +156,7 @@ export default async function ContactPage({
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          title="Home field map"
+          title={t("mapTitle")}
         />
       </div>
     </div>

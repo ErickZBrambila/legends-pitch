@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { HighlightVideo } from "@/lib/types";
 
 export default function VideoCollectionFolder({
@@ -10,6 +11,7 @@ export default function VideoCollectionFolder({
   event: string;
   clips: HighlightVideo[];
 }) {
+  const t = useTranslations("VideoCollection");
   const [open, setOpen] = useState(false);
 
   return (
@@ -36,7 +38,7 @@ export default function VideoCollectionFolder({
 
         <div className="flex-1 min-w-0">
           <p className="font-bold text-gray-900 text-base leading-snug truncate">{event}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{clips.length} clips · 360° footage</p>
+          <p className="text-xs text-gray-400 mt-0.5">{t("clipsFootage", { count: clips.length })}</p>
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">

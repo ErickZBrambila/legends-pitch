@@ -3,19 +3,22 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const links = [
-  { href: "/", label: "Home" },
-  { href: "/schedule", label: "Schedule" },
-  { href: "/roster", label: "Roster" },
-  { href: "/videos", label: "Videos" },
-  { href: "/news", label: "News" },
-  { href: "/gallery", label: "Gallery" },
-  { href: "/contact", label: "Contact" },
-];
+  { href: "/", key: "home" },
+  { href: "/schedule", key: "schedule" },
+  { href: "/roster", key: "roster" },
+  { href: "/videos", key: "videos" },
+  { href: "/news", key: "news" },
+  { href: "/gallery", key: "gallery" },
+  { href: "/contact", key: "contact" },
+] as const;
 
 export default function Nav() {
   const pathname = usePathname();
+  const t = useTranslations("Nav");
 
   return (
     <header className="hidden md:block sticky top-0 z-50 bg-[var(--color-navy)] shadow-lg">
@@ -45,10 +48,11 @@ export default function Nav() {
                     : "text-gray-300 hover:bg-white/10 hover:text-white"
                 }`}
               >
-                {link.label}
+                {t(link.key)}
               </Link>
             );
           })}
+          <LanguageSwitcher className="ml-2" />
         </nav>
       </div>
     </header>

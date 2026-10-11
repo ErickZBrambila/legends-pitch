@@ -6,7 +6,8 @@ export default defineType({
   type: "document",
   fields: [
     defineField({ name: "team", title: "Team", type: "reference", to: [{ type: "team" }], validation: (r) => r.required() }),
-    defineField({ name: "title", title: "Title", type: "string", validation: (r) => r.required() }),
+    defineField({ name: "title", title: "Title (EN)", type: "string", validation: (r) => r.required() }),
+    defineField({ name: "title_es", title: "Título (ES)", type: "string" }),
     defineField({ name: "date", title: "Date", type: "date", validation: (r) => r.required() }),
     defineField({
       name: "images",

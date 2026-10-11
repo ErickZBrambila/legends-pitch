@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface Props {
   targetDate: string;
@@ -29,6 +30,7 @@ function pad(n: number) {
 }
 
 export default function CountdownTimer({ targetDate }: Props) {
+  const t = useTranslations("Countdown");
   const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
 
   useEffect(() => {
@@ -42,16 +44,16 @@ export default function CountdownTimer({ targetDate }: Props) {
   if (!timeLeft) {
     return (
       <p className="text-[var(--color-accent-light)] font-semibold text-lg">
-        Game time — let&apos;s go!
+        {t("gameTime")}
       </p>
     );
   }
 
   const units = [
-    { label: "Days", value: timeLeft.days },
-    { label: "Hours", value: timeLeft.hours },
-    { label: "Min", value: timeLeft.minutes },
-    { label: "Sec", value: timeLeft.seconds },
+    { label: t("days"), value: timeLeft.days },
+    { label: t("hours"), value: timeLeft.hours },
+    { label: t("minutes"), value: timeLeft.minutes },
+    { label: t("seconds"), value: timeLeft.seconds },
   ];
 
   return (

@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import { getGalleryEventsByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
-export const metadata: Metadata = { title: "Gallery" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Gallery");
+  return { title: t("metaTitle") };
+}
 
 export default async function GalleryPage({
   searchParams,
@@ -14,24 +18,29 @@ export default async function GalleryPage({
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
 
+  const t = await getTranslations("Gallery");
+  const locale = await getLocale();
+
   const events = await getGalleryEventsByTeam(team);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-black text-gray-900">Photo Gallery</h1>
+        <h1 className="text-3xl font-black text-gray-900">{t("heading")}</h1>
         <TeamTabs activeTeam={team} />
       </div>
 
       {events.length === 0 ? (
-        <p className="text-gray-400 text-center py-20">No photos yet — add them in the Studio.</p>
+        <p className="text-gray-400 text-center py-20">{t("noPhotos")}</p>
       ) : (
         events.map((event) => (
           <section key={event.id} className="mb-12">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800">{event.title}</h2>
+              <h2 className="text-lg font-bold text-gray-800">
+                {locale === "es" && event.title_es ? event.title_es : event.title}
+              </h2>
               <span className="text-xs text-gray-400">
-                {new Date(event.date).toLocaleDateString("en-US", {
+                {new Date(event.date).toLocaleDateString(locale, {
                   month: "long",
                   day: "numeric",
                   year: "numeric",

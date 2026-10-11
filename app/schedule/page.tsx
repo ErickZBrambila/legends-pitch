@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import { getMatchesByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
-export const metadata: Metadata = { title: "Schedule" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Schedule");
+  return { title: t("metaTitle") };
+}
 
 const RESULT_STYLES: Record<string, string> = {
   W: "bg-green-100 text-green-800 border border-green-200",
@@ -11,16 +15,16 @@ const RESULT_STYLES: Record<string, string> = {
   D: "bg-yellow-100 text-yellow-800 border border-yellow-200",
 };
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
+const formatDate = (iso: string, locale: string) =>
+  new Date(iso).toLocaleDateString(locale, {
     weekday: "long",
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const formatTime = (iso: string, locale: string) =>
+  new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
 
 export default async function SchedulePage({
   searchParams,
@@ -29,6 +33,9 @@ export default async function SchedulePage({
 }) {
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
+
+  const t = await getTranslations("Schedule");
+  const locale = await getLocale();
 
   const matches = await getMatchesByTeam(team);
   const now = new Date();
@@ -42,14 +49,14 @@ export default async function SchedulePage({
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-black text-gray-900">Schedule & Results</h1>
+        <h1 className="text-3xl font-black text-gray-900">{t("heading")}</h1>
         <TeamTabs activeTeam={team} />
       </div>
 
       {/* Upcoming */}
       <section className="mb-10">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-4">
-          Upcoming Fixtures
+          {t("upcomingFixtures")}
         </h2>
 
         <div className="flex flex-col gap-3 md:hidden">
@@ -57,47 +64,47 @@ export default async function SchedulePage({
             <div key={m.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                  {m.homeAway === "home" ? "Home" : "Away"}
+                  {m.homeAway === "home" ? t("home") : t("away")}
                 </span>
-                <span className="text-xs text-gray-400">{formatTime(m.date)}</span>
+                <span className="text-xs text-gray-400">{formatTime(m.date, locale)}</span>
               </div>
-              <p className="font-bold text-gray-800 text-base">vs {m.opponent}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{formatDate(m.date)}</p>
+              <p className="font-bold text-gray-800 text-base">{t("versus", { opponent: m.opponent })}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{formatDate(m.date, locale)}</p>
               <p className="text-xs text-gray-500 mt-0.5">{m.location}</p>
             </div>
           ))}
-          {upcoming.length === 0 && <p className="text-gray-400 text-sm">No upcoming fixtures.</p>}
+          {upcoming.length === 0 && <p className="text-gray-400 text-sm">{t("noUpcoming")}</p>}
         </div>
 
         <div className="hidden md:block overflow-hidden rounded-xl border border-gray-100 shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
               <tr>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">Opponent</th>
-                <th className="px-4 py-3 text-left">Location</th>
-                <th className="px-4 py-3 text-center">H/A</th>
-                <th className="px-4 py-3 text-right">Kick-off</th>
+                <th className="px-4 py-3 text-left">{t("colDate")}</th>
+                <th className="px-4 py-3 text-left">{t("colOpponent")}</th>
+                <th className="px-4 py-3 text-left">{t("colLocation")}</th>
+                <th className="px-4 py-3 text-center">{t("colHomeAway")}</th>
+                <th className="px-4 py-3 text-right">{t("colKickoff")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
               {upcoming.map((m) => (
                 <tr key={m.id} className="hover:bg-green-50/40 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-800">{formatDate(m.date)}</td>
-                  <td className="px-4 py-3 font-semibold text-gray-900">vs {m.opponent}</td>
+                  <td className="px-4 py-3 font-medium text-gray-800">{formatDate(m.date, locale)}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">{t("versus", { opponent: m.opponent })}</td>
                   <td className="px-4 py-3 text-gray-500">{m.location}</td>
                   <td className="px-4 py-3 text-center">
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                      {m.homeAway === "home" ? "Home" : "Away"}
+                      {m.homeAway === "home" ? t("home") : t("away")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-500">{formatTime(m.date)}</td>
+                  <td className="px-4 py-3 text-right text-gray-500">{formatTime(m.date, locale)}</td>
                 </tr>
               ))}
               {upcoming.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
-                    No upcoming fixtures.
+                    {t("noUpcoming")}
                   </td>
                 </tr>
               )}
@@ -109,7 +116,7 @@ export default async function SchedulePage({
       {/* Results */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-4">
-          Results
+          {t("results")}
         </h2>
 
         <div className="flex flex-col gap-3 md:hidden">
@@ -117,38 +124,38 @@ export default async function SchedulePage({
             <div key={m.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-gray-50 text-gray-600 border border-gray-200">
-                  {m.homeAway === "home" ? "Home" : "Away"}
+                  {m.homeAway === "home" ? t("home") : t("away")}
                 </span>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${RESULT_STYLES[m.result!]}`}>
                   {m.result}
                 </span>
               </div>
-              <p className="font-bold text-gray-800 text-base">vs {m.opponent}</p>
+              <p className="font-bold text-gray-800 text-base">{t("versus", { opponent: m.opponent })}</p>
               <p className="text-sm font-semibold text-gray-600 mt-0.5">
                 {m.goalsFor} – {m.goalsAgainst}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">{formatDate(m.date)}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{formatDate(m.date, locale)}</p>
             </div>
           ))}
-          {played.length === 0 && <p className="text-gray-400 text-sm">No results yet.</p>}
+          {played.length === 0 && <p className="text-gray-400 text-sm">{t("noResults")}</p>}
         </div>
 
         <div className="hidden md:block overflow-hidden rounded-xl border border-gray-100 shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 uppercase text-xs tracking-wider">
               <tr>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">Opponent</th>
-                <th className="px-4 py-3 text-center">Score</th>
-                <th className="px-4 py-3 text-center">Result</th>
-                <th className="px-4 py-3 text-center">H/A</th>
+                <th className="px-4 py-3 text-left">{t("colDate")}</th>
+                <th className="px-4 py-3 text-left">{t("colOpponent")}</th>
+                <th className="px-4 py-3 text-center">{t("colScore")}</th>
+                <th className="px-4 py-3 text-center">{t("colResult")}</th>
+                <th className="px-4 py-3 text-center">{t("colHomeAway")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
               {played.map((m) => (
                 <tr key={m.id} className="hover:bg-gray-50/60 transition-colors">
-                  <td className="px-4 py-3 text-gray-500">{formatDate(m.date)}</td>
-                  <td className="px-4 py-3 font-semibold text-gray-900">vs {m.opponent}</td>
+                  <td className="px-4 py-3 text-gray-500">{formatDate(m.date, locale)}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-900">{t("versus", { opponent: m.opponent })}</td>
                   <td className="px-4 py-3 text-center font-bold text-gray-800">
                     {m.goalsFor} – {m.goalsAgainst}
                   </td>
@@ -157,15 +164,15 @@ export default async function SchedulePage({
                       {m.result}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center text-gray-500 text-xs capitalize">
-                    {m.homeAway}
+                  <td className="px-4 py-3 text-center text-gray-500 text-xs">
+                    {m.homeAway === "home" ? t("home") : t("away")}
                   </td>
                 </tr>
               ))}
               {played.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
-                    No results yet.
+                    {t("noResults")}
                   </td>
                 </tr>
               )}

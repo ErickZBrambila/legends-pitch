@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortableText } from "next-sanity";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getPostBySlug } from "@/lib/sanity/queries";
 
 export async function generateMetadata({
@@ -11,7 +12,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
-  return { title: post?.title ?? "Post not found" };
+  if (post?.title) return { title: post.title };
+  const t = await getTranslations("NewsPost");
+  return { title: t("metaTitleNotFound") };
 }
 
 export default async function NewsPostPage({
@@ -25,6 +28,9 @@ export default async function NewsPostPage({
   const post = await getPostBySlug(slug);
   if (!post) notFound();
 
+  const t = await getTranslations("NewsPost");
+  const locale = await getLocale();
+
   const backTeam = team === "u12" ? "u12" : "u11";
 
   return (
@@ -33,13 +39,13 @@ export default async function NewsPostPage({
         href={`/news?team=${backTeam}`}
         className="inline-flex items-center gap-1.5 text-sm text-[var(--color-primary)] font-medium hover:underline mb-6"
       >
-        ← Back to News
+        {t("backToNews")}
       </Link>
 
       <article>
         <header className="mb-6">
           <p className="text-xs text-gray-400 mb-2">
-            {new Date(post.publishedAt).toLocaleDateString("en-US", {
+            {new Date(post.publishedAt).toLocaleDateString(locale, {
               weekday: "long",
               month: "long",
               day: "numeric",
@@ -48,7 +54,7 @@ export default async function NewsPostPage({
             · {post.author}
           </p>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900 leading-tight">
-            {post.title}
+            {locale === "es" && post.title_es ? post.title_es : post.title}
           </h1>
         </header>
 
@@ -56,7 +62,7 @@ export default async function NewsPostPage({
           {post.body && post.body.length > 0 ? (
             <PortableText value={post.body as Parameters<typeof PortableText>[0]["value"]} />
           ) : (
-            <p className="text-gray-400">No content yet.</p>
+            <p className="text-gray-400">{t("noContent")}</p>
           )}
         </div>
       </article>

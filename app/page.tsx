@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import CountdownTimerClient from "@/components/CountdownTimerClient";
 import TeamTabs from "@/components/TeamTabs";
 import {
@@ -9,15 +10,15 @@ import {
 } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
+const formatDate = (iso: string, locale: string) =>
+  new Date(iso).toLocaleDateString(locale, {
     weekday: "short",
     month: "short",
     day: "numeric",
   });
 
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const formatTime = (iso: string, locale: string) =>
+  new Date(iso).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
 
 const resultColors: Record<string, string> = {
   W: "bg-green-100 text-green-800 border border-green-200",
@@ -32,6 +33,9 @@ export default async function Home({
 }) {
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
+
+  const t = await getTranslations("Home");
+  const locale = await getLocale();
 
   const [nextMatch, stats, matches, latestNews] = await Promise.all([
     getNextMatchByTeam(team),
@@ -65,20 +69,20 @@ export default async function Home({
             North Legends FC
           </h1>
           <p className="text-[var(--color-accent-light)] text-base md:text-lg max-w-md italic font-medium">
-            More than a team, a legend in the making.
+            {t("tagline")}
           </p>
           <div className="flex gap-3 mt-2">
             <Link
               href={`/schedule?team=${team}`}
               className="px-5 py-2.5 bg-[var(--color-accent)] text-[#1c1c1e] font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors shadow-md"
             >
-              View Schedule
+              {t("viewSchedule")}
             </Link>
             <Link
               href={`/roster?team=${team}`}
               className="px-5 py-2.5 bg-[var(--color-accent)] text-[#1c1c1e] font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors shadow-md"
             >
-              Meet the Team
+              {t("meetTheTeam")}
             </Link>
           </div>
         </div>
@@ -93,12 +97,12 @@ export default async function Home({
           <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <p className="text-red-200 text-xs uppercase tracking-widest font-semibold mb-1">
-                Next Match
+                {t("nextMatch")}
               </p>
-              <h2 className="text-xl md:text-2xl font-bold">vs {nextMatch.opponent}</h2>
+              <h2 className="text-xl md:text-2xl font-bold">{t("versus", { opponent: nextMatch.opponent })}</h2>
               <p className="text-red-200 text-sm mt-0.5">
-                {formatDate(nextMatch.date)} · {formatTime(nextMatch.date)} ·{" "}
-                <span className="capitalize">{nextMatch.homeAway}</span>
+                {formatDate(nextMatch.date, locale)} · {formatTime(nextMatch.date, locale)} ·{" "}
+                <span>{nextMatch.homeAway === "home" ? t("home") : t("away")}</span>
               </p>
               <p className="text-red-300 text-xs mt-0.5">{nextMatch.location}</p>
             </div>
@@ -115,13 +119,13 @@ export default async function Home({
       <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Season Stats */}
         <section className="lg:col-span-1">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Season Record</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-4">{t("seasonRecord")}</h2>
           <div className="bg-[var(--color-navy)] text-white rounded-xl p-5 shadow-md">
             <div className="grid grid-cols-3 gap-3 text-center mb-5">
               {[
-                { label: "Wins", value: stats.wins, color: "text-green-400" },
-                { label: "Draws", value: stats.draws, color: "text-yellow-400" },
-                { label: "Losses", value: stats.losses, color: "text-red-400" },
+                { label: t("wins"), value: stats.wins, color: "text-green-400" },
+                { label: t("draws"), value: stats.draws, color: "text-yellow-400" },
+                { label: t("losses"), value: stats.losses, color: "text-red-400" },
               ].map(({ label, value, color }) => (
                 <div key={label}>
                   <p className={`text-3xl font-black ${color}`}>{value}</p>
@@ -132,17 +136,17 @@ export default async function Home({
             <div className="border-t border-red-900/40 pt-4 grid grid-cols-2 gap-3 text-center">
               <div>
                 <p className="text-2xl font-bold text-white">{stats.goalsFor}</p>
-                <p className="text-xs text-red-300">Goals Scored</p>
+                <p className="text-xs text-red-300">{t("goalsScored")}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{stats.goalsAgainst}</p>
-                <p className="text-xs text-red-300">Goals Conceded</p>
+                <p className="text-xs text-red-300">{t("goalsConceded")}</p>
               </div>
             </div>
           </div>
 
           <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mt-6 mb-3">
-            Recent Results
+            {t("recentResults")}
           </h3>
           <div className="flex flex-col gap-2">
             {recentResults.map((m) => (
@@ -151,8 +155,8 @@ export default async function Home({
                 className="flex items-center justify-between bg-white border border-gray-100 rounded-lg px-4 py-3 shadow-sm"
               >
                 <div>
-                  <p className="font-medium text-gray-800 text-sm">vs {m.opponent}</p>
-                  <p className="text-xs text-gray-400">{formatDate(m.date)}</p>
+                  <p className="font-medium text-gray-800 text-sm">{t("versus", { opponent: m.opponent })}</p>
+                  <p className="text-xs text-gray-400">{formatDate(m.date, locale)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-700">
@@ -165,7 +169,7 @@ export default async function Home({
               </div>
             ))}
             {recentResults.length === 0 && (
-              <p className="text-gray-400 text-sm">No results yet.</p>
+              <p className="text-gray-400 text-sm">{t("noResults")}</p>
             )}
           </div>
 
@@ -173,19 +177,19 @@ export default async function Home({
             href={`/schedule?team=${team}`}
             className="block text-center mt-4 text-sm text-[var(--color-primary)] font-medium hover:underline"
           >
-            Full schedule →
+            {t("fullSchedule")}
           </Link>
         </section>
 
         {/* Latest News */}
         <section className="lg:col-span-2">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Latest News</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-4">{t("latestNews")}</h2>
           <div className="flex flex-col gap-4">
             {topNews.map((post) => (
               <Link key={post.id} href={`/news/${post.slug}?team=${team}`}>
                 <article className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-green-200 transition-all">
                   <p className="text-xs text-gray-400 mb-1">
-                    {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                    {new Date(post.publishedAt).toLocaleDateString(locale, {
                       month: "long",
                       day: "numeric",
                       year: "numeric",
@@ -197,20 +201,20 @@ export default async function Home({
                   </h3>
                   <p className="text-gray-500 text-sm line-clamp-2">{post.excerpt}</p>
                   <span className="inline-block mt-3 text-xs font-semibold text-[var(--color-primary)]">
-                    Read more →
+                    {t("readMore")}
                   </span>
                 </article>
               </Link>
             ))}
             {topNews.length === 0 && (
-              <p className="text-gray-400 text-sm">No posts yet — add them in the Studio.</p>
+              <p className="text-gray-400 text-sm">{t("noPosts")}</p>
             )}
           </div>
           <Link
             href={`/news?team=${team}`}
             className="block text-center mt-4 text-sm text-[var(--color-primary)] font-medium hover:underline"
           >
-            All announcements →
+            {t("allAnnouncements")}
           </Link>
         </section>
       </div>

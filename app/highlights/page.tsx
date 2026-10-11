@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import { getHighlightVideosByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import type { HighlightVideo } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Highlights" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Highlights");
+  return { title: t("metaTitle") };
+}
 
 function groupByEvent(videos: HighlightVideo[]): Record<string, HighlightVideo[]> {
   return videos.reduce<Record<string, HighlightVideo[]>>((acc, v) => {
@@ -21,6 +25,8 @@ export default async function HighlightsPage({
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
 
+  const t = await getTranslations("Highlights");
+
   const videos = await getHighlightVideosByTeam(team);
   const grouped = groupByEvent(videos);
 
@@ -28,14 +34,14 @@ export default async function HighlightsPage({
     <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 mb-1">Highlights</h1>
-          <p className="text-gray-500 text-sm">360° videos — click any clip to watch on YouTube</p>
+          <h1 className="text-3xl font-black text-gray-900 mb-1">{t("heading")}</h1>
+          <p className="text-gray-500 text-sm">{t("subtitle")}</p>
         </div>
         <TeamTabs activeTeam={team} />
       </div>
 
       {videos.length === 0 ? (
-        <p className="text-gray-400 text-center py-20">No videos yet — add them in the Studio.</p>
+        <p className="text-gray-400 text-center py-20">{t("noVideos")}</p>
       ) : (
         Object.entries(grouped).map(([event, clips]) => (
           <section key={event} className="mb-12">
@@ -43,7 +49,7 @@ export default async function HighlightsPage({
               <div className="w-1 h-6 rounded-full bg-[var(--color-accent)]" />
               <h2 className="text-xl font-black text-gray-800">{event}</h2>
               <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                {clips.length} clips
+                {t("clipsCount", { count: clips.length })}
               </span>
             </div>
 
@@ -77,7 +83,7 @@ export default async function HighlightsPage({
                   <div className="px-4 py-3">
                     <p className="text-sm font-semibold text-gray-800 leading-snug">{v.title}</p>
                     <p className="text-xs text-[var(--color-primary)] mt-1 font-medium group-hover:underline">
-                      Watch on YouTube →
+                      {t("watchOnYoutube")}
                     </p>
                   </div>
                 </a>

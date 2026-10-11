@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import VideoCollectionFolder from "@/components/VideoCollectionFolder";
 import { getSessionsByTeam, getHighlightVideosByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import type { PracticeSession, HighlightVideo } from "@/lib/types";
 
-export const metadata: Metadata = { title: "KickReel · Match Videos" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Videos");
+  return { title: t("metaTitle") };
+}
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -42,6 +46,8 @@ export default async function VideosPage({
 }) {
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
+  const t = await getTranslations("Videos");
+  const locale = await getLocale();
   const [sessions, highlightVideos] = await Promise.all([
     getSessionsByTeam(team),
     getHighlightVideosByTeam(team),
@@ -62,17 +68,17 @@ export default async function VideosPage({
             <svg className="w-6 h-6 text-[var(--color-primary)]" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
-            <h1 className="text-3xl font-black text-gray-900">KickReel</h1>
+            <h1 className="text-3xl font-black text-gray-900">{t("heading")}</h1>
           </div>
-          <p className="text-gray-500 text-sm">Full-quality match and practice footage — tap any clip to watch or download</p>
+          <p className="text-gray-500 text-sm">{t("subtitle")}</p>
         </div>
         <TeamTabs activeTeam={team} />
       </div>
 
       {sessions.length === 0 ? (
         <div className="text-center py-24">
-          <p className="text-gray-400 text-lg font-medium">No videos yet.</p>
-          <p className="text-gray-300 text-sm mt-1">Run the KickReel pipeline after your next session.</p>
+          <p className="text-gray-400 text-lg font-medium">{t("noVideos")}</p>
+          <p className="text-gray-300 text-sm mt-1">{t("noVideosHint")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -121,7 +127,7 @@ export default async function VideosPage({
                         ? "bg-[var(--color-primary)] text-white"
                         : "bg-[var(--color-accent)] text-[#1c1c1e]"
                     }`}>
-                      {session.sessionType === "GAME" ? "GAME" : "PRACTICE"}
+                      {session.sessionType === "GAME" ? t("game") : t("practice")}
                     </span>
                   </div>
 
@@ -137,15 +143,15 @@ export default async function VideosPage({
                 <div className="p-4">
                   <p className="font-bold text-gray-900 text-base leading-snug">{session.sessionName}</p>
                   {session.sessionDate && (
-                    <p className="text-xs text-gray-400 mt-1">{formatDate(session.sessionDate)}</p>
+                    <p className="text-xs text-gray-400 mt-1">{formatDate(session.sessionDate, locale)}</p>
                   )}
                   <div className="flex items-center gap-3 mt-3">
                     <span className="text-xs text-gray-500">
-                      {session.videos.length} video{session.videos.length !== 1 ? "s" : ""}
+                      {t("videoCount", { count: session.videos.length })}
                     </span>
                     {clips > 0 && (
                       <span className="text-xs font-semibold text-[var(--color-primary)] bg-red-50 px-2 py-0.5 rounded-full">
-                        {clips} highlight{clips !== 1 ? "s" : ""}
+                        {t("highlightCount", { count: clips })}
                       </span>
                     )}
                   </div>
@@ -161,8 +167,8 @@ export default async function VideosPage({
         <div className="mt-16">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-1 h-7 rounded-full bg-[var(--color-accent)]" />
-            <h2 className="text-2xl font-black text-gray-900">360° Collections</h2>
-            <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">YouTube</span>
+            <h2 className="text-2xl font-black text-gray-900">{t("collectionsHeading")}</h2>
+            <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{t("youtube")}</span>
           </div>
           <div className="flex flex-col gap-3">
             {Object.entries(ytByEvent).map(([event, clips]) => (

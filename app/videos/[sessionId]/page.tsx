@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getSessionById } from "@/lib/sanity/queries";
 import SessionViewer from "./SessionViewer";
 
@@ -9,11 +10,13 @@ type Props = { params: Promise<{ sessionId: string }>; searchParams: Promise<{ t
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { sessionId } = await params;
   const session = await getSessionById(sessionId);
-  return { title: session ? `${session.sessionName} · KickReel` : "Session Not Found" };
+  if (session) return { title: `${session.sessionName} · KickReel` };
+  const t = await getTranslations("Session");
+  return { title: t("metaTitleNotFound") };
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -25,6 +28,9 @@ export default async function SessionPage({ params, searchParams }: Props) {
   const { sessionId } = await params;
   const { team } = await searchParams;
   const teamSlug = team === "u12" ? "u12" : "u11";
+
+  const t = await getTranslations("Session");
+  const locale = await getLocale();
 
   const session = await getSessionById(sessionId);
   if (!session) notFound();
@@ -39,7 +45,7 @@ export default async function SessionPage({ params, searchParams }: Props) {
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        Back to videos
+        {t("backToVideos")}
       </Link>
 
       {/* Session header */}
@@ -51,11 +57,11 @@ export default async function SessionPage({ params, searchParams }: Props) {
               ? "bg-[var(--color-primary)] text-white"
               : "bg-[var(--color-accent)] text-[#1c1c1e]"
           }`}>
-            {session.sessionType === "GAME" ? "GAME" : "PRACTICE"}
+            {session.sessionType === "GAME" ? t("game") : t("practice")}
           </span>
         </div>
         {session.sessionDate && (
-          <p className="text-sm text-gray-400">{formatDate(session.sessionDate)}</p>
+          <p className="text-sm text-gray-400">{formatDate(session.sessionDate, locale)}</p>
         )}
       </div>
 
@@ -63,7 +69,7 @@ export default async function SessionPage({ params, searchParams }: Props) {
       {session.videos.length > 0 ? (
         <SessionViewer session={session} />
       ) : (
-        <p className="text-gray-400 text-center py-16">No videos in this session.</p>
+        <p className="text-gray-400 text-center py-16">{t("noVideos")}</p>
       )}
     </div>
   );

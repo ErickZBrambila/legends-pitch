@@ -4,8 +4,12 @@ import { hashPasscode, FAMILY_COOKIE } from "@/lib/family-auth";
 export async function POST(req: NextRequest) {
   const { passcode } = await req.json();
 
-  if (passcode !== process.env.FAMILY_PASSCODE) {
-    return NextResponse.json({ error: "Incorrect passcode" }, { status: 401 });
+  const envVal = process.env.FAMILY_PASSCODE ?? "";
+  if (passcode !== envVal) {
+    return NextResponse.json({
+      error: "Incorrect passcode",
+      debug: { receivedLen: passcode.length, envLen: envVal.length, envSet: envVal.length > 0 },
+    }, { status: 401 });
   }
 
   const token = hashPasscode(passcode);

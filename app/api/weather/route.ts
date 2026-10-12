@@ -12,7 +12,25 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing params" }, { status: 400 });
   }
 
+  // Validate lat/lng are plain numbers before interpolating them into the
+  // outbound Open-Meteo URL (prevents query/path injection into that request).
+  const latNum = Number(lat);
+  const lngNum = Number(lng);
+  if (
+    !Number.isFinite(latNum) ||
+    !Number.isFinite(lngNum) ||
+    latNum < -90 ||
+    latNum > 90 ||
+    lngNum < -180 ||
+    lngNum > 180
+  ) {
+    return NextResponse.json({ error: "Invalid coordinates" }, { status: 400 });
+  }
+
   const gameTime = new Date(iso);
+  if (Number.isNaN(gameTime.getTime())) {
+    return NextResponse.json({ error: "Invalid time" }, { status: 400 });
+  }
   const diffDays = (gameTime.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
   if (diffDays > 7 || diffDays < -1) {
     return NextResponse.json({ available: false });
@@ -20,7 +38,7 @@ export async function GET(req: NextRequest) {
 
   // Open-Meteo free API — no key required
   const date = gameTime.toISOString().slice(0, 10);
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FChicago&start_date=${date}&end_date=${date}`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latNum}&longitude=${lngNum}&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FChicago&start_date=${date}&end_date=${date}`;
 
   const res = await fetch(url, { next: { revalidate: 3600 } });
   if (!res.ok) return NextResponse.json({ error: "Weather fetch failed" }, { status: 502 });

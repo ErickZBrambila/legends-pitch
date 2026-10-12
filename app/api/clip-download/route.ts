@@ -17,16 +17,39 @@ export async function GET(req: NextRequest) {
     return new Response("Invalid url", { status: 400 });
   }
 
-  if (parsed.host !== ALLOWED_HOST) {
+  // SSRF guard: only allow the exact R2 public bucket over https, and reject
+  // any embedded credentials (userinfo) that could be used to confuse the host
+  // check or leak into the upstream request.
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.hostname !== ALLOWED_HOST ||
+    parsed.username !== "" ||
+    parsed.password !== ""
+  ) {
     return new Response("Forbidden", { status: 403 });
   }
 
-  const upstream = await fetch(url);
+  // Rebuild the request URL from the validated components so nothing beyond the
+  // allowlisted origin + path/query can be smuggled through.
+  const safeUrl = `https://${ALLOWED_HOST}${parsed.pathname}${parsed.search}`;
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(safeUrl, { redirect: "error" });
+  } catch {
+    return new Response("Failed to fetch clip", { status: 502 });
+  }
   if (!upstream.ok || !upstream.body) {
     return new Response("Failed to fetch clip", { status: 502 });
   }
 
-  const safe = filename.replace(/[^a-z0-9._\- ]/gi, "_");
+  // Strip anything that could break out of the Content-Disposition header
+  // (CR/LF, quotes, backslashes) in addition to restricting the charset.
+  const safe =
+    filename
+      .replace(/[\r\n"\\]/g, "")
+      .replace(/[^a-z0-9._\- ]/gi, "_")
+      .slice(0, 200) || "clip.mp4";
 
   return new Response(upstream.body, {
     status: 200,
@@ -35,6 +58,7 @@ export async function GET(req: NextRequest) {
       "Content-Length": upstream.headers.get("Content-Length") ?? "",
       "Content-Disposition": `attachment; filename="${safe}"`,
       "Cache-Control": "private, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

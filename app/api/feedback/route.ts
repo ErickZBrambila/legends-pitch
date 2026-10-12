@@ -9,20 +9,41 @@ const writeClient = createClient({
   useCdn: false,
 });
 
+const ALLOWED_TYPES = new Set(["general", "bug", "feature", "idea", "praise"]);
+
+function str(v: unknown, max: number): string {
+  return typeof v === "string" ? v.trim().slice(0, max) : "";
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, type, message } = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
 
-    if (!message?.trim()) {
+    const { name, email, type, message } = (body ?? {}) as Record<string, unknown>;
+
+    const cleanMessage = str(message, 5000);
+    if (!cleanMessage) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
+    const cleanEmail = str(email, 254);
+    // Lightweight email shape check — reject obviously malformed values but
+    // keep it permissive (empty is allowed).
+    const emailOk = !cleanEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
+
+    const cleanType = str(type, 32).toLowerCase();
+
     await writeClient.create({
       _type: "feedback",
-      name: name?.trim() || "Anonymous",
-      email: email?.trim() || null,
-      feedbackType: type || "general",
-      message: message.trim(),
+      name: str(name, 200) || "Anonymous",
+      email: emailOk && cleanEmail ? cleanEmail : null,
+      feedbackType: ALLOWED_TYPES.has(cleanType) ? cleanType : "general",
+      message: cleanMessage,
       submittedAt: new Date().toISOString(),
       status: "new",
     });

@@ -201,6 +201,14 @@
     "photoCount": "{count, plural, one {# photo} other {# photos}}",
     "backToGallery": "← Back to Gallery"
   },
+  "Sponsors": {
+    "heading": "Our Sponsors",
+    "subheading": "These local businesses believe in our kids. Their support makes the jerseys, the fields, and the season possible.",
+    "becomeHeading": "Want to sponsor North Legends FC?",
+    "becomeBody": "Your logo on jerseys, on this site, and in front of hundreds of local families every season.",
+    "becomeButton": "Get in touch →",
+    "poweredBy": "Empowered by"
+  },
   "Highlights": {
     "metaTitle": "Highlights",
     "heading": "Highlights",

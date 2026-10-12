@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
 import CountdownTimerClient from "@/components/CountdownTimerClient";
 import TeamTabs from "@/components/TeamTabs";
@@ -36,6 +37,7 @@ export default async function Home({
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
 
   const t = await getTranslations("Home");
+  const ts = await getTranslations("Sponsors");
   const locale = await getLocale();
 
   const [latestNews] = await Promise.all([getPostsByTeam(team)]);
@@ -227,6 +229,53 @@ export default async function Home({
           </Link>
         </section>
       </div>
+      {/* Sponsors */}
+      <section className="bg-[var(--color-navy)] mt-8">
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <p className="text-xs text-red-400 uppercase tracking-widest font-semibold text-center mb-1">{ts("poweredBy")}</p>
+          <h2 className="text-2xl font-black text-white text-center mb-2">{ts("heading")}</h2>
+          <p className="text-red-300 text-sm text-center max-w-lg mx-auto mb-10">{ts("subheading")}</p>
+
+          {/* Current sponsors */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+            {/* Houk Air Conditioning */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-3 hover:bg-white/10 transition-colors">
+              <div className="w-16 h-16 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-3xl">
+                ❄️
+              </div>
+              <div>
+                <p className="text-white font-black text-lg leading-tight">Houk Air Conditioning</p>
+                <p className="text-red-300 text-xs mt-1">Heating, Cooling & HVAC Services</p>
+              </div>
+            </div>
+
+            {/* Bonilla's Painting */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-3 hover:bg-white/10 transition-colors">
+              <div className="w-16 h-16 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-3xl">
+                🎨
+              </div>
+              <div>
+                <p className="text-white font-black text-lg leading-tight">Bonilla&apos;s Painting LLC</p>
+                <p className="text-red-300 text-xs mt-1">Professional Painting Services</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Become a sponsor CTA */}
+          <div className="border border-[var(--color-accent)]/40 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/5">
+            <div>
+              <p className="text-white font-black text-base">{ts("becomeHeading")}</p>
+              <p className="text-red-300 text-sm mt-0.5">{ts("becomeBody")}</p>
+            </div>
+            <a
+              href="mailto:legendsfcnorth@gmail.com?subject=Sponsorship%20Inquiry%20—%20North%20Legends%20FC"
+              className="shrink-0 px-6 py-3 bg-[var(--color-accent)] text-[var(--color-navy)] font-black rounded-xl hover:opacity-90 transition-opacity text-sm whitespace-nowrap"
+            >
+              {ts("becomeButton")}
+            </a>
+          </div>
+        </div>
+      </section>
     </>
   );
 }

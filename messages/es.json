@@ -201,6 +201,14 @@
     "photoCount": "{count, plural, one {# foto} other {# fotos}}",
     "backToGallery": "← Volver a la Galería"
   },
+  "Sponsors": {
+    "heading": "Nuestros Patrocinadores",
+    "subheading": "Estos negocios locales creen en nuestros niños. Su apoyo hace posibles los uniformes, los campos y la temporada.",
+    "becomeHeading": "¿Quieres patrocinar a North Legends FC?",
+    "becomeBody": "Tu logo en los uniformes, en este sitio y frente a cientos de familias locales cada temporada.",
+    "becomeButton": "Contáctanos →",
+    "poweredBy": "Con el apoyo de"
+  },
   "Highlights": {
     "metaTitle": "Jugadas Destacadas",
     "heading": "Jugadas Destacadas",

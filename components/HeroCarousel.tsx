@@ -1,29 +1,33 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 
-const VIDEO_DURATION = 15000; // ms to show video
-const PHOTO_DURATION = 8000;  // ms to show photo
-const FADE_DURATION  = 1000;  // CSS transition duration
+const SLIDES = [
+  { type: "video" as const, duration: 15000 },
+  { type: "photo" as const, src: "/team-photo-2026.jpg", alt: "North Legends FC 2026 — Never Give Up", duration: 8000 },
+  { type: "photo" as const, src: "/team-photo.jpg",     alt: "North Legends FC team",                  duration: 8000 },
+  { type: "photo" as const, src: "/sponsors-banner.jpg", alt: "North Legends FC — Empowered by Houk Air Conditioning and Bonilla's Painting LLC", duration: 8000 },
+] as const;
+
+const FADE = 1000;
 
 export default function HeroCarousel() {
-  const [showPhoto, setShowPhoto] = useState(false);
+  const [idx, setIdx] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const goTo = useCallback((next: number) => {
+    setIdx(next);
+  }, []);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-
-    const scheduleNext = (isPhoto: boolean) => {
-      timer = setTimeout(() => {
-        setShowPhoto(!isPhoto);
-        scheduleNext(!isPhoto);
-      }, isPhoto ? PHOTO_DURATION : VIDEO_DURATION);
-    };
-
-    scheduleNext(false); // start on video
-    return () => clearTimeout(timer);
-  }, []);
+    const current = SLIDES[idx];
+    timerRef.current = setTimeout(() => {
+      goTo((idx + 1) % SLIDES.length);
+    }, current.duration);
+    return () => clearTimeout(timerRef.current);
+  }, [idx, goTo]);
 
   return (
     <>
@@ -35,38 +39,44 @@ export default function HeroCarousel() {
         loop
         playsInline
         className="absolute inset-0 w-full h-full object-cover transition-opacity ease-in-out"
-        style={{ transitionDuration: `${FADE_DURATION}ms`, opacity: showPhoto ? 0 : 1 }}
+        style={{ transitionDuration: `${FADE}ms`, opacity: idx === 0 ? 1 : 0 }}
       >
         <source src="/Legends_hero_video.mp4" type="video/mp4" />
       </video>
 
-      {/* Photo layer */}
-      <div
-        className="absolute inset-0 transition-opacity ease-in-out"
-        style={{ transitionDuration: `${FADE_DURATION}ms`, opacity: showPhoto ? 1 : 0 }}
-      >
-        <Image
-          src="/team-photo.jpg"
-          alt="North Legends FC team"
-          fill
-          className="object-cover object-center"
-          priority
-          sizes="100vw"
-        />
-      </div>
+      {/* Photo layers */}
+      {SLIDES.filter((s) => s.type === "photo").map((slide, i) => {
+        const slideIdx = i + 1; // video is 0
+        return (
+          <div
+            key={slide.src}
+            className="absolute inset-0 transition-opacity ease-in-out"
+            style={{ transitionDuration: `${FADE}ms`, opacity: idx === slideIdx ? 1 : 0 }}
+          >
+            <Image
+              src={slide.src}
+              alt={slide.alt}
+              fill
+              className="object-cover object-center"
+              priority={slideIdx === 1}
+              sizes="100vw"
+            />
+          </div>
+        );
+      })}
 
-      {/* Dots indicator */}
+      {/* Dot indicators */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-        <button
-          aria-label="Show video"
-          onClick={() => setShowPhoto(false)}
-          className={`w-2 h-2 rounded-full transition-all duration-300 ${!showPhoto ? "bg-[var(--color-accent)] w-5" : "bg-white/50"}`}
-        />
-        <button
-          aria-label="Show team photo"
-          onClick={() => setShowPhoto(true)}
-          className={`w-2 h-2 rounded-full transition-all duration-300 ${showPhoto ? "bg-[var(--color-accent)] w-5" : "bg-white/50"}`}
-        />
+        {SLIDES.map((_, i) => (
+          <button
+            key={i}
+            aria-label={`Go to slide ${i + 1}`}
+            onClick={() => { clearTimeout(timerRef.current); goTo(i); }}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              idx === i ? "bg-[var(--color-accent)] w-5" : "bg-white/50 w-2"
+            }`}
+          />
+        ))}
       </div>
     </>
   );

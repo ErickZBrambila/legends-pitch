@@ -142,6 +142,23 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     // pendingPlay stays false — preload only, don't auto-play
   }, [activeVideo.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Prefetch next 2 non-archived clips while current one plays
+  useEffect(() => {
+    if (!activeClipUrl) return;
+    const playable = activeVideo.clips.filter((c) => !c.archived);
+    const idx = playable.findIndex((c) => c.r2Url === activeClipUrl);
+    const upcoming = playable.slice(idx + 1, idx + 3);
+    const injected: HTMLLinkElement[] = upcoming.map((clip) => {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = clip.r2Url;
+      link.as = "video";
+      document.head.appendChild(link);
+      return link;
+    });
+    return () => injected.forEach((l) => l.remove());
+  }, [activeClipUrl, activeVideo.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSave = useCallback((clipId: string) => {
     setSavedClips((prev) => {
       const next = new Set(prev);

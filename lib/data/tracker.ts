@@ -240,3 +240,60 @@ export function monthlyRunningCost() {
 export function annualRunningCost() {
   return SERVICES.reduce((s, svc) => s + svc.annualCostUSD, 0);
 }
+
+// ── TCO ──────────────────────────────────────────────────────────────────────
+// Total Cost of Ownership: what it actually cost to build and run this platform.
+
+// Agency/freelancer equivalent — what this would cost if outsourced:
+// Junior dev @ $75/hr or boutique agency quote (~$40K for scope delivered)
+const AGENCY_RATE_USD_PER_HOUR = 150;
+const AGENCY_FIXED_QUOTE_USD   = 40_000; // realistic agency quote for this feature set
+
+export interface TCOSummary {
+  // Build costs (one-time)
+  devHours: number;
+  claudeCostUSD: number;
+  totalBuildCostUSD: number;        // Claude + $0 labor (owner built it)
+
+  // Running costs (ongoing)
+  monthlyRunningCostUSD: number;
+  annualRunningCostUSD: number;
+
+  // 3-year TCO
+  threeYearTCOUSD: number;          // build + 3 years of running costs
+
+  // vs. alternatives
+  agencyEquivalentUSD: number;      // what an agency would have charged
+  freelancerEquivalentUSD: number;  // devHours × $150/hr
+  savingsVsAgencyUSD: number;
+  savingsVsFreelancerUSD: number;
+
+  // Efficiency
+  costPerFeature: number;           // claudeCost / features shipped
+  costPerCommit: number;            // claudeCost / commits
+}
+
+export function tco(): TCOSummary {
+  const devHours            = totalHours();
+  const claudeCostUSD       = totalClaudeCost();
+  const totalBuildCostUSD   = claudeCostUSD; // owner's time = $0 out-of-pocket
+  const monthlyRunning      = monthlyRunningCost();
+  const annualRunning       = annualRunningCost();
+  const threeYearTCOUSD     = totalBuildCostUSD + annualRunning * 3;
+  const freelancerEq        = devHours * AGENCY_RATE_USD_PER_HOUR;
+
+  return {
+    devHours,
+    claudeCostUSD,
+    totalBuildCostUSD,
+    monthlyRunningCostUSD:    monthlyRunning,
+    annualRunningCostUSD:     annualRunning,
+    threeYearTCOUSD,
+    agencyEquivalentUSD:      AGENCY_FIXED_QUOTE_USD,
+    freelancerEquivalentUSD:  freelancerEq,
+    savingsVsAgencyUSD:       AGENCY_FIXED_QUOTE_USD  - totalBuildCostUSD,
+    savingsVsFreelancerUSD:   freelancerEq            - totalBuildCostUSD,
+    costPerFeature:           claudeCostUSD / totalFeatures(),
+    costPerCommit:            claudeCostUSD / totalCommits(),
+  };
+}

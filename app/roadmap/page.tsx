@@ -27,6 +27,13 @@ const CONTENT = {
         { emoji: "📰", title: "News & announcements", desc: "Pinned announcements from the coaching staff." },
       ],
     },
+    knownBugs: {
+      badge: "🐛 Known issue",
+      title: "Known bugs",
+      items: [
+        { emoji: "🐢", title: "Video clips load slowly", desc: "We know — we're on it. Videos will be significantly faster once we connect our domain to the CDN. Fix coming soon." },
+      ],
+    },
     next: {
       badge: "🔜 In progress",
       title: "Coming next",
@@ -66,6 +73,13 @@ const CONTENT = {
         { emoji: "🌐", title: "Inglés y Español", desc: "Soporte bilingüe completo en todo el sitio." },
         { emoji: "🔒", title: "Acceso solo para familias", desc: "Videos y galería protegidos con contraseña — pídela al Entrenador Hugo." },
         { emoji: "📰", title: "Noticias y anuncios", desc: "Anuncios fijados del cuerpo técnico." },
+      ],
+    },
+    knownBugs: {
+      badge: "🐛 Error conocido",
+      title: "Errores conocidos",
+      items: [
+        { emoji: "🐢", title: "Los videos cargan lento", desc: "Lo sabemos — ya lo estamos resolviendo. Los videos serán mucho más rápidos cuando conectemos nuestro dominio al CDN. Solución pronto." },
       ],
     },
     next: {
@@ -131,6 +145,7 @@ export default async function RoadmapPage() {
       </div>
 
       <Section badge={c.live.badge} title={c.live.title} badgeColor="bg-green-100 text-green-700" items={c.live.items} />
+      <Section badge={c.knownBugs.badge} title={c.knownBugs.title} badgeColor="bg-red-100 text-red-700" items={c.knownBugs.items} />
       <Section badge={c.next.badge} title={c.next.title} badgeColor="bg-blue-100 text-blue-700" items={c.next.items} />
       <Section badge={c.wishlist.badge} title={c.wishlist.title} badgeColor="bg-yellow-100 text-yellow-700" items={c.wishlist.items} />
 

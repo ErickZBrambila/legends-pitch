@@ -179,7 +179,11 @@
     "play": "Reproducir",
     "download": "Descargar",
     "archived": "Archivado · {count} guardados",
-    "fullGameOnDrive": "Partido completo en Drive ↗"
+    "fullGameOnDrive": "Partido completo en Drive ↗",
+    "clipIndex": "Clip {current} / {total}",
+    "tapDownload": "toca ↓ para descargar",
+    "autoPlayOn": "Auto-play activado",
+    "autoPlayOff": "Auto-play desactivado"
   },
   "News": {
     "metaTitle": "Noticias",

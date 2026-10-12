@@ -112,9 +112,13 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   );
   const [isLoading, setIsLoading] = useState(false);
   const [savedClips, setSavedClips] = useState<Set<string>>(new Set());
+  const [autoPlay, setAutoPlay] = useState(true);
+  const autoPlayRef = useRef(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
   const pendingPlay = useRef(false);
+
+  useEffect(() => { autoPlayRef.current = autoPlay; }, [autoPlay]);
 
   // Load saved clips from localStorage on mount
   useEffect(() => {
@@ -194,6 +198,16 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   }
 
   if (!activeVideo) return null;
+
+  const playableClips = activeVideo.clips.filter((c) => !c.archived);
+  const currentClipIdx = playableClips.findIndex((c) => c.r2Url === activeClipUrl);
+  const currentClip = playableClips[currentClipIdx] ?? null;
+
+  function handleEnded() {
+    if (!autoPlayRef.current) return;
+    const next = playableClips[currentClipIdx + 1];
+    if (next) playClip(next.r2Url);
+  }
 
   const sections = (["first", "second", "celebration"] as const).map((key) => ({
     key,
@@ -276,6 +290,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           onPlaying={() => setIsLoading(false)}
           onWaiting={() => setIsLoading(true)}
           onStalled={() => setIsLoading(true)}
+          onEnded={handleEnded}
         />
         {isLoading && activeClipUrl && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none">
@@ -287,15 +302,24 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         )}
       </div>
 
-      {/* Now playing label */}
-      <div className="mt-2 mb-6 h-5">
-        {activeClipUrl && !isLoading && (
-          <p className="text-xs text-gray-400 font-medium">
-            {t("nowPlaying", {
-              label: activeVideo.clips.find(c => c.r2Url === activeClipUrl)?.label ?? t("playing"),
-            })}
-          </p>
-        )}
+      {/* Now playing bar + auto-play toggle */}
+      <div className="mt-2 mb-6 flex items-center justify-between gap-3 min-h-[24px]">
+        <p className="text-xs text-gray-400 font-medium truncate">
+          {activeClipUrl && !isLoading && currentClip
+            ? `${t("clipIndex", { current: currentClipIdx + 1, total: playableClips.length })} · ${currentClip.label} · ${t("tapDownload")}`
+            : isLoading ? t("loadingClip") : ""}
+        </p>
+        <button
+          onClick={() => setAutoPlay((v) => !v)}
+          className={`shrink-0 flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
+            autoPlay
+              ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] border-[var(--color-accent)]/30"
+              : "bg-gray-100 text-gray-400 border-gray-200"
+          }`}
+        >
+          <span>{autoPlay ? "▶▶" : "▶"}</span>
+          {autoPlay ? t("autoPlayOn") : t("autoPlayOff")}
+        </button>
       </div>
 
       {/* Goals quick-access */}
@@ -307,7 +331,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">{goals.length}</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {goals.map((c) => (
+            {goals.map((c, i) => (
               <button
                 key={c.id}
                 onClick={() => playClip(c.r2Url)}
@@ -317,7 +341,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                     : "bg-white text-green-800 border-green-300 hover:bg-green-100"
                 }`}
               >
-                ⚽ {c.label}
+                ⚽ {i + 1} · {c.label}
               </button>
             ))}
           </div>

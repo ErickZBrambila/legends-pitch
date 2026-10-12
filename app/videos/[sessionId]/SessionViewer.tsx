@@ -112,13 +112,11 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   );
   const [isLoading, setIsLoading] = useState(false);
   const [savedClips, setSavedClips] = useState<Set<string>>(new Set());
-  const [autoPlay, setAutoPlay] = useState(true);
-  const autoPlayRef = useRef(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
   const pendingPlay = useRef(false);
-
-  useEffect(() => { autoPlayRef.current = autoPlay; }, [autoPlay]);
+  // true while we're chaining through goals; false once user picks a non-goal clip
+  const goalsModeRef = useRef(false);
 
   // Load saved clips from localStorage on mount
   useEffect(() => {
@@ -128,22 +126,33 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     } catch {}
   }, []);
 
-  // Preload the first clip whenever the active video tab changes (including on mount)
+  // On mount / video-tab change: auto-play first goal if available, else preload first clip
   useEffect(() => {
-    const clip = getFirstClip(activeVideo);
+    const goals = activeVideo.clips.filter((c) => c.clipType === "goal" && !c.archived);
+    const firstGoal = goals[0] ?? null;
+    const firstClip = getFirstClip(activeVideo);
     const vid = videoRef.current;
     if (!vid) return;
-    if (clip) {
-      setActiveClipUrl(clip.r2Url);
+
+    if (firstGoal) {
+      goalsModeRef.current = true;
+      setActiveClipUrl(firstGoal.r2Url);
       vid.pause();
-      vid.src = clip.r2Url;
+      vid.src = firstGoal.r2Url;
       vid.load();
+      pendingPlay.current = true; // auto-play
+    } else if (firstClip) {
+      goalsModeRef.current = false;
+      setActiveClipUrl(firstClip.r2Url);
+      vid.pause();
+      vid.src = firstClip.r2Url;
+      vid.load();
+      // pendingPlay stays false — preload only
     } else {
       setActiveClipUrl(null);
       vid.removeAttribute("src");
       vid.load();
     }
-    // pendingPlay stays false — preload only, don't auto-play
   }, [activeVideo.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prefetch next 2 non-archived clips while current one plays
@@ -179,10 +188,11 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       const dist = (t: typeof c) => Math.abs((t.startSeconds + t.endSeconds) / 2 - seconds);
       return dist(c) < dist(best) ? c : best;
     }, activeVideo.clips[0]);
-    if (clip) playClip(clip.r2Url);
+    if (clip) playClip(clip.r2Url, clip.clipType === "goal");
   }
 
-  function playClip(url: string) {
+  function playClip(url: string, isGoal = false) {
+    goalsModeRef.current = isGoal;
     setActiveClipUrl(url);
     setIsLoading(true);
     pendingPlay.current = true;
@@ -190,7 +200,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     if (vid) {
       vid.pause();
       vid.removeAttribute("src");
-      vid.load(); // cancel any in-flight request
+      vid.load();
       vid.src = url;
       vid.load();
     }
@@ -204,9 +214,15 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   const currentClip = playableClips[currentClipIdx] ?? null;
 
   function handleEnded() {
-    if (!autoPlayRef.current) return;
-    const next = playableClips[currentClipIdx + 1];
-    if (next) playClip(next.r2Url);
+    if (!goalsModeRef.current) return;
+    const goals = activeVideo.clips.filter((c) => c.clipType === "goal" && !c.archived);
+    const idx = goals.findIndex((c) => c.r2Url === activeClipUrl);
+    const nextGoal = goals[idx + 1];
+    if (nextGoal) {
+      playClip(nextGoal.r2Url);
+    } else {
+      goalsModeRef.current = false; // all goals played — stop chaining
+    }
   }
 
   const sections = (["first", "second", "celebration"] as const).map((key) => ({
@@ -302,24 +318,23 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         )}
       </div>
 
-      {/* Now playing bar + auto-play toggle */}
-      <div className="mt-2 mb-6 flex items-center justify-between gap-3 min-h-[24px]">
-        <p className="text-xs text-gray-400 font-medium truncate">
-          {activeClipUrl && !isLoading && currentClip
-            ? `${t("clipIndex", { current: currentClipIdx + 1, total: playableClips.length })} · ${currentClip.label} · ${t("tapDownload")}`
-            : isLoading ? t("loadingClip") : ""}
-        </p>
-        <button
-          onClick={() => setAutoPlay((v) => !v)}
-          className={`shrink-0 flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
-            autoPlay
-              ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] border-[var(--color-accent)]/30"
-              : "bg-gray-100 text-gray-400 border-gray-200"
-          }`}
-        >
-          <span>{autoPlay ? "▶▶" : "▶"}</span>
-          {autoPlay ? t("autoPlayOn") : t("autoPlayOff")}
-        </button>
+      {/* Now playing — clip heading */}
+      <div className="mt-3 mb-6 min-h-[48px]">
+        {currentClip ? (
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                {t("clipIndex", { current: currentClipIdx + 1, total: playableClips.length })}
+              </p>
+              <h3 className="text-base font-black text-gray-900 leading-snug mt-0.5">
+                {currentClip.label}
+              </h3>
+            </div>
+            {isLoading && (
+              <span className="shrink-0 text-[11px] text-gray-400 mt-1">{t("loadingClip")}</span>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Goals quick-access */}
@@ -334,7 +349,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             {goals.map((c, i) => (
               <button
                 key={c.id}
-                onClick={() => playClip(c.r2Url)}
+                onClick={() => playClip(c.r2Url, true)}
                 className={`px-3 py-1.5 border text-sm font-semibold rounded-full transition-colors ${
                   activeClipUrl === c.r2Url
                     ? "bg-green-600 text-white border-green-600"

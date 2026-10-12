@@ -6,6 +6,18 @@ Live at: **[northlegensfc.com](https://northlegensfc.com)** (custom domain pendi
 
 ---
 
+## Documentation
+
+| Document | What's in it |
+|---|---|
+| **README.md** ← you are here | Setup, stack, env vars, deployment |
+| [TECHNICAL.md](TECHNICAL.md) | Architecture diagrams, auth flow, API routes, security, key files |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute — from opening an issue to submitting a PR |
+| [SOURCES.md](SOURCES.md) | All external URLs: GotSport, SportsYou, Sanity, Vercel, R2, Upstash |
+| [COACH_ONBOARDING.md](COACH_ONBOARDING.md) | Information needed from the coach before launch |
+
+---
+
 ## What it does
 
 **For parents:**

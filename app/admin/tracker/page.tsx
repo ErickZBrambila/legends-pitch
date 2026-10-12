@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin-auth";
 import {
-  SESSIONS, SERVICES, KICKREEL_RUNS,
+  SESSIONS, SERVICES, KICKREEL_RUNS, HARDWARE,
   totalHours, totalCommits, totalFeatures,
-  totalClaudeCost, monthlyRunningCost, annualRunningCost, tco,
+  totalClaudeCost, totalHardwareCost, monthlyRunningCost, annualRunningCost, tco,
 } from "@/lib/data/tracker";
 
 export const metadata = { title: "Project Tracker · North Legends FC Admin" };
@@ -72,8 +72,10 @@ export default async function TrackerPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="bg-green-50 border border-green-100 rounded-xl p-4">
                 <p className="text-xs font-black uppercase tracking-widest text-green-600 mb-1">Actual Build Cost</p>
-                <p className="text-3xl font-black text-green-700">${t.claudeCostUSD.toFixed(0)}</p>
-                <p className="text-xs text-green-600 mt-1">Claude API · {t.devHours}h owner time</p>
+                <p className="text-3xl font-black text-green-700">${t.totalBuildCostUSD.toFixed(0)}</p>
+                <p className="text-xs text-green-600 mt-1">
+                  Claude ${t.claudeCostUSD.toFixed(0)} + hardware ${t.hardwareCostUSD.toFixed(0)} · {t.devHours}h owner time
+                </p>
               </div>
               <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
                 <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-1">Freelancer Equivalent</p>
@@ -123,6 +125,41 @@ export default async function TrackerPage() {
                 <p className="text-xl font-black text-blue-700">${t.threeYearTCOUSD.toFixed(0)}</p>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Hardware */}
+        <section className="mb-10">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-base font-black text-gray-900">Hardware</h2>
+            <p className="text-xs text-gray-400">one-time · ${totalHardwareCost().toFixed(2)} total</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="text-left px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-400">Item</th>
+                  <th className="text-left px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-400 hidden sm:table-cell">Purpose</th>
+                  <th className="text-right px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-400">Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {HARDWARE.map((h, i) => (
+                  <tr key={h.name} className={i < HARDWARE.length - 1 ? "border-b border-gray-50" : ""}>
+                    <td className="px-4 py-3">
+                      <p className="font-bold text-gray-900">{h.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5 sm:hidden">{h.purpose}</p>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{h.purpose}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-gray-900">${h.costUSD.toFixed(2)}</td>
+                  </tr>
+                ))}
+                <tr className="border-t border-gray-200 bg-gray-50">
+                  <td className="px-4 py-3 font-black text-gray-900" colSpan={2}>Total</td>
+                  <td className="px-4 py-3 text-right font-black font-mono">${totalHardwareCost().toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </section>
 

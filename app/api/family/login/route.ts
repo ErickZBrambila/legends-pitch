@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { hashPasscode, FAMILY_COOKIE } from "@/lib/family-auth";
+import { rateLimit } from "@/lib/ratelimit";
 
 // Constant-time string comparison to avoid leaking length/content via timing.
 function safeEqual(a: string, b: string): boolean {
@@ -15,6 +16,9 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimit(req, "login");
+  if (limited) return limited;
+
   let passcode: unknown;
   try {
     ({ passcode } = await req.json());

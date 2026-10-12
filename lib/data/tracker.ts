@@ -101,6 +101,25 @@ export const SESSIONS: WorkSession[] = [
       "Bottom tab bar removed — hamburger handles all navigation",
     ],
   },
+  {
+    date: "2026-10-12",
+    title: "Session 5 — Security, Tracker & Foldable",
+    hours: 6,
+    commits: 9,
+    claudeCostUSD: 28,
+    features: [
+      "Full security audit + hardening (CSP, HSTS, cookie flags, GROQ injection, SSRF)",
+      "Rate limiting on all auth + public write routes (Upstash Redis, graceful degradation)",
+      "Onboarding route disabled by default — activated on demand via ONBOARDING_ENABLED env var",
+      "Admin project tracker: per-session Claude cost, cost-per-feature stats",
+      "Admin hub replacing old dead-code dashboard (Sanity Studio + Tracker cards)",
+      "Hero carousel wired into home page (was built but never imported)",
+      "Video player: clip title moved above video, iOS mediaSession branding fix",
+      "Hamburger nav: left/right-handed toggle in drawer (persists to localStorage)",
+      "iPhone Duo / foldable support: CSS viewport-segments two-panel layout on video page",
+      "KickReel tracker: Oct 10 vs Elgin United (72 clips, 7 goals, analytics) added",
+    ],
+  },
 ];
 
 export const KICKREEL_RUNS: KickReelRun[] = [

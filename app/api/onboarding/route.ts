@@ -19,6 +19,11 @@ function str(v: unknown, max: number): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Disabled by default — activate on demand by setting ONBOARDING_ENABLED=true in Vercel env
+  if (process.env.ONBOARDING_ENABLED !== "true") {
+    return NextResponse.json({ error: "Not available" }, { status: 404 });
+  }
+
   try {
     let raw: unknown;
     try {

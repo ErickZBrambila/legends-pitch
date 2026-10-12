@@ -1,8 +1,12 @@
 import { NextRequest } from "next/server";
+import { rateLimit } from "@/lib/ratelimit";
 
 const ALLOWED_HOST = "pub-ec6efd6486724c999de33694e15dd4dc.r2.dev";
 
 export async function GET(req: NextRequest) {
+  const limited = await rateLimit(req, "download");
+  if (limited) return limited;
+
   const url = req.nextUrl.searchParams.get("url");
   const filename = req.nextUrl.searchParams.get("filename") ?? "clip.mp4";
 

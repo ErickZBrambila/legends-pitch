@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "next-sanity";
+import { rateLimit } from "@/lib/ratelimit";
 
 const writeClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -16,6 +17,9 @@ function str(v: unknown, max: number): string {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimit(req, "feedback");
+  if (limited) return limited;
+
   try {
     let body: unknown;
     try {

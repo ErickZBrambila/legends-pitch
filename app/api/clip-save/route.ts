@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "next-sanity";
+import { rateLimit } from "@/lib/ratelimit";
 
 const writeClient = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -16,6 +17,9 @@ const KEY_RE = /^[a-zA-Z0-9]{1,64}$/; // _key: random alphanumeric
 const ID_RE = /^[a-zA-Z0-9._-]{1,128}$/; // document _id
 
 export async function POST(req: NextRequest) {
+  const limited = await rateLimit(req, "save");
+  if (limited) return limited;
+
   try {
     let body: unknown;
     try {

@@ -6,8 +6,6 @@ import Image from "next/image";
 const SLIDES = [
   { type: "video" as const, duration: 15000 },
   { type: "photo" as const, src: "/team-photo-2026.jpg", alt: "North Legends FC 2026 — Never Give Up", duration: 8000 },
-  { type: "photo" as const, src: "/team-photo.jpg",     alt: "North Legends FC team",                  duration: 8000 },
-  { type: "photo" as const, src: "/sponsors-banner.jpg", alt: "North Legends FC — Empowered by Houk Air Conditioning and Bonilla's Painting LLC", duration: 8000 },
 ] as const;
 
 const FADE = 1000;

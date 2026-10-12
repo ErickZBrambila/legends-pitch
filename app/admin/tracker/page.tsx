@@ -3,7 +3,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import {
   SESSIONS, SERVICES, KICKREEL_RUNS,
   totalHours, totalCommits, totalFeatures,
-  monthlyRunningCost, annualRunningCost,
+  totalClaudeCost, monthlyRunningCost, annualRunningCost,
 } from "@/lib/data/tracker";
 
 export const metadata = { title: "Project Tracker · North Legends FC Admin" };
@@ -42,11 +42,23 @@ export default async function TrackerPage() {
         </div>
 
         {/* Summary stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
           <StatCard label="Total Hours" value={`${totalHours()}h`} sub={`across ${SESSIONS.length} sessions`} />
           <StatCard label="Features Shipped" value={`${totalFeatures()}`} sub={`${totalCommits()} commits`} />
-          <StatCard label="Monthly Cost" value={`$${monthlyRunningCost().toFixed(2)}`} sub="mostly free tier" />
+          <StatCard label="Monthly Cost" value={`$${monthlyRunningCost().toFixed(2)}`} sub="infra · mostly free tier" />
           <StatCard label="Annual Cost" value={`$${annualRunningCost().toFixed(0)}`} sub={`${months} months running`} />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+          <StatCard
+            label="Claude Cost · This Project"
+            value={`$${totalClaudeCost().toFixed(0)}`}
+            sub="estimated from Anthropic billing · update each session"
+          />
+          <StatCard
+            label="Cost per Feature"
+            value={`$${(totalClaudeCost() / totalFeatures()).toFixed(2)}`}
+            sub={`$${(totalClaudeCost() / totalHours()).toFixed(2)}/hr · ${totalFeatures()} features`}
+          />
         </div>
 
         {/* Running services */}
@@ -183,6 +195,10 @@ export default async function TrackerPage() {
                     <div className="text-center">
                       <p className="text-2xl font-black text-gray-900">{session.commits}</p>
                       <p className="text-[10px] text-gray-400 uppercase tracking-wide">commits</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-black text-gray-900">${session.claudeCostUSD}</p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide">claude</p>
                     </div>
                   </div>
                 </div>

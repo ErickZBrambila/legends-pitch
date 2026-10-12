@@ -4,6 +4,7 @@ export interface WorkSession {
   hours: number;
   commits: number;
   features: string[];
+  claudeCostUSD: number; // estimated from Anthropic billing for this project
 }
 
 export interface KickReelRun {
@@ -32,6 +33,7 @@ export const SESSIONS: WorkSession[] = [
     title: "Session 1 — Launch",
     hours: 4,
     commits: 5,
+    claudeCostUSD: 8,
     features: [
       "Initial Next.js site with Tailwind + next-intl (EN/ES)",
       "Hero section with Insta360 tournament video background",
@@ -45,6 +47,7 @@ export const SESSIONS: WorkSession[] = [
     title: "Session 2 — KickReel & Analytics",
     hours: 8,
     commits: 7,
+    claudeCostUSD: 18,
     features: [
       "KickReel /videos section with Sanity-backed session viewer",
       "Full Sanity CMS migration — all content moved off static files",
@@ -59,6 +62,7 @@ export const SESSIONS: WorkSession[] = [
     title: "Session 3 — Video UX & Gallery",
     hours: 10,
     commits: 14,
+    claudeCostUSD: 25,
     features: [
       "Video half-grouping (1st / 2nd / Celebration), loading spinner",
       "Analytics redesign: bubble heatmap, timeline bars, per-half goal pressure",
@@ -78,6 +82,7 @@ export const SESSIONS: WorkSession[] = [
     title: "Session 4 — Auth, Nav & Polish",
     hours: 14,
     commits: 20,
+    claudeCostUSD: 35,
     features: [
       "SportsYou iCal integration — U11 schedule pulled live (no manual entry)",
       "America/Chicago timezone fix across all date/time displays",
@@ -172,18 +177,14 @@ export const SERVICES: ServiceLine[] = [
     annualCostUSD: 15,
     notes: "~$15/year. Waiting on Cloudflare admin credentials to connect to R2 bucket and Vercel.",
   },
-  {
-    name: "Claude (Anthropic)",
-    purpose: "AI assistant — site build, KickReel pipeline, all projects",
-    plan: "API / Claude Code",
-    monthlyCostUSD: 20,
-    annualCostUSD: 240,
-    notes: "Shared across multiple projects (legends-pitch, argus, AutoSense-AI, etc.). Estimate ~$20/mo — adjust as bills come in. Claude Code sessions drive most of the spend.",
-  },
 ];
 
 export function totalHours() {
   return SESSIONS.reduce((s, session) => s + session.hours, 0);
+}
+
+export function totalClaudeCost() {
+  return SESSIONS.reduce((s, session) => s + session.claudeCostUSD, 0);
 }
 
 export function totalCommits() {

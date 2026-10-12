@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metaTitle") };
 }
 
-const FIELD_ADDRESS = "Frost Elementary School, 711 Lakeway Dr, Georgetown, TX 78628";
+const FIELD_ADDRESS = "Jarrell Elementary School, Jarrell, TX";
 const MAPS_EMBED = `https://maps.google.com/maps?q=${encodeURIComponent(FIELD_ADDRESS)}&output=embed&z=15`;
 
 export default async function ContactPage({
@@ -160,7 +160,7 @@ export default async function ContactPage({
             {t("homeField")}
           </h2>
           <p className="text-gray-700 text-sm font-semibold mb-1">{t("fieldName")}</p>
-          <p className="text-gray-400 text-xs mb-3">711 Lakeway Dr, Georgetown, TX 78628</p>
+          <p className="text-gray-400 text-xs mb-3">Jarrell, TX</p>
           <a
             href={`https://maps.google.com/?q=${encodeURIComponent(FIELD_ADDRESS)}`}
             target="_blank"

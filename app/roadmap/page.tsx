@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getLocale } from "next-intl/server";
 import FeedbackForm from "./FeedbackForm";
 
 export const metadata: Metadata = {
@@ -6,36 +7,94 @@ export const metadata: Metadata = {
   description: "See what's live on the North Legends FC app, what we're building next, and share your ideas.",
 };
 
-const LIVE = [
-  { emoji: "📅", title: "Game schedule", desc: "Live weather forecasts and Google Maps links for every field." },
-  { emoji: "👕", title: "Team roster", desc: "Field view and list view with positions." },
-  { emoji: "📸", title: "Photo gallery", desc: "Albums from every game, auto-synced from Google Drive." },
-  { emoji: "🎥", title: "Match videos (KickReel)", desc: "Full-quality 360° footage, clips, and highlights." },
-  { emoji: "📆", title: "Calendar subscription", desc: "Subscribe on iPhone or Google Calendar — updates push automatically." },
-  { emoji: "🌐", title: "English & Spanish", desc: "Full bilingual support across the entire site." },
-  { emoji: "🔒", title: "Family-only access", desc: "Videos and gallery are passcode-protected — ask Coach Hugo for the code." },
-  { emoji: "📰", title: "News & announcements", desc: "Pinned announcements from the coaching staff." },
-];
+const CONTENT = {
+  en: {
+    heading: "What's Coming",
+    subheading: "This is your team's app — here's what's live, what we're building next, and where we want to take it. Got an idea? Tell us at the bottom.",
+    feedbackHeading: "Share your ideas",
+    feedbackBody: "Found a bug? Have a feature idea? Want something moved up the list? We read every message.",
+    live: {
+      badge: "✅ Live",
+      title: "Live now",
+      items: [
+        { emoji: "📅", title: "Game schedule", desc: "Live weather forecasts and Google Maps links for every field." },
+        { emoji: "👕", title: "Team roster", desc: "Field view and list view with positions." },
+        { emoji: "📸", title: "Photo gallery", desc: "Albums from every game, auto-synced from Google Drive." },
+        { emoji: "🎥", title: "Match videos (KickReel)", desc: "Full-quality 360° footage, clips, and highlights." },
+        { emoji: "📆", title: "Calendar subscription", desc: "Subscribe on iPhone or Google Calendar — updates push automatically." },
+        { emoji: "🌐", title: "English & Spanish", desc: "Full bilingual support across the entire site." },
+        { emoji: "🔒", title: "Family-only access", desc: "Videos and gallery are passcode-protected — ask Coach Hugo for the code." },
+        { emoji: "📰", title: "News & announcements", desc: "Pinned announcements from the coaching staff." },
+      ],
+    },
+    next: {
+      badge: "🔜 In progress",
+      title: "Coming next",
+      items: [
+        { emoji: "👤", title: "Parent accounts", desc: "Register as a parent to unlock more features — no shared password needed." },
+        { emoji: "🖼️", title: "Player profile photos", desc: "Upload a photo for your child's roster card." },
+        { emoji: "🍊", title: "Snack signup", desc: "Replace SignUpGenius — sign up for snacks directly on the site." },
+        { emoji: "🔔", title: "Game-day reminders", desc: "Push notifications before each game with time, field, and weather." },
+      ],
+    },
+    wishlist: {
+      badge: "💡 Exploring",
+      title: "On the wishlist",
+      items: [
+        { emoji: "💬", title: "Team announcements feed", desc: "Coach posts updates, parents react — no more group chat chaos." },
+        { emoji: "📊", title: "Player stats", desc: "Goals, assists, and appearances per player across the season." },
+        { emoji: "✅", title: "Attendance tracking", desc: "Mark who showed up to practice and games." },
+        { emoji: "🏆", title: "Season awards", desc: "Vote for MVP, most improved, and best attitude at end of season." },
+      ],
+    },
+  },
+  es: {
+    heading: "Próximamente",
+    subheading: "Esta es la app de tu equipo — aquí verás qué está en vivo, qué estamos construyendo y hacia dónde vamos. ¿Tienes una idea? Cuéntanos abajo.",
+    feedbackHeading: "Comparte tus ideas",
+    feedbackBody: "¿Encontraste un error? ¿Tienes una idea? ¿Quieres que algo suba en la lista? Leemos cada mensaje.",
+    live: {
+      badge: "✅ En vivo",
+      title: "Disponible ahora",
+      items: [
+        { emoji: "📅", title: "Calendario de partidos", desc: "Pronóstico del tiempo en vivo y enlace a Google Maps para cada campo." },
+        { emoji: "👕", title: "Alineación del equipo", desc: "Vista de campo y lista con posiciones." },
+        { emoji: "📸", title: "Galería de fotos", desc: "Álbumes de cada partido, sincronizados automáticamente desde Google Drive." },
+        { emoji: "🎥", title: "Videos de partidos (KickReel)", desc: "Grabaciones 360° en calidad completa, clips y jugadas destacadas." },
+        { emoji: "📆", title: "Suscripción al calendario", desc: "Suscríbete en iPhone o Google Calendar — los cambios se sincronizan automáticamente." },
+        { emoji: "🌐", title: "Inglés y Español", desc: "Soporte bilingüe completo en todo el sitio." },
+        { emoji: "🔒", title: "Acceso solo para familias", desc: "Videos y galería protegidos con contraseña — pídela al Entrenador Hugo." },
+        { emoji: "📰", title: "Noticias y anuncios", desc: "Anuncios fijados del cuerpo técnico." },
+      ],
+    },
+    next: {
+      badge: "🔜 En progreso",
+      title: "Próximamente",
+      items: [
+        { emoji: "👤", title: "Cuentas para padres", desc: "Regístrate como padre para acceder a más funciones — sin contraseña compartida." },
+        { emoji: "🖼️", title: "Fotos de perfil de jugadores", desc: "Sube una foto para la tarjeta de tu hijo en la alineación." },
+        { emoji: "🍊", title: "Registro de snacks", desc: "Reemplaza SignUpGenius — regístrate para llevar snacks directamente en el sitio." },
+        { emoji: "🔔", title: "Recordatorios del día del partido", desc: "Notificaciones antes de cada partido con hora, campo y clima." },
+      ],
+    },
+    wishlist: {
+      badge: "💡 Explorando",
+      title: "En la lista de deseos",
+      items: [
+        { emoji: "💬", title: "Feed de anuncios del equipo", desc: "El entrenador publica, los padres reaccionan — sin más caos en el chat grupal." },
+        { emoji: "📊", title: "Estadísticas de jugadores", desc: "Goles, asistencias y apariciones por jugador en la temporada." },
+        { emoji: "✅", title: "Control de asistencia", desc: "Registra quién asistió a los entrenamientos y partidos." },
+        { emoji: "🏆", title: "Premios de temporada", desc: "Vota por MVP, más mejorado y mejor actitud al final de la temporada." },
+      ],
+    },
+  },
+};
 
-const NEXT = [
-  { emoji: "👤", title: "Parent accounts", desc: "Register as a parent to unlock more features — no shared password needed." },
-  { emoji: "🖼️", title: "Player profile photos", desc: "Upload a photo for your child's roster card." },
-  { emoji: "🍊", title: "Snack signup", desc: "Replace SignUpGenius — sign up for snacks directly on the site." },
-  { emoji: "🔔", title: "Game-day reminders", desc: "Push notifications before each game with time, field, and weather." },
-];
-
-const WISHLIST = [
-  { emoji: "💬", title: "Team announcements feed", desc: "Coach posts updates, parents react — no more group chat chaos." },
-  { emoji: "📊", title: "Player stats", desc: "Goals, assists, and appearances per player across the season." },
-  { emoji: "✅", title: "Attendance tracking", desc: "Mark who showed up to practice and games." },
-  { emoji: "🏆", title: "Season awards", desc: "Vote for MVP, most improved, and best attitude at end of season." },
-];
-
-function Section({ title, badge, items, badgeColor }: {
-  title: string;
+function Section({ badge, title, badgeColor, items }: {
   badge: string;
-  items: { emoji: string; title: string; desc: string }[];
+  title: string;
   badgeColor: string;
+  items: { emoji: string; title: string; desc: string }[];
 }) {
   return (
     <section className="mb-10">
@@ -58,43 +117,24 @@ function Section({ title, badge, items, badgeColor }: {
   );
 }
 
-export default function RoadmapPage() {
+export default async function RoadmapPage() {
+  const locale = await getLocale();
+  const c = locale === "es" ? CONTENT.es : CONTENT.en;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-gray-900 mb-2">What&apos;s Coming</h1>
-        <p className="text-gray-500 text-sm leading-relaxed max-w-xl">
-          This is your team&apos;s app — here&apos;s what&apos;s live, what we&apos;re building next,
-          and where we want to take it. Got an idea? Tell us at the bottom. ·{" "}
-          <span className="text-gray-400">Esta es la app de tu equipo. ¿Tienes una idea? Dinos abajo.</span>
-        </p>
+        <h1 className="text-3xl font-black text-gray-900 mb-2">{c.heading}</h1>
+        <p className="text-gray-500 text-sm leading-relaxed max-w-xl">{c.subheading}</p>
       </div>
 
-      <Section
-        title="Live now"
-        badge="✅ Live"
-        badgeColor="bg-green-100 text-green-700"
-        items={LIVE}
-      />
-      <Section
-        title="Coming next"
-        badge="🔜 In progress"
-        badgeColor="bg-blue-100 text-blue-700"
-        items={NEXT}
-      />
-      <Section
-        title="On the wishlist"
-        badge="💡 Exploring"
-        badgeColor="bg-yellow-100 text-yellow-700"
-        items={WISHLIST}
-      />
+      <Section badge={c.live.badge} title={c.live.title} badgeColor="bg-green-100 text-green-700" items={c.live.items} />
+      <Section badge={c.next.badge} title={c.next.title} badgeColor="bg-blue-100 text-blue-700" items={c.next.items} />
+      <Section badge={c.wishlist.badge} title={c.wishlist.title} badgeColor="bg-yellow-100 text-yellow-700" items={c.wishlist.items} />
 
-      {/* Feedback */}
       <section className="bg-gray-50 border border-gray-100 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-lg font-black text-gray-900 mb-1">Share your ideas · Comparte tus ideas</h2>
-        <p className="text-sm text-gray-500 mb-5">
-          Found a bug? Have a feature idea? Want something moved up the list? We read every message.
-        </p>
+        <h2 className="text-lg font-black text-gray-900 mb-1">{c.feedbackHeading}</h2>
+        <p className="text-sm text-gray-500 mb-5">{c.feedbackBody}</p>
         <FeedbackForm />
       </section>
     </div>

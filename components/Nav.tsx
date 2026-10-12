@@ -14,6 +14,7 @@ const links = [
   { href: "/news", key: "news" },
   { href: "/gallery", key: "gallery" },
   { href: "/contact", key: "contact" },
+  { href: "/roadmap", key: "roadmap" },
 ] as const;
 
 export default function Nav() {

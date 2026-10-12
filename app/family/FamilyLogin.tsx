@@ -22,7 +22,7 @@ export default function FamilyLogin({ next }: { next: string }) {
     });
 
     if (res.ok) {
-      router.push(next);
+      window.location.href = next;
     } else {
       setError("Incorrect passcode · Contraseña incorrecta");
       setPasscode("");

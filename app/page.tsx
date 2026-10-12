@@ -4,6 +4,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import HeroCarousel from "@/components/HeroCarousel";
 import CountdownTimerClient from "@/components/CountdownTimerClient";
 import TeamTabs from "@/components/TeamTabs";
+import ScrollDepthTracker from "@/components/ScrollDepthTracker";
+import TrackedLink from "@/components/TrackedLink";
+import TrackedAnchor from "@/components/TrackedAnchor";
 import { getPostsByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import { getGotSportData } from "@/lib/data/gotsport";
@@ -65,6 +68,7 @@ export default async function Home({
 
   return (
     <>
+      <ScrollDepthTracker page="home" />
       {/* Hero */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
         <HeroCarousel />
@@ -82,18 +86,22 @@ export default async function Home({
             {t("tagline")}
           </p>
           <div className="flex gap-3 mt-2">
-            <Link
+            <TrackedLink
               href={`/schedule?team=${team}`}
+              eventName="hero_cta_click"
+              eventProps={{ button: "view_schedule", team }}
               className="px-5 py-2.5 bg-[var(--color-accent)] text-[#1c1c1e] font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors shadow-md"
             >
               {t("viewSchedule")}
-            </Link>
-            <Link
+            </TrackedLink>
+            <TrackedLink
               href={`/roster?team=${team}`}
+              eventName="hero_cta_click"
+              eventProps={{ button: "meet_the_team", team }}
               className="px-5 py-2.5 bg-[var(--color-accent)] text-[#1c1c1e] font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors shadow-md"
             >
               {t("meetTheTeam")}
-            </Link>
+            </TrackedLink>
           </div>
         </div>
       </section>
@@ -196,7 +204,7 @@ export default async function Home({
           <h2 className="text-lg font-bold text-gray-800 mb-4">{t("latestNews")}</h2>
           <div className="flex flex-col gap-4">
             {topNews.map((post) => (
-              <Link key={post.id} href={`/news/${post.slug}?team=${team}`}>
+              <TrackedLink key={post.id} href={`/news/${post.slug}?team=${team}`} eventName="news_click" eventProps={{ slug: post.slug, team }}>
                 <article className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-green-200 transition-all">
                   <p className="text-xs text-gray-400 mb-1">
                     {new Date(post.publishedAt).toLocaleDateString(locale, {
@@ -214,7 +222,7 @@ export default async function Home({
                     {t("readMore")}
                   </span>
                 </article>
-              </Link>
+              </TrackedLink>
             ))}
             {topNews.length === 0 && (
               <p className="text-gray-400 text-sm">{t("noPosts")}</p>
@@ -266,12 +274,13 @@ export default async function Home({
               <p className="text-white font-black text-base">{ts("becomeHeading")}</p>
               <p className="text-red-300 text-sm mt-0.5">{ts("becomeBody")}</p>
             </div>
-            <a
+            <TrackedAnchor
               href="mailto:legendsfcnorth@gmail.com?subject=Sponsorship%20Inquiry%20—%20North%20Legends%20FC"
+              eventName="sponsor_cta_click"
               className="shrink-0 px-6 py-3 bg-[var(--color-accent)] text-[var(--color-navy)] font-black rounded-xl hover:opacity-90 transition-opacity text-sm whitespace-nowrap"
             >
               {ts("becomeButton")}
-            </a>
+            </TrackedAnchor>
           </div>
         </div>
       </section>

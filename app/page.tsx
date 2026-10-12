@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
+import HeroCarousel from "@/components/HeroCarousel";
 import CountdownTimerClient from "@/components/CountdownTimerClient";
 import TeamTabs from "@/components/TeamTabs";
 import { getPostsByTeam } from "@/lib/sanity/queries";
@@ -66,9 +67,7 @@ export default async function Home({
     <>
       {/* Hero */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
-        <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
-          <source src="/Legends_hero_video.mp4" type="video/mp4" />
-        </video>
+        <HeroCarousel />
         <div className="absolute inset-0 bg-black/60" />
 
         <div className="relative max-w-6xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center gap-4">

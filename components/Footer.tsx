@@ -26,9 +26,17 @@ export default function Footer() {
             <Link href="/roadmap" className="hover:text-white transition-colors">{t("roadmap")}</Link>
           </nav>
 
-          <p className="text-xs text-red-600">
-            {t("copyright", { year })}
-          </p>
+          <div className="flex flex-col items-center md:items-end gap-1">
+            <p className="text-xs text-red-600">{t("copyright", { year })}</p>
+            <a
+              href="https://github.com/ErickZBrambila/legends-pitch"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-red-500 hover:text-white transition-colors"
+            >
+              {t("contribute")}
+            </a>
+          </div>
         </div>
       </div>
     </footer>

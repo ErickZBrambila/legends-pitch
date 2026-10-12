@@ -1,19 +1,73 @@
-# legends-pitch — North Legends FC Website
+# North Legends FC — Team Website
 
-A public-facing team website for the **North Legends**, a U9–U12 youth soccer team. Built so parents can check the schedule, players can see the roster, and the coach can post news — all without anyone needing to touch code after launch.
+The official website for **North Legends FC**, a U11/U12 youth soccer club based in the Dallas–Fort Worth area. Built so parents can check the schedule and gallery, and coaches can manage content without touching code.
+
+Live at: **[northlegensfc.com](https://northlegensfc.com)** (custom domain pending) / [legends-pitch.vercel.app](https://legends-pitch.vercel.app)
+
+---
+
+## What it does
+
+**For parents:**
+- Game schedule with live weather forecasts and Google Maps links
+- Photo gallery organized by event, synced from Google Drive
+- Match videos (KickReel) — full-quality 360° clips, goals, and in-game analytics
+- Calendar subscription (Apple Calendar / Google Calendar / .ics)
+- News and announcements from the coaching staff
+- English and Spanish — full bilingual support
+
+**For coaches:**
+- Sanity Studio at `/studio` — manage roster, schedule, news, and gallery without code
+- Admin panel at `/admin` — project tracker, links to Studio
 
 ---
 
 ## Tech Stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Framework | Next.js 16 (App Router) | Server Components, ISR, file-based routing |
-| Styling | Tailwind CSS v4 | Utility-first, easy responsive breakpoints |
-| CMS (planned) | Sanity.io | Coach-friendly Studio UI, free tier, real-time updates |
-| Hosting | Vercel | Zero-config Next.js deploy, free hobby tier |
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript (strict) |
+| Styling | Tailwind CSS v4 |
+| CMS | Sanity.io (embedded Studio, GROQ) |
+| Hosting | Vercel (ISR, Edge Middleware) |
+| Video storage | Cloudflare R2 |
+| Rate limiting | Upstash Redis (@upstash/ratelimit) |
+| i18n | next-intl (EN / ES) |
+| Weather | Open-Meteo (no API key) |
+| Schedule feed | SportsYou webcal (polled hourly) |
 
-During development the site runs off **mock data** in `lib/data.ts`. Once Sanity is connected, data fetching moves to `lib/queries.ts` with GROQ and the mock file is retired.
+---
+
+## Getting Started
+
+```bash
+npm install
+cp .env.example .env.local   # fill in your values — see Environment Variables below
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). The app will build but protected routes (videos, gallery) won't work without valid env vars.
+
+---
+
+## Environment Variables
+
+Create `.env.local` with the following. See `.env.example` for the template.
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | Yes | Sanity project ID (found in sanity.io dashboard) |
+| `NEXT_PUBLIC_SANITY_DATASET` | Yes | Sanity dataset — usually `production` |
+| `SANITY_WRITE_TOKEN` | Yes | Sanity write-scoped API token (for feedback, clip-save, onboarding) |
+| `FAMILY_PASSCODE` | Yes | Passcode families enter to unlock /videos, /gallery, /highlights |
+| `ADMIN_PASSWORD` | Yes | Coach password for the /admin panel |
+| `UPSTASH_REDIS_REST_URL` | No | Upstash Redis REST URL — enables rate limiting on API routes |
+| `UPSTASH_REDIS_REST_TOKEN` | No | Upstash Redis token — required if URL is set |
+| `GITHUB_ISSUES_TOKEN` | No | GitHub fine-grained token — creates GitHub issues from roadmap feedback form |
+| `ONBOARDING_ENABLED` | No | Set to `true` to enable the `/api/onboarding` route (disabled by default) |
+
+Rate limiting and GitHub issue creation degrade gracefully — the app works without those vars; those features just won't activate.
 
 ---
 
@@ -21,145 +75,61 @@ During development the site runs off **mock data** in `lib/data.ts`. Once Sanity
 
 ```
 legends-pitch/
-├── app/                        # Next.js App Router pages
-│   ├── layout.tsx              # Root layout: nav + footer wrapper
-│   ├── page.tsx                # Home: hero, countdown, season stats
-│   ├── schedule/page.tsx       # Fixtures & results
-│   ├── roster/page.tsx         # Player cards
-│   ├── news/page.tsx           # Announcements list
-│   ├── news/[slug]/page.tsx    # Individual post
-│   ├── gallery/page.tsx        # Photo gallery by event
-│   ├── contact/page.tsx        # Info, map embed, coach contact
-│   └── globals.css             # CSS custom properties (team colors)
+├── app/
+│   ├── page.tsx                   # Home: hero carousel, countdown, sponsors
+│   ├── schedule/page.tsx          # Fixtures with weather + maps
+│   ├── roster/page.tsx            # Player cards — field and list view
+│   ├── gallery/page.tsx           # Photo gallery (album cards + lightbox)
+│   ├── gallery/[eventId]/page.tsx # Single album
+│   ├── highlights/page.tsx        # YouTube highlights
+│   ├── videos/page.tsx            # KickReel session list
+│   ├── videos/[sessionId]/        # Session viewer: player, clips, analytics
+│   ├── news/page.tsx              # Announcements list
+│   ├── news/[slug]/page.tsx       # Single post
+│   ├── contact/page.tsx           # Coach info, map
+│   ├── roadmap/page.tsx           # Roadmap + public feedback form
+│   ├── family/page.tsx            # Family passcode gate
+│   ├── admin/                     # Coach admin panel (password protected)
+│   ├── onboarding/page.tsx        # Coach onboarding form (gated via env var)
+│   ├── studio/[[...tool]]/        # Embedded Sanity Studio
+│   └── api/                       # API routes (see TECHNICAL.md)
 │
-├── components/                 # Shared UI components
-│   ├── Nav.tsx                 # Desktop/tablet top navigation
-│   ├── MobileNav.tsx           # Phone bottom tab bar
-│   └── Footer.tsx              # Site footer
+├── components/                    # Shared UI
+│   ├── Nav.tsx                    # Top nav + hamburger (handedness toggle)
+│   ├── HeroCarousel.tsx           # Home hero slides
+│   ├── FieldHeatmap.tsx           # Match analytics heatmap
+│   ├── ActivityTimeline.tsx       # Per-half clip timeline
+│   └── ...
 │
 ├── lib/
-│   ├── types.ts                # TypeScript interfaces
-│   └── data.ts                 # Mock data + helper functions
+│   ├── sanity/                    # Sanity client, image helpers, GROQ queries
+│   ├── ratelimit.ts               # Rate limiter (Upstash, graceful degradation)
+│   ├── family-auth.ts             # Family cookie helpers
+│   ├── admin-auth.ts              # Admin cookie helpers
+│   ├── data/tracker.ts            # Dev session + cost tracker data
+│   └── types.ts                   # Shared TypeScript types
 │
-└── public/                     # Static assets (logo, og-image)
+├── schemaTypes/                   # Sanity content schemas
+├── middleware.ts                  # Route guards (family + admin gates)
+├── i18n/                          # next-intl config + routing
+└── public/                        # Logo, OG image, static assets
 ```
-
----
-
-## Features
-
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | **Hero / Landing** | Full-width banner, team name, season tagline, live countdown to next game |
-| 2 | **Schedule & Results** | All fixtures with date, opponent, location; past games show W/L/D score badge |
-| 3 | **Roster** | Player cards with name, jersey number, and position — no personal info exposed |
-| 4 | **News / Announcements** | Coach posts updates, practice cancellations, match recaps |
-| 5 | **Photo Gallery** | Photos organized by event (game, practice) |
-| 6 | **Season Stats** | Live record (W/L/D), goals scored and conceded |
-| 7 | **Contact / Info** | Practice location and times, map embed, coach contact email |
-
----
-
-## Responsive Design
-
-The site adapts across three breakpoint tiers — one codebase, three distinct experiences:
-
-| Breakpoint | Device | Navigation | Layout |
-|---|---|---|---|
-| `< 640px` | Phone | Sticky **bottom tab bar** (5 tabs) | Single-column stacked cards, large tap targets |
-| `640px – 1024px` | Tablet | Collapsible **sidebar** | 2-column grids for schedule and roster |
-| `> 1024px` | Desktop | **Top navbar** | 3-column roster grid, full-width hero background |
-
-No user-agent detection or separate sites — everything is done with Tailwind's `sm:`, `md:`, and `lg:` responsive prefixes.
-
----
-
-## Getting Started
-
-```bash
-# Install dependencies
-npm install
-
-# Start the dev server
-npm run dev
-```
-
-Then open [http://localhost:3000](http://localhost:3000).
-
-The site loads with **placeholder mock data** (fake player names, fake schedule, Unsplash photos). Replace it with real content using the coach onboarding form below, then swap the data source to Sanity once the CMS is set up.
-
----
-
-## Content Management
-
-### Current State (Development)
-All content lives in `lib/data.ts`. Edit the arrays directly to update players, matches, news posts, and gallery events.
-
-### Production (Sanity CMS)
-When Sanity is wired up:
-1. Coach logs into the Sanity Studio at `/studio` (embedded in the app)
-2. Edits publish instantly — Next.js ISR revalidates pages within ~60 seconds
-3. No code changes needed for schedule updates, roster edits, or news posts
-
-Planned Sanity content types:
-- **match** — date, opponent, location, homeAway, score, result
-- **player** — name, number, position, photo
-- **post** — title, slug, body (rich text), publishedAt
-- **galleryEvent** — title, date, images[]
-
-See `COACH_ONBOARDING.md` for the full list of information needed from the coach before launch.
-
----
-
-## Customization
-
-### Team Colors
-
-Open `app/globals.css` and update the CSS custom properties in `:root`:
-
-```css
-:root {
-  --color-primary:       #15803d;   /* Main green — change to your team color */
-  --color-primary-dark:  #052e16;   /* Dark variant for hero backgrounds */
-  --color-primary-light: #16a34a;   /* Hover/active states */
-  --color-accent:        #ca8a04;   /* Gold accent — badge highlights, CTAs */
-  --color-accent-light:  #fbbf24;   /* Light accent for text on dark backgrounds */
-}
-```
-
-All components reference these variables, so one edit changes the whole site.
-
-### Team Logo
-
-Replace `public/logo.png` with your actual logo file. The `<img>` in `Nav.tsx` references this path.
 
 ---
 
 ## Deployment
 
-### Vercel (recommended)
+The project deploys automatically to Vercel on every push to `main`.
 
-1. Push the repo to GitHub
-2. Import the repo at [vercel.com/new](https://vercel.com/new)
+To set up your own deployment:
+1. Fork this repo and import it at [vercel.com/new](https://vercel.com/new)
+2. Add all required environment variables in the Vercel dashboard (Settings → Environment Variables)
 3. Vercel auto-detects Next.js — click Deploy
-4. Set environment variables (Sanity project ID, dataset, token) in the Vercel dashboard
 
-### Sanity Studio
-
-The Sanity Studio is embedded at the `/studio` route. To set it up:
-
-1. Create a free project at [sanity.io](https://www.sanity.io)
-2. Copy the **Project ID** and **Dataset** name
-3. Add to `.env.local`:
-   ```
-   NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
-   NEXT_PUBLIC_SANITY_DATASET=production
-   ```
-4. Run `npx sanity@latest init --env` to finish setup
-5. Visit `/studio` in dev or production to manage content
+For Sanity Studio to work in production, add your Vercel deployment URL to the CORS origins in your Sanity project settings.
 
 ---
 
-## Questions?
+## Contributing
 
-See `COACH_ONBOARDING.md` for the information needed from the coach to go live.
+See [CONTRIBUTING.md](CONTRIBUTING.md) — all skill levels welcome, from opening an issue to submitting a PR.

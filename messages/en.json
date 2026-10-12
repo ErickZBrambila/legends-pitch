@@ -24,7 +24,8 @@
     "gallery": "Gallery",
     "contact": "Contact",
     "roadmap": "What's Coming",
-    "copyright": "© {year} North Legends FC"
+    "copyright": "© {year} North Legends FC",
+    "contribute": "Open source — contribute on GitHub"
   },
   "Teams": {
     "u11": "Under 11",

@@ -51,6 +51,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Studio runs in an iframe on sanity.io — must not have X-Frame-Options: DENY
+        source: "/studio/:path*",
+        headers: securityHeaders.filter((h) => h.key !== "X-Frame-Options"),
+      },
+      {
         source: "/:path*",
         headers: securityHeaders,
       },

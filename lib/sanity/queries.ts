@@ -365,6 +365,7 @@ export async function getCoachSubmission(team: TeamSlug): Promise<CoachSubmissio
       headCoachName, headCoachEmail,
       assistants, practiceSlots
     }`,
-    { id: `coach-submission-${team}` }
+    { id: `coach-submission-${team}` },
+    { cache: "no-store" }
   );
 }

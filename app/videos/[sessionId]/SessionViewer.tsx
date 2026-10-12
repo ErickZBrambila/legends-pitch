@@ -100,10 +100,16 @@ function SaveButton({
   );
 }
 
+function getFirstClip(video: SessionVideo) {
+  return video.clips.find((c) => !c.archived) ?? null;
+}
+
 export default function SessionViewer({ session }: { session: PracticeSession }) {
   const t = useTranslations("Session");
   const [activeVideo, setActiveVideo] = useState<SessionVideo>(session.videos[0]);
-  const [activeClipUrl, setActiveClipUrl] = useState<string | null>(null);
+  const [activeClipUrl, setActiveClipUrl] = useState<string | null>(
+    () => getFirstClip(session.videos[0])?.r2Url ?? null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [savedClips, setSavedClips] = useState<Set<string>>(new Set());
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -117,6 +123,24 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       if (raw) setSavedClips(new Set(JSON.parse(raw) as string[]));
     } catch {}
   }, []);
+
+  // Preload the first clip whenever the active video tab changes (including on mount)
+  useEffect(() => {
+    const clip = getFirstClip(activeVideo);
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (clip) {
+      setActiveClipUrl(clip.r2Url);
+      vid.pause();
+      vid.src = clip.r2Url;
+      vid.load();
+    } else {
+      setActiveClipUrl(null);
+      vid.removeAttribute("src");
+      vid.load();
+    }
+    // pendingPlay stays false — preload only, don't auto-play
+  }, [activeVideo.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = useCallback((clipId: string) => {
     setSavedClips((prev) => {
@@ -203,7 +227,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           {session.videos.map((v, i) => (
             <button
               key={v.id}
-              onClick={() => { setActiveVideo(v); setActiveClipUrl(null); }}
+              onClick={() => setActiveVideo(v)}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
                 activeVideo.id === v.id
                   ? "bg-[var(--color-primary)] text-white"
@@ -222,8 +246,9 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           ref={videoRef}
           controls
           playsInline
+          poster={activeVideo.thumbnailUrl || undefined}
           className="w-full max-h-[70vh]"
-          preload={activeClipUrl ? "auto" : "none"}
+          preload="auto"
           onCanPlay={() => {
             setIsLoading(false);
             if (pendingPlay.current) {
@@ -235,26 +260,6 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           onWaiting={() => setIsLoading(true)}
           onStalled={() => setIsLoading(true)}
         />
-        {/* Thumbnail overlay — plain <img> avoids iOS Safari treating .cover as a video */}
-        {!activeClipUrl && activeVideo.thumbnailUrl && (
-          <div className="absolute inset-0 pointer-events-none">
-            <img
-              src={activeVideo.thumbnailUrl}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
-                  <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
-                <p className="text-white/80 text-sm font-medium">{t("tapClip")}</p>
-              </div>
-            </div>
-          </div>
-        )}
         {isLoading && activeClipUrl && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none">
             <div className="flex flex-col items-center gap-3">

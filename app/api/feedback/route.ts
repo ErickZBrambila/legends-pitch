@@ -81,7 +81,9 @@ export async function POST(req: NextRequest) {
           body: `**Type:** ${feedbackType}\n\n${cleanMessage}\n\n---\n*Submitted via website feedback form.*`,
           labels: [labelMap[feedbackType] ?? "feedback"],
         }),
-      }).catch(() => { /* non-fatal */ });
+      }).then(async (res) => {
+        if (!res.ok) console.error("github issue error:", res.status, await res.text());
+      }).catch((err) => console.error("github issue fetch error:", err));
     }
 
     return NextResponse.json({ ok: true });

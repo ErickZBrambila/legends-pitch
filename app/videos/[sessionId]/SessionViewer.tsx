@@ -155,6 +155,21 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     }
   }, [activeVideo.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Update iOS/Android media session metadata so lock screen shows North Legends branding
+  useEffect(() => {
+    if (!activeClipUrl || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+    const clip = activeVideo.clips.find((c) => c.r2Url === activeClipUrl);
+    if (!clip) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: clip.label,
+      artist: session.sessionName,
+      album: "North Legends FC · KickReel",
+      artwork: [
+        { src: "/logo.jpg", sizes: "512x512", type: "image/jpeg" },
+      ],
+    });
+  }, [activeClipUrl, activeVideo.clips, session.sessionName]);
+
   // Prefetch next 2 non-archived clips while current one plays
   useEffect(() => {
     if (!activeClipUrl) return;
@@ -287,6 +302,25 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         </div>
       )}
 
+      {/* Now playing — clip heading (above video) */}
+      <div className="mb-2 min-h-[48px]">
+        {currentClip ? (
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
+                {t("clipIndex", { current: currentClipIdx + 1, total: playableClips.length })}
+              </p>
+              <h3 className="text-lg font-black text-gray-900 leading-snug mt-0.5">
+                {currentClip.label}
+              </h3>
+            </div>
+            {isLoading && (
+              <span className="shrink-0 text-[11px] text-gray-400 mt-1">{t("loadingClip")}</span>
+            )}
+          </div>
+        ) : null}
+      </div>
+
       {/* Player */}
       <div ref={playerRef} className="relative rounded-2xl overflow-hidden bg-black shadow-xl">
         <video
@@ -318,23 +352,12 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         )}
       </div>
 
-      {/* Now playing — clip heading */}
-      <div className="mt-3 mb-6 min-h-[48px]">
-        {currentClip ? (
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
-                {t("clipIndex", { current: currentClipIdx + 1, total: playableClips.length })}
-              </p>
-              <h3 className="text-base font-black text-gray-900 leading-snug mt-0.5">
-                {currentClip.label}
-              </h3>
-            </div>
-            {isLoading && (
-              <span className="shrink-0 text-[11px] text-gray-400 mt-1">{t("loadingClip")}</span>
-            )}
-          </div>
-        ) : null}
+      {/* Known bug notice — video slowness */}
+      <div className="mt-3 mb-6 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+        <span className="shrink-0 font-black mt-0.5">⚠</span>
+        <p>
+          <span className="font-black">Videos loading slowly?</span> We&apos;re waiting on a CDN fix (northlegensfc.com domain) — clips currently load direct from storage. Thanks for your patience!
+        </p>
       </div>
 
       {/* Goals quick-access */}

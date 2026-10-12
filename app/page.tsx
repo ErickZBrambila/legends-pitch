@@ -246,26 +246,42 @@ export default async function Home({
           {/* Current sponsors */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
             {/* Houk Air Conditioning */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-3 hover:bg-white/10 transition-colors">
+            <TrackedAnchor
+              href="https://houkac.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              eventName="sponsor_logo_click"
+              eventProps={{ sponsor: "houk_ac" }}
+              className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-3 hover:bg-white/10 transition-colors"
+            >
               <div className="w-16 h-16 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-3xl">
                 ❄️
               </div>
               <div>
                 <p className="text-white font-black text-lg leading-tight">Houk Air Conditioning</p>
                 <p className="text-red-300 text-xs mt-1">Heating, Cooling & HVAC Services</p>
+                <p className="text-[var(--color-accent)] text-xs mt-1 font-medium">houkac.com ↗</p>
               </div>
-            </div>
+            </TrackedAnchor>
 
             {/* Bonilla's Painting */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-3 hover:bg-white/10 transition-colors">
+            <TrackedAnchor
+              href="https://www.facebook.com/p/Bonillas-Painting-LLC-100090721931900/"
+              target="_blank"
+              rel="noopener noreferrer"
+              eventName="sponsor_logo_click"
+              eventProps={{ sponsor: "bonillas_painting" }}
+              className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-3 hover:bg-white/10 transition-colors"
+            >
               <div className="w-16 h-16 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-3xl">
                 🎨
               </div>
               <div>
                 <p className="text-white font-black text-lg leading-tight">Bonilla&apos;s Painting LLC</p>
                 <p className="text-red-300 text-xs mt-1">Professional Painting Services</p>
+                <p className="text-[var(--color-accent)] text-xs mt-1 font-medium">Facebook ↗</p>
               </div>
-            </div>
+            </TrackedAnchor>
           </div>
 
           {/* Become a sponsor CTA */}

@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
 
     // Create GitHub issue if token is configured — fire-and-forget, non-fatal
     const ghToken = process.env.GITHUB_ISSUES_TOKEN;
+    console.log("github token present:", !!ghToken, "length:", ghToken?.length ?? 0);
     if (ghToken) {
       const labelMap: Record<string, string> = {
         bug: "bug",

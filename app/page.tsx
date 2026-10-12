@@ -254,8 +254,8 @@ export default async function Home({
               eventProps={{ sponsor: "houk_ac" }}
               className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-3 hover:bg-white/10 transition-colors"
             >
-              <div className="w-16 h-16 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-3xl">
-                ❄️
+              <div className="h-16 flex items-center justify-center">
+                <Image src="/sponsors/houk-logo.svg" alt="Houk Air Conditioning" width={160} height={43} className="object-contain" />
               </div>
               <div>
                 <p className="text-white font-black text-lg leading-tight">Houk Air Conditioning</p>
@@ -273,8 +273,8 @@ export default async function Home({
               eventProps={{ sponsor: "bonillas_painting" }}
               className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col items-center text-center gap-3 hover:bg-white/10 transition-colors"
             >
-              <div className="w-16 h-16 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center text-3xl">
-                🎨
+              <div className="h-16 flex items-center justify-center">
+                <Image src="/sponsors/bonillas-logo.jpg" alt="Bonilla's Painting LLC" width={64} height={64} className="rounded-full object-cover" />
               </div>
               <div>
                 <p className="text-white font-black text-lg leading-tight">Bonilla&apos;s Painting LLC</p>

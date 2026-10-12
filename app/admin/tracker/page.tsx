@@ -3,7 +3,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import {
   SESSIONS, SERVICES, KICKREEL_RUNS,
   totalHours, totalCommits, totalFeatures,
-  totalClaudeCost, monthlyRunningCost, annualRunningCost,
+  totalClaudeCost, monthlyRunningCost, annualRunningCost, tco,
 } from "@/lib/data/tracker";
 
 export const metadata = { title: "Project Tracker · North Legends FC Admin" };
@@ -27,6 +27,7 @@ export default async function TrackerPage() {
   );
 
   const totalClips = KICKREEL_RUNS.reduce((s, r) => s + r.clipsExtracted, 0);
+  const t = tco();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,6 +61,70 @@ export default async function TrackerPage() {
             sub={`$${(totalClaudeCost() / totalHours()).toFixed(2)}/hr · ${totalFeatures()} features`}
           />
         </div>
+
+        {/* TCO */}
+        <section className="mb-10">
+          <h2 className="text-base font-black text-gray-900 mb-4">Total Cost of Ownership</h2>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+
+            {/* Build cost vs alternatives */}
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Build Cost — What We Actually Paid vs. Alternatives</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+                <p className="text-xs font-black uppercase tracking-widest text-green-600 mb-1">Actual Build Cost</p>
+                <p className="text-3xl font-black text-green-700">${t.claudeCostUSD.toFixed(0)}</p>
+                <p className="text-xs text-green-600 mt-1">Claude API · {t.devHours}h owner time</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-1">Freelancer Equivalent</p>
+                <p className="text-3xl font-black text-gray-700">${t.freelancerEquivalentUSD.toLocaleString()}</p>
+                <p className="text-xs text-gray-400 mt-1">{t.devHours}h × $150/hr market rate</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                <p className="text-xs font-black uppercase tracking-widest text-gray-500 mb-1">Agency Quote</p>
+                <p className="text-3xl font-black text-gray-700">${t.agencyEquivalentUSD.toLocaleString()}</p>
+                <p className="text-xs text-gray-400 mt-1">Realistic boutique agency estimate</p>
+              </div>
+            </div>
+
+            {/* Savings callout */}
+            <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-6 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+              <div>
+                <p className="font-black text-green-800 text-sm">Saved vs. agency</p>
+                <p className="text-2xl font-black text-green-700">${t.savingsVsAgencyUSD.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="font-black text-green-800 text-sm">Saved vs. freelancer</p>
+                <p className="text-2xl font-black text-green-700">${t.savingsVsFreelancerUSD.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="font-black text-green-800 text-sm">Cost per feature</p>
+                <p className="text-2xl font-black text-green-700">${t.costPerFeature.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="font-black text-green-800 text-sm">Cost per commit</p>
+                <p className="text-2xl font-black text-green-700">${t.costPerCommit.toFixed(2)}</p>
+              </div>
+            </div>
+
+            {/* 3-year TCO */}
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">3-Year Total Cost of Ownership</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl border border-gray-100 p-4 text-center">
+                <p className="text-xs text-gray-400 mb-1">Build</p>
+                <p className="text-xl font-black text-gray-900">${t.claudeCostUSD.toFixed(0)}</p>
+              </div>
+              <div className="rounded-xl border border-gray-100 p-4 text-center">
+                <p className="text-xs text-gray-400 mb-1">3yr Infra</p>
+                <p className="text-xl font-black text-gray-900">${(t.annualRunningCostUSD * 3).toFixed(0)}</p>
+              </div>
+              <div className="rounded-xl border border-blue-100 bg-blue-50 p-4 text-center">
+                <p className="text-xs text-blue-600 font-bold mb-1">3yr TCO</p>
+                <p className="text-xl font-black text-blue-700">${t.threeYearTCOUSD.toFixed(0)}</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Running services */}
         <section className="mb-10">

@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import LanguageSwitcher from "./LanguageSwitcher";
 
+const HAND_KEY = "nlfc_hand";
+
 const links = [
   { href: "/", key: "home" },
   { href: "/schedule", key: "schedule" },
@@ -22,6 +24,11 @@ export default function Nav() {
   const pathname = usePathname();
   const t = useTranslations("Nav");
   const [open, setOpen] = useState(false);
+  const [leftHanded, setLeftHanded] = useState(false);
+
+  useEffect(() => {
+    setLeftHanded(localStorage.getItem(HAND_KEY) === "left");
+  }, []);
 
   // Close menu on route change
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -32,14 +39,38 @@ export default function Nav() {
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
+  function toggleHand() {
+    const next = !leftHanded;
+    setLeftHanded(next);
+    localStorage.setItem(HAND_KEY, next ? "left" : "right");
+  }
+
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
+  const hamburger = (
+    <button
+      onClick={() => setOpen((v) => !v)}
+      aria-label="Toggle menu"
+      className="p-2 rounded-md text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+    >
+      {open ? (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      ) : (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      )}
+    </button>
+  );
+
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-navy)] shadow-lg">
-      <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
+      <div className={`max-w-6xl mx-auto px-4 flex items-center h-16 ${leftHanded ? "flex-row-reverse" : "justify-between"}`}>
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className={`flex items-center gap-2.5 ${leftHanded ? "mr-auto" : ""}`}>
           <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-[var(--color-accent)] flex-shrink-0">
             <Image src="/logo.jpg" alt="North Legends FC crest" width={36} height={36} className="object-cover" />
           </div>
@@ -64,30 +95,16 @@ export default function Nav() {
           <LanguageSwitcher className="ml-2" />
         </nav>
 
-        {/* Mobile: language switcher + hamburger */}
-        <div className="flex items-center gap-2 md:hidden">
+        {/* Mobile: language switcher + hamburger — order follows hand preference */}
+        <div className={`flex items-center gap-2 md:hidden ${leftHanded ? "flex-row-reverse" : ""}`}>
           <LanguageSwitcher />
-          <button
-            onClick={() => setOpen((v) => !v)}
-            aria-label="Toggle menu"
-            className="p-2 rounded-md text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
-          >
-            {open ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
+          {hamburger}
         </div>
       </div>
 
       {/* Mobile drawer */}
       {open && (
-        <nav className="md:hidden bg-[var(--color-navy)] border-t border-white/10 px-4 pb-6 pt-2 flex flex-col gap-1">
+        <nav className="md:hidden bg-[var(--color-navy)] border-t border-white/10 px-4 pb-4 pt-2 flex flex-col gap-1">
           {links.map((link) => (
             <Link
               key={link.href}
@@ -101,6 +118,20 @@ export default function Nav() {
               {t(link.key)}
             </Link>
           ))}
+
+          {/* Hand preference toggle */}
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <button
+              onClick={toggleHand}
+              className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <span>{leftHanded ? "🫲" : "🫱"}</span>
+                <span>{leftHanded ? "Left-handed mode" : "Right-handed mode"}</span>
+              </span>
+              <span className="text-xs text-gray-500">tap to switch</span>
+            </button>
+          </div>
         </nav>
       )}
     </header>

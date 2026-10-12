@@ -252,7 +252,9 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   const driveUrl = session.videos.find((v) => v.driveUrl)?.driveUrl;
 
   return (
-    <div>
+    <div className="fold-two-panel">
+    {/* ── LEFT PANEL (sticky video) on foldable, full-width on normal screens ── */}
+    <div className="fold-panel-left">
       {/* Full-game Drive download banner */}
       {driveUrl && (
         <a
@@ -353,12 +355,15 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       </div>
 
       {/* Known bug notice — video slowness */}
-      <div className="mt-3 mb-6 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+      <div className="fold-hide mt-3 mb-6 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
         <span className="shrink-0 font-black mt-0.5">⚠</span>
         <p>
           <span className="font-black">Videos loading slowly?</span> We&apos;re waiting on a CDN fix (northlegensfc.com domain) — clips currently load direct from storage. Thanks for your patience!
         </p>
       </div>
+    </div>
+    {/* ── RIGHT PANEL (goals, clips, analytics) on foldable ── */}
+    <div className="fold-panel-right">
 
       {/* Goals quick-access */}
       {goals.length > 0 && (
@@ -525,6 +530,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
           </div>
         </section>
       ))}
+    </div>
     </div>
   );
 }

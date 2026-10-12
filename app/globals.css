@@ -27,3 +27,39 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* ── iPhone Duo / foldable device support ───────────────────────────────────
+   horizontal-viewport-segments: 2 fires when the screen is unfolded book-style
+   (two side-by-side panels). env() variables give exact panel dimensions.     */
+
+@media (horizontal-viewport-segments: 2) {
+  .fold-two-panel {
+    display: grid;
+    grid-template-columns:
+      env(viewport-segment-width 0 0, 50%)
+      env(viewport-segment-width 1 0, 50%);
+    column-gap: env(viewport-segment-left 1 0, 0px);
+    align-items: start;
+  }
+
+  /* Left panel: video player area */
+  .fold-panel-left {
+    position: sticky;
+    top: 4rem; /* below nav */
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    padding-right: 1rem;
+  }
+
+  /* Right panel: clips, goals, analytics */
+  .fold-panel-right {
+    overflow-y: auto;
+    max-height: calc(100dvh - 4rem);
+    padding-left: 1rem;
+  }
+
+  /* Hide the CDN warning on large inner screen — not worth the space */
+  .fold-hide {
+    display: none;
+  }
+}

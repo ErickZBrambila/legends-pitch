@@ -56,7 +56,6 @@ export async function POST(req: NextRequest) {
 
     // Create GitHub issue if token is configured — fire-and-forget, non-fatal
     const ghToken = process.env.GITHUB_ISSUES_TOKEN;
-    console.log("github token present:", !!ghToken, "length:", ghToken?.length ?? 0);
     if (ghToken) {
       const labelMap: Record<string, string> = {
         bug: "bug",
@@ -82,9 +81,7 @@ export async function POST(req: NextRequest) {
           body: `**Type:** ${feedbackType}\n\n${cleanMessage}\n\n---\n*Submitted via website feedback form.*`,
           labels: [labelMap[feedbackType] ?? "feedback"],
         }),
-      }).then(async (res) => {
-        if (!res.ok) console.error("github issue error:", res.status, await res.text());
-      }).catch((err) => console.error("github issue fetch error:", err));
+      }).catch(() => { /* non-fatal */ });
     }
 
     return NextResponse.json({ ok: true });

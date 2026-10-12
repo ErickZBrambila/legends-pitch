@@ -31,6 +31,7 @@ const CONTENT = {
       badge: "🔜 In progress",
       title: "Coming next",
       items: [
+        { emoji: "🔥", title: "Parent photo uploads — URGENT", desc: "Let parents upload photos from games and practices directly to the gallery. Coming soon for U12." },
         { emoji: "👤", title: "Parent accounts", desc: "Register as a parent to unlock more features — no shared password needed." },
         { emoji: "🖼️", title: "Player profile photos", desc: "Upload a photo for your child's roster card." },
         { emoji: "🍊", title: "Snack signup", desc: "Replace SignUpGenius — sign up for snacks directly on the site." },
@@ -71,6 +72,7 @@ const CONTENT = {
       badge: "🔜 En progreso",
       title: "Próximamente",
       items: [
+        { emoji: "🔥", title: "Subir fotos como padre — URGENTE", desc: "Que los padres puedan subir fotos de los partidos y entrenamientos directo a la galería. Pronto para U12." },
         { emoji: "👤", title: "Cuentas para padres", desc: "Regístrate como padre para acceder a más funciones — sin contraseña compartida." },
         { emoji: "🖼️", title: "Fotos de perfil de jugadores", desc: "Sube una foto para la tarjeta de tu hijo en la alineación." },
         { emoji: "🍊", title: "Registro de snacks", desc: "Reemplaza SignUpGenius — regístrate para llevar snacks directamente en el sitio." },

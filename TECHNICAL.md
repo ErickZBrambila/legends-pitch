@@ -4,6 +4,42 @@ Architecture, data flow, and implementation notes for contributors and maintaine
 
 ---
 
+## System Architecture
+
+```mermaid
+graph TD
+    Browser["🌐 Browser / Mobile"]
+
+    subgraph Vercel["Vercel (Edge + Serverless)"]
+        MW["middleware.ts\nEdge — route guard"]
+        Next["Next.js App Router\nServer Components + ISR"]
+        API["API Routes\n/api/*"]
+    end
+
+    subgraph External["External Services"]
+        Sanity["Sanity CMS\nContent + write ops"]
+        R2["Cloudflare R2\nVideo storage"]
+        Upstash["Upstash Redis\nRate limiting"]
+        OpenMeteo["Open-Meteo\nWeather forecasts"]
+        SportsYou["SportsYou webcal\nU11 schedule feed"]
+        GitHub["GitHub Issues\nFeedback tracking"]
+    end
+
+    Browser -->|"every request"| MW
+    MW -->|"authenticated"| Next
+    MW -->|"unauthenticated"| Next
+    Next -->|"GROQ queries"| Sanity
+    Next -->|"iCal feed (1h cache)"| SportsYou
+    API -->|"read/write"| Sanity
+    API -->|"sliding window check"| Upstash
+    API -->|"proxy download"| R2
+    API -->|"forecast"| OpenMeteo
+    API -->|"create issue"| GitHub
+    Next -->|"clip URLs"| R2
+```
+
+---
+
 ## Stack
 
 | Layer | Technology | Notes |
@@ -24,6 +60,32 @@ Architecture, data flow, and implementation notes for contributors and maintaine
 ## Authentication
 
 Two independent cookie-based gates. No user accounts — single shared secrets per role.
+
+```mermaid
+sequenceDiagram
+    participant P as Parent / Coach
+    participant MW as middleware.ts
+    participant API as /api/*/login
+    participant ENV as Env Vars
+
+    P->>MW: GET /videos
+    MW->>MW: check nlfc_family cookie
+    alt cookie missing or invalid
+        MW-->>P: redirect → /family
+        P->>API: POST /api/family/login {passcode}
+        API->>ENV: read FAMILY_PASSCODE
+        API->>API: timingSafeEqual(input, env)
+        alt match
+            API-->>P: 200 + Set-Cookie nlfc_family
+            P->>MW: GET /videos (with cookie)
+            MW-->>P: 200 page
+        else no match
+            API-->>P: 401 Incorrect passcode
+        end
+    else cookie valid
+        MW-->>P: 200 page
+    end
+```
 
 ### Family gate
 - **Route:** `POST /api/family/login`
@@ -47,6 +109,15 @@ Two independent cookie-based gates. No user accounts — single shared secrets p
 ---
 
 ## Rate Limiting
+
+```mermaid
+flowchart LR
+    Req["Incoming Request"] --> Check{UPSTASH env\nvars set?}
+    Check -->|No| Allow["✅ Allow\n(no-op)"]
+    Check -->|Yes| Redis["Upstash Redis\nsliding window"]
+    Redis -->|under limit| Allow
+    Redis -->|over limit| Block["❌ 429\nToo Many Requests"]
+```
 
 `lib/ratelimit.ts` wraps `@upstash/ratelimit` with a graceful degradation pattern: if `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` are not set, the function returns `null` (allow) instead of throwing.
 
@@ -112,6 +183,32 @@ All content is fetched via GROQ queries in `lib/sanity/queries.ts`. **Never inte
 
 The main video experience lives in `app/videos/[sessionId]/SessionViewer.tsx`.
 
+```mermaid
+flowchart TD
+    subgraph Pipeline["KickReel Ingest Pipeline (local)"]
+        Cam["📷 Falcon XBotGo\n360° camera"]
+        Script["Python script\nclip extraction + metadata"]
+        R2Up["Upload to\nCloudflare R2"]
+        SanityPub["Publish videoSession\nto Sanity CMS"]
+        Cam --> Script --> R2Up --> SanityPub
+    end
+
+    subgraph Viewer["SessionViewer (browser)"]
+        Fetch["Fetch videoSession\nfrom Sanity (GROQ)"]
+        Player["&lt;video&gt; element\nclip src swap on select"]
+        Prefetch["Prefetch next 2 clips\n&lt;link rel=prefetch&gt;"]
+        MediaSession["navigator.mediaSession\niOS lock screen artwork"]
+        Analytics["FieldHeatmap + ActivityTimeline\nSVG bubble + bar chart"]
+        Fetch --> Player
+        Player --> Prefetch
+        Player --> MediaSession
+        Player --> Analytics
+    end
+
+    SanityPub -->|"GROQ query on page load"| Fetch
+    R2Up -->|"r2Url in clip doc"| Player
+```
+
 **Data flow:**
 1. Session page fetches the `videoSession` document from Sanity (clips, analytics, half metadata)
 2. `SessionViewer` renders the `<video>` element and a clip list
@@ -120,6 +217,33 @@ The main video experience lives in `app/videos/[sessionId]/SessionViewer.tsx`.
 5. Analytics tab shows `FieldHeatmap` (SVG bubble overlay) and `ActivityTimeline` (per-half bar chart)
 
 **Video storage:** R2 public bucket — `pub-*.r2.dev` direct URLs. No CDN cache until `northlegensfc.com` is connected. Once connected, update `r2Url` fields in Sanity to use `videos.northlegensfc.com/...` and update `ALLOWED_HOST` in the download route.
+
+---
+
+## Feedback → GitHub Issues Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User (roadmap page)
+    participant API as /api/feedback
+    participant RL as Upstash Rate Limiter
+    participant S as Sanity CMS
+    participant GH as GitHub Issues
+
+    U->>API: POST {type, message, name?, email?}
+    API->>RL: check IP limit (3 req / 1h)
+    alt over limit
+        RL-->>U: 429 Too Many Requests
+    else under limit
+        API->>API: sanitize + validate input
+        API->>S: writeClient.create(feedback doc)
+        alt GITHUB_ISSUES_TOKEN set
+            API->>GH: POST /repos/.../issues\n{title, body, labels}
+            GH-->>API: 201 issue created
+        end
+        API-->>U: 200 {ok: true}
+    end
+```
 
 ---
 

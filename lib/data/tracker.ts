@@ -166,6 +166,35 @@ export const KICKREEL_RUNS: KickReelRun[] = [
   // { date: "YYYY-MM-DD", label: "vs Opponent", team: "U11", type: "Game", clipsExtracted: 0, uploadedToR2: true, publishedToSanity: true },
 ];
 
+export interface HardwareLine {
+  name: string;
+  purpose: string;
+  purchasedDate: string;
+  costUSD: number;
+  notes: string;
+}
+
+export const HARDWARE: HardwareLine[] = [
+  {
+    name: "Falcon XBotGo 360° Camera",
+    purpose: "Automated match filming — AI tracking + 360° capture for KickReel pipeline",
+    purchasedDate: "2026-07-03",
+    costUSD: 709.00,
+    notes: "Primary capture device. Mounts on sideline tripod, tracks play autonomously. Footage processed by KickReel pipeline → R2 → Sanity.",
+  },
+  {
+    name: "Falcon XBotGo Tripod",
+    purpose: "Sideline mount for the XBotGo camera",
+    purchasedDate: "2026-07-03",
+    costUSD: 197.44,
+    notes: "Required for stable sideline placement. Bundled purchase with camera.",
+  },
+];
+
+export function totalHardwareCost() {
+  return HARDWARE.reduce((s, h) => s + h.costUSD, 0);
+}
+
 export const SERVICES: ServiceLine[] = [
   {
     name: "Vercel",
@@ -253,7 +282,8 @@ export interface TCOSummary {
   // Build costs (one-time)
   devHours: number;
   claudeCostUSD: number;
-  totalBuildCostUSD: number;        // Claude + $0 labor (owner built it)
+  hardwareCostUSD: number;
+  totalBuildCostUSD: number;        // Claude + hardware (owner labor = $0)
 
   // Running costs (ongoing)
   monthlyRunningCostUSD: number;
@@ -276,7 +306,8 @@ export interface TCOSummary {
 export function tco(): TCOSummary {
   const devHours            = totalHours();
   const claudeCostUSD       = totalClaudeCost();
-  const totalBuildCostUSD   = claudeCostUSD; // owner's time = $0 out-of-pocket
+  const hardwareCostUSD     = totalHardwareCost();
+  const totalBuildCostUSD   = claudeCostUSD + hardwareCostUSD;
   const monthlyRunning      = monthlyRunningCost();
   const annualRunning       = annualRunningCost();
   const threeYearTCOUSD     = totalBuildCostUSD + annualRunning * 3;
@@ -285,6 +316,7 @@ export function tco(): TCOSummary {
   return {
     devHours,
     claudeCostUSD,
+    hardwareCostUSD,
     totalBuildCostUSD,
     monthlyRunningCostUSD:    monthlyRunning,
     annualRunningCostUSD:     annualRunning,

@@ -23,6 +23,7 @@ export default function Footer() {
             <Link href="/news" className="hover:text-white transition-colors">{t("news")}</Link>
             <Link href="/gallery" className="hover:text-white transition-colors">{t("gallery")}</Link>
             <Link href="/contact" className="hover:text-white transition-colors">{t("contact")}</Link>
+            <Link href="/roadmap" className="hover:text-white transition-colors">{t("roadmap")}</Link>
           </nav>
 
           <p className="text-xs text-red-600">

@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
+import { getCoachSubmission } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
+
+export const revalidate = 0;
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Contact");
@@ -12,35 +15,6 @@ export async function generateMetadata(): Promise<Metadata> {
 const FIELD_ADDRESS = "Frost Elementary School, 711 Lakeway Dr, Georgetown, TX 78628";
 const MAPS_EMBED = `https://maps.google.com/maps?q=${encodeURIComponent(FIELD_ADDRESS)}&output=embed&z=15`;
 
-const TEAM_INFO: Record<TeamSlug, {
-  email: string;
-  coaches: { name: string; roleKey: string }[];
-  practice: { dayKey: string; time: string; location: string }[];
-}> = {
-  u11: {
-    email: "northlegends@gmail.com",
-    coaches: [
-      { name: "Coach Hugo", roleKey: "headCoach" },
-      { name: "—", roleKey: "assistantCoach" },
-    ],
-    practice: [
-      { dayKey: "tuesday",  time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
-      { dayKey: "thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
-    ],
-  },
-  u12: {
-    email: "northlegends@gmail.com",
-    coaches: [
-      { name: "Coach Hugo", roleKey: "headCoach" },
-      { name: "—", roleKey: "assistantCoach" },
-    ],
-    practice: [
-      { dayKey: "tuesday",  time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
-      { dayKey: "thursday", time: "6:30 – 7:30 PM", location: "Jarrell Elementary School" },
-    ],
-  },
-};
-
 export default async function ContactPage({
   searchParams,
 }: {
@@ -48,9 +22,13 @@ export default async function ContactPage({
 }) {
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
-  const info = TEAM_INFO[team];
 
-  const t = await getTranslations("Contact");
+  const [t, info] = await Promise.all([
+    getTranslations("Contact"),
+    getCoachSubmission(team),
+  ]);
+
+  const email = info?.headCoachEmail ?? "legendsfcnorth@gmail.com";
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
@@ -59,7 +37,7 @@ export default async function ContactPage({
         <TeamTabs activeTeam={team} />
       </div>
 
-      {/* Coach Hugo — full-width feature card */}
+      {/* Coach feature card */}
       <div className="bg-[var(--color-navy)] text-white rounded-2xl overflow-hidden shadow-lg mb-8">
         <div className="flex flex-col md:flex-row">
           <div className="relative w-full md:w-56 h-56 md:h-auto flex-shrink-0">
@@ -79,8 +57,6 @@ export default async function ContactPage({
               <h2 className="text-2xl font-black mb-3">{t("coachHugoName")}</h2>
               <p className="text-gray-300 text-sm leading-relaxed">{t("coachHugoBio")}</p>
             </div>
-
-            {/* Philosophy */}
             <div className="border-t border-white/10 pt-5">
               <p className="text-[var(--color-accent)] text-xs uppercase tracking-widest font-semibold mb-2">
                 {t("coachingPhilosophy")}
@@ -89,8 +65,6 @@ export default async function ContactPage({
                 {t("coachingPhilosophyBody")}
               </p>
             </div>
-
-            {/* Testimonial */}
             <div className="bg-white/5 rounded-xl px-5 py-4">
               <p className="text-gray-200 text-sm italic leading-relaxed">{t("parentTestimonial")}</p>
               <p className="text-gray-400 text-xs mt-2">{t("parentTestimonialAuthor")}</p>
@@ -111,13 +85,17 @@ export default async function ContactPage({
             {t("practiceSchedule")}
           </h2>
           <div className="flex flex-col gap-3">
-            {info.practice.map((s, i) => (
-              <div key={i} className="flex flex-col gap-0.5">
-                <p className="font-semibold text-gray-700 text-sm">{t(s.dayKey as Parameters<typeof t>[0])}</p>
-                <p className="text-gray-500 text-sm">{s.time}</p>
-                <p className="text-gray-400 text-xs">{s.location}</p>
-              </div>
-            ))}
+            {info?.practiceSlots?.length ? (
+              info.practiceSlots.map((s, i) => (
+                <div key={i} className="flex flex-col gap-0.5">
+                  <p className="font-semibold text-gray-700 text-sm">{s.day.trim()}</p>
+                  <p className="text-gray-500 text-sm">{s.time}</p>
+                  <p className="text-gray-400 text-xs">{s.location}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-400 text-sm">Schedule coming soon.</p>
+            )}
           </div>
         </div>
 
@@ -132,16 +110,26 @@ export default async function ContactPage({
             {t("coachingStaff")}
           </h2>
           <div className="flex flex-col gap-3">
-            {info.coaches.map((c, i) => (
-              <div key={i}>
-                <p className="font-semibold text-gray-700 text-sm">{c.name}</p>
-                <p className="text-gray-400 text-xs">{t(c.roleKey as Parameters<typeof t>[0])}</p>
-              </div>
-            ))}
+            {info ? (
+              <>
+                <div>
+                  <p className="font-semibold text-gray-700 text-sm">{info.headCoachName}</p>
+                  <p className="text-gray-400 text-xs">{t("headCoach")}</p>
+                </div>
+                {info.assistants?.map((a, i) => (
+                  <div key={i}>
+                    <p className="font-semibold text-gray-700 text-sm">{a.name.trim()}</p>
+                    <p className="text-gray-400 text-xs">{t("assistantCoach")}</p>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <p className="text-gray-400 text-sm">{t("headCoachTbd")}</p>
+            )}
           </div>
         </div>
 
-        {/* Contact */}
+        {/* Get in touch */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
           <h2 className="font-bold text-gray-800 text-base mb-4 flex items-center gap-2">
             <span className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center">
@@ -153,14 +141,14 @@ export default async function ContactPage({
           </h2>
           <p className="text-gray-500 text-sm mb-3">{t("getInTouchBody")}</p>
           <a
-            href={`mailto:${info.email}`}
+            href={`mailto:${email}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors"
           >
-            {info.email}
+            {email}
           </a>
         </div>
 
-        {/* Field address */}
+        {/* Home field */}
         <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
           <h2 className="font-bold text-gray-800 text-base mb-4 flex items-center gap-2">
             <span className="w-7 h-7 rounded-full bg-[var(--color-primary)] flex items-center justify-center">

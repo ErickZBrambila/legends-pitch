@@ -351,3 +351,20 @@ export async function getSessionById(id: string): Promise<PracticeSession | null
   );
   return raw ? mapSession(raw) : null;
 }
+
+export interface CoachSubmission {
+  headCoachName: string;
+  headCoachEmail: string;
+  assistants: { name: string; role: string }[];
+  practiceSlots: { day: string; time: string; location: string }[];
+}
+
+export async function getCoachSubmission(team: TeamSlug): Promise<CoachSubmission | null> {
+  return sanityClient.fetch<CoachSubmission | null>(
+    `*[_id == $id][0]{
+      headCoachName, headCoachEmail,
+      assistants, practiceSlots
+    }`,
+    { id: `coach-submission-${team}` }
+  );
+}

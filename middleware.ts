@@ -15,8 +15,8 @@ async function sha256(value: string, salt: string): Promise<string> {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Admin gate — /admin/dashboard requires ADMIN_PASSWORD cookie
-  if (pathname.startsWith("/admin/dashboard")) {
+  // Admin gate — all /admin/* sub-pages require ADMIN_PASSWORD cookie
+  if (pathname.startsWith("/admin/") && pathname !== "/admin") {
     const token = req.cookies.get("nlfc_admin")?.value;
     const expected = await sha256(process.env.ADMIN_PASSWORD ?? "", "-nlfc-admin-2026");
     if (token !== expected) {
@@ -43,5 +43,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/dashboard/:path*", "/videos/:path*", "/gallery/:path*", "/highlights/:path*"],
+  matcher: ["/admin/:path+", "/videos/:path*", "/gallery/:path*", "/highlights/:path*"],
 };

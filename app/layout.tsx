@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import NavTip from "@/components/NavTip";
 import LanguagePickerModal from "@/components/LanguagePickerModal";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -38,6 +39,7 @@ export default async function RootLayout({
           <Footer />
         </NextIntlClientProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

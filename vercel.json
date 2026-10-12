@@ -1,3 +1,8 @@
 {
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "github": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  }
 }

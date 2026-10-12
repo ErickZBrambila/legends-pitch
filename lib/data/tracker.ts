@@ -109,7 +109,17 @@ export const KICKREEL_RUNS: KickReelRun[] = [
     publishedToSanity: false,
     notes: "Filmed with Insta360. Clips published manually to YouTube Highlights page (pre-pipeline).",
   },
-  // Add more pipeline runs here as they happen:
+  {
+    date: "2026-10-10",
+    label: "vs Elgin United",
+    team: "U11",
+    type: "Game",
+    clipsExtracted: 72,
+    uploadedToR2: true,
+    publishedToSanity: true,
+    notes: "7 goals · full-game analytics: field heatmap, per-half activity timeline, goal pressure %. Full 4K game on Google Drive.",
+  },
+  // Add future pipeline runs here:
   // { date: "YYYY-MM-DD", label: "vs Opponent", team: "U11", type: "Game", clipsExtracted: 0, uploadedToR2: true, publishedToSanity: true },
 ];
 
@@ -161,6 +171,14 @@ export const SERVICES: ServiceLine[] = [
     monthlyCostUSD: 1.25,
     annualCostUSD: 15,
     notes: "~$15/year. Waiting on Cloudflare admin credentials to connect to R2 bucket and Vercel.",
+  },
+  {
+    name: "Claude (Anthropic)",
+    purpose: "AI assistant — site build, KickReel pipeline, all projects",
+    plan: "API / Claude Code",
+    monthlyCostUSD: 20,
+    annualCostUSD: 240,
+    notes: "Shared across multiple projects (legends-pitch, argus, AutoSense-AI, etc.). Estimate ~$20/mo — adjust as bills come in. Claude Code sessions drive most of the spend.",
   },
 ];
 

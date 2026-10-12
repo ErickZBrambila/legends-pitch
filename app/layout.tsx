@@ -4,8 +4,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
 import Nav from "@/components/Nav";
-import MobileNav from "@/components/MobileNav";
 import Footer from "@/components/Footer";
+import NavTip from "@/components/NavTip";
 import LanguagePickerModal from "@/components/LanguagePickerModal";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -29,13 +29,13 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className={`${geist.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col pb-14 md:pb-0">
+      <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>
           <LanguagePickerModal />
           <Nav />
+          <NavTip />
           <main className="flex-1">{children}</main>
           <Footer />
-          <MobileNav />
         </NextIntlClientProvider>
         <Analytics />
       </body>

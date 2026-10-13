@@ -103,6 +103,22 @@ export const SESSIONS: WorkSession[] = [
   },
   {
     date: "2026-10-12",
+    title: "Session 7 — Analytics, Sponsors & UX Polish",
+    hours: 3,
+    commits: 8,
+    claudeCostUSD: 15,
+    features: [
+      "Vercel Analytics custom events — scroll depth milestones (25/50/75/100%), hero CTA clicks, news article clicks, sponsor email CTA",
+      "Vercel Speed Insights — Core Web Vitals (LCP, CLS, FID, TTFB) per page",
+      "Fixed Vercel preview deployments — ignoreCommand skips all non-main branches",
+      "Sponsor cards made clickable — Houk AC → houkac.com, Bonilla's → Facebook page",
+      "Real sponsor logos replacing emojis — Houk SVG from site, Bonilla's logo PNG",
+      "Facebook 'Follow us' button in footer — FB blue branded button, replaces invisible red text link",
+      "Hero carousel cleanup — removed team-photo.jpg and sponsors-banner.jpg (video + 2026 photo only)",
+    ],
+  },
+  {
+    date: "2026-10-12",
     title: "Session 6 — Open Source, Docs & GitHub Integration",
     hours: 4,
     commits: 5,

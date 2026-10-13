@@ -43,14 +43,25 @@ export default function Footer() {
               Follow us on Facebook
             </a>
             <p className="text-xs text-red-600">{t("copyright", { year })}</p>
-            <a
-              href="https://github.com/ErickZBrambila/legends-pitch"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-red-500 hover:text-white transition-colors"
-            >
-              {t("contribute")}
-            </a>
+            <div className="flex items-center gap-3">
+              <a
+                href="https://claude.ai/code"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-red-400 hover:text-white transition-colors"
+              >
+                Powered by Claude Code ↗
+              </a>
+              <span className="text-red-800 text-xs">·</span>
+              <a
+                href="https://github.com/ErickZBrambila/legends-pitch"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-red-500 hover:text-white transition-colors"
+              >
+                {t("contribute")}
+              </a>
+            </div>
           </div>
         </div>
       </div>

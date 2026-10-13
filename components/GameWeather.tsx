@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface WeatherData {
   available: boolean;
@@ -16,21 +17,21 @@ interface Props {
   gameIso: string;
 }
 
-// WMO weather code → emoji + label
-function weatherIcon(code: number): { emoji: string; label: string } {
-  if (code === 0)                    return { emoji: "☀️",  label: "Clear" };
-  if (code <= 2)                     return { emoji: "⛅",  label: "Partly cloudy" };
-  if (code === 3)                    return { emoji: "☁️",  label: "Overcast" };
-  if (code <= 49)                    return { emoji: "🌫️", label: "Fog" };
-  if (code <= 57)                    return { emoji: "🌦️", label: "Drizzle" };
-  if (code <= 67)                    return { emoji: "🌧️", label: "Rain" };
-  if (code <= 77)                    return { emoji: "❄️",  label: "Snow" };
-  if (code <= 82)                    return { emoji: "🌧️", label: "Showers" };
-  if (code <= 99)                    return { emoji: "⛈️",  label: "Thunderstorm" };
-  return { emoji: "🌡️", label: "Unknown" };
+function weatherKey(code: number): { emoji: string; key: string } {
+  if (code === 0)   return { emoji: "☀️",  key: "clear" };
+  if (code <= 2)    return { emoji: "⛅",  key: "partlyCloudy" };
+  if (code === 3)   return { emoji: "☁️",  key: "overcast" };
+  if (code <= 49)   return { emoji: "🌫️", key: "fog" };
+  if (code <= 57)   return { emoji: "🌦️", key: "drizzle" };
+  if (code <= 67)   return { emoji: "🌧️", key: "rain" };
+  if (code <= 77)   return { emoji: "❄️",  key: "snow" };
+  if (code <= 82)   return { emoji: "🌧️", key: "showers" };
+  if (code <= 99)   return { emoji: "⛈️",  key: "thunderstorm" };
+  return { emoji: "🌡️", key: "unknown" };
 }
 
 export default function GameWeather({ lat, lng, gameIso }: Props) {
+  const t = useTranslations("Weather");
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function GameWeather({ lat, lng, gameIso }: Props) {
 
   if (!weather || !weather.available) return null;
 
-  const { emoji, label } = weatherIcon(weather.weatherCode ?? 0);
+  const { emoji, key } = weatherKey(weather.weatherCode ?? 0);
   const rain = weather.precipPct ?? 0;
   const rainColor = rain >= 70 ? "text-blue-600" : rain >= 40 ? "text-blue-400" : "text-gray-400";
 
@@ -50,7 +51,7 @@ export default function GameWeather({ lat, lng, gameIso }: Props) {
     <div className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 rounded-lg px-3 py-1.5 text-xs mt-1.5">
       <span className="text-base leading-none">{emoji}</span>
       <span className="font-bold text-gray-800">{weather.tempF}°F</span>
-      <span className="text-gray-500">{label}</span>
+      <span className="text-gray-500">{t(key as Parameters<typeof t>[0])}</span>
       {rain > 0 && (
         <span className={`font-semibold ${rainColor}`}>💧{rain}%</span>
       )}

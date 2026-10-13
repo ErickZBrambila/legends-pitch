@@ -221,5 +221,17 @@
     "noVideos": "Aún no hay videos — agrégalos en el Studio.",
     "clipsCount": "{count} clips",
     "watchOnYoutube": "Ver en YouTube →"
+  },
+  "Weather": {
+    "clear": "Despejado",
+    "partlyCloudy": "Parcialmente nublado",
+    "overcast": "Nublado",
+    "fog": "Niebla",
+    "drizzle": "Llovizna",
+    "rain": "Lluvia",
+    "snow": "Nieve",
+    "showers": "Chubascos",
+    "thunderstorm": "Tormenta",
+    "unknown": "Desconocido"
   }
 }

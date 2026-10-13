@@ -25,6 +25,7 @@ const CONTENT = {
         { emoji: "🌐", title: "English & Spanish", desc: "Full bilingual support across the entire site." },
         { emoji: "🔒", title: "Family-only access", desc: "Videos and gallery are passcode-protected — ask Coach Hugo for the code." },
         { emoji: "📰", title: "News & announcements", desc: "Pinned announcements from the coaching staff." },
+        { emoji: "💬", title: "Team announcements feed", desc: "Coach posts a message in any language — the site translates it automatically, shows the location with a Maps link, and pulls a live weather forecast for the event." },
       ],
     },
     knownBugs: {
@@ -49,7 +50,6 @@ const CONTENT = {
       badge: "💡 Exploring",
       title: "On the wishlist",
       items: [
-        { emoji: "💬", title: "Team announcements feed", desc: "Coach posts updates, parents react — no more group chat chaos." },
         { emoji: "📊", title: "Player stats", desc: "Goals, assists, and appearances per player across the season." },
         { emoji: "✅", title: "Attendance tracking", desc: "Mark who showed up to practice and games." },
         { emoji: "🏆", title: "Season awards", desc: "Vote for MVP, most improved, and best attitude at end of season." },
@@ -73,6 +73,7 @@ const CONTENT = {
         { emoji: "🌐", title: "Inglés y Español", desc: "Soporte bilingüe completo en todo el sitio." },
         { emoji: "🔒", title: "Acceso solo para familias", desc: "Videos y galería protegidos con contraseña — pídela al Entrenador Hugo." },
         { emoji: "📰", title: "Noticias y anuncios", desc: "Anuncios fijados del cuerpo técnico." },
+        { emoji: "💬", title: "Feed de anuncios del equipo", desc: "El entrenador publica en cualquier idioma — el sitio lo traduce automáticamente, muestra la ubicación con enlace a Maps y el pronóstico del tiempo para el evento." },
       ],
     },
     knownBugs: {
@@ -97,7 +98,6 @@ const CONTENT = {
       badge: "💡 Explorando",
       title: "En la lista de deseos",
       items: [
-        { emoji: "💬", title: "Feed de anuncios del equipo", desc: "El entrenador publica, los padres reaccionan — sin más caos en el chat grupal." },
         { emoji: "📊", title: "Estadísticas de jugadores", desc: "Goles, asistencias y apariciones por jugador en la temporada." },
         { emoji: "✅", title: "Control de asistencia", desc: "Registra quién asistió a los entrenamientos y partidos." },
         { emoji: "🏆", title: "Premios de temporada", desc: "Vota por MVP, más mejorado y mejor actitud al final de la temporada." },

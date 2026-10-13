@@ -221,5 +221,17 @@
     "noVideos": "No videos yet — add them in the Studio.",
     "clipsCount": "{count} clips",
     "watchOnYoutube": "Watch on YouTube →"
+  },
+  "Weather": {
+    "clear": "Clear",
+    "partlyCloudy": "Partly cloudy",
+    "overcast": "Overcast",
+    "fog": "Fog",
+    "drizzle": "Drizzle",
+    "rain": "Rain",
+    "snow": "Snow",
+    "showers": "Showers",
+    "thunderstorm": "Thunderstorm",
+    "unknown": "Unknown"
   }
 }

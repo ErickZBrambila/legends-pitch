@@ -7,7 +7,8 @@ import TeamTabs from "@/components/TeamTabs";
 import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import TrackedLink from "@/components/TrackedLink";
 import TrackedAnchor from "@/components/TrackedAnchor";
-import { getPostsByTeam } from "@/lib/sanity/queries";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
+import { getPostsByTeam, getLatestAnnouncement } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import { getGotSportData } from "@/lib/data/gotsport";
 
@@ -44,7 +45,10 @@ export default async function Home({
   const ts = await getTranslations("Sponsors");
   const locale = await getLocale();
 
-  const [latestNews] = await Promise.all([getPostsByTeam(team)]);
+  const [latestNews, latestAnnouncement] = await Promise.all([
+    getPostsByTeam(team),
+    getLatestAnnouncement(team),
+  ]);
 
   const { matches } = await getGotSportData(team);
   const now = new Date();
@@ -201,6 +205,11 @@ export default async function Home({
 
         {/* Latest News */}
         <section className="lg:col-span-2">
+          {latestAnnouncement && (
+            <div className="mb-6">
+              <AnnouncementBanner announcement={latestAnnouncement} locale={locale} />
+            </div>
+          )}
           <h2 className="text-lg font-bold text-gray-800 mb-4">{t("latestNews")}</h2>
           <div className="flex flex-col gap-4">
             {topNews.map((post) => (

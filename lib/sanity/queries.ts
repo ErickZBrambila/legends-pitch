@@ -1,8 +1,26 @@
 import { sanityClient } from "./client";
 import { urlForImage } from "./image";
-import type { Match, Player, NewsPost, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
+import type { Announcement, Match, Player, NewsPost, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
 
 export type TeamSlug = "u11" | "u12";
+
+export async function getLatestAnnouncement(team: TeamSlug): Promise<Announcement | null> {
+  const raw = await sanityClient.fetch<{
+    _id: string;
+    message: string;
+    message_es?: string;
+    author: string;
+    publishedAt: string;
+  } | null>(
+    `*[_type == "announcement" && team->ageGroup == $team] | order(publishedAt desc) [0]{
+      _id, message, message_es, author, publishedAt
+    }`,
+    { team },
+    { next: { revalidate: 300 } }
+  );
+  if (!raw) return null;
+  return { id: raw._id, message: raw.message, message_es: raw.message_es, author: raw.author, publishedAt: raw.publishedAt };
+}
 
 export async function getMatchesByTeam(team: TeamSlug): Promise<Match[]> {
   const raw = await sanityClient.fetch<

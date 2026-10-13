@@ -1,3 +1,11 @@
+export interface Announcement {
+  id: string;
+  message: string;
+  message_es?: string;
+  author: string;
+  publishedAt: string;
+}
+
 export type MatchResult = "W" | "L" | "D" | null;
 
 export interface Match {

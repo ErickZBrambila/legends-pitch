@@ -36,9 +36,9 @@ async function main() {
     .patch(doc._id)
     .set({
       location: "1001 E University Ave, Georgetown, TX 78626",
-      // Southwestern University soccer field
-      locationLat: 30.6338,
-      locationLng: -97.6775,
+      // Southwestern University Soccer Field — exact pin from Google Maps
+      locationLat: 30.6380112,
+      locationLng: -97.6604064,
       // Friday Oct 17 at 6:45 PM CDT = 23:45 UTC
       eventTime: "2026-10-17T23:45:00.000Z",
     })

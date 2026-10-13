@@ -11,15 +11,29 @@ export async function getLatestAnnouncement(team: TeamSlug): Promise<Announcemen
     message_es?: string;
     author: string;
     publishedAt: string;
+    location?: string;
+    eventTime?: string;
+    locationLat?: number;
+    locationLng?: number;
   } | null>(
     `*[_type == "announcement" && team->ageGroup == $team] | order(publishedAt desc) [0]{
-      _id, message, message_es, author, publishedAt
+      _id, message, message_es, author, publishedAt, location, eventTime, locationLat, locationLng
     }`,
     { team },
     { next: { revalidate: 300 } }
   );
   if (!raw) return null;
-  return { id: raw._id, message: raw.message, message_es: raw.message_es, author: raw.author, publishedAt: raw.publishedAt };
+  return {
+    id: raw._id,
+    message: raw.message,
+    message_es: raw.message_es,
+    author: raw.author,
+    publishedAt: raw.publishedAt,
+    location: raw.location,
+    eventTime: raw.eventTime,
+    locationLat: raw.locationLat,
+    locationLng: raw.locationLng,
+  };
 }
 
 export async function getMatchesByTeam(team: TeamSlug): Promise<Match[]> {

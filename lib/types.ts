@@ -4,6 +4,10 @@ export interface Announcement {
   message_es?: string;
   author: string;
   publishedAt: string;
+  location?: string;
+  eventTime?: string;
+  locationLat?: number;
+  locationLng?: number;
 }
 
 export type MatchResult = "W" | "L" | "D" | null;

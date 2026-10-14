@@ -23,6 +23,7 @@ export default defineType({
       options: { list: [{ title: "Draft", value: "draft" }, { title: "Published", value: "published" }] },
       initialValue: "published",
     }),
+    defineField({ name: "sourceMatchId", title: "Source Match ID", type: "string", hidden: true }),
   ],
   preview: {
     select: { title: "title", subtitle: "publishedAt" },

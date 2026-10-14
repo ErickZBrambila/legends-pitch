@@ -46,6 +46,7 @@ export interface NewsPost {
   author: string;
   status?: "draft" | "published";
   coverImageUrl?: string;
+  sourceMatchId?: string;
 }
 
 export interface GalleryEvent {

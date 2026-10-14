@@ -47,7 +47,7 @@ function blocksToText(blocks: unknown): string {
 
 interface DraftPreview {
   id: string;
-  matchId?: string;
+  sourceMatchId?: string;
   slug: string;
   title: string;
   title_es: string;
@@ -84,11 +84,17 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
   const [showPreview, setShowPreview] = useState(false);
   const [editState, setEditState] = useState<EditState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // For saved drafts that have no sourceMatchId — show inline match picker
+  const [regenPickFor, setRegenPickFor] = useState<string | null>(null);
+  const [regenPickMatchId, setRegenPickMatchId] = useState<string>("");
 
   const draftPosts = posts.filter((p) => p.status === "draft");
 
   async function generate(matchId?: string) {
-    if (mode === "freeform" && !freeFormContext.trim()) return;
+    if (!matchId && !freeFormContext.trim()) {
+      setError("No match linked to this draft. Pick a match from the table above to regenerate, or switch to Free Form mode.");
+      return;
+    }
     const key = matchId ?? "freeform";
     setGenerating(key);
     setError(null);
@@ -111,7 +117,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Unknown error");
-      setDraft({ id: data.id, matchId, ...data });
+      setDraft({ id: data.id, sourceMatchId: matchId, ...data });
       setShowPreview(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate article");
@@ -322,7 +328,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
 
             {mode === "freeform" && (
               <button
-                onClick={() => generate()}
+                onClick={() => generate(undefined)}
                 disabled={!freeFormContext.trim() || generating !== null}
                 className="w-full py-2.5 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -378,7 +384,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                     {saving ? "Saving…" : "Save Changes"}
                   </button>
                   <button
-                    onClick={() => { setEditState(null); draft.matchId ? generate(draft.matchId) : generate(); }}
+                    onClick={() => { setEditState(null); draft.sourceMatchId ? generate(draft.sourceMatchId) : generate(); }}
                     disabled={generating !== null}
                     className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                   >
@@ -418,7 +424,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                 <div className="flex gap-2 mt-4 pt-4 border-t border-amber-200">
                   <button onClick={discard} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Discard</button>
                   <button onClick={() => startEdit(draft)} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Edit</button>
-                  <button onClick={() => draft.matchId ? generate(draft.matchId) : generate()} disabled={generating !== null} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">Regenerate</button>
+                  <button onClick={() => draft.sourceMatchId ? generate(draft.sourceMatchId) : generate()} disabled={generating !== null} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">Regenerate</button>
                   <button onClick={() => publish(draft.id)} disabled={publishing === draft.id} className="ml-auto px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
                     {publishing === draft.id ? "Publishing…" : "Publish Article"}
                   </button>
@@ -525,7 +531,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                           {saving ? "Saving…" : "Save Changes"}
                         </button>
                         <button
-                          onClick={() => { setEditState(null); generate(); }}
+                          onClick={() => { setEditState(null); generate(post.sourceMatchId); }}
                           disabled={generating !== null}
                           className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                         >
@@ -544,34 +550,83 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-400 mb-1">
-                          {formatDate(post.publishedAt)} · {post.author}
-                          <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold text-[10px] uppercase">Draft</span>
-                        </p>
-                        <h3 className="font-bold text-gray-800 text-sm leading-snug">{post.title}</h3>
-                        <p className="text-gray-400 text-xs mt-1 line-clamp-2">{post.excerpt}</p>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-400 mb-1">
+                            {formatDate(post.publishedAt)} · {post.author}
+                            <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-bold text-[10px] uppercase">Draft</span>
+                          </p>
+                          <h3 className="font-bold text-gray-800 text-sm leading-snug">{post.title}</h3>
+                          <p className="text-gray-400 text-xs mt-1 line-clamp-2">{post.excerpt}</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <button onClick={() => startEdit(post)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors">Edit</button>
+                          <button
+                            onClick={() => {
+                              if (post.sourceMatchId) {
+                                generate(post.sourceMatchId);
+                              } else {
+                                setRegenPickFor(post.id);
+                                setRegenPickMatchId(matches[0]?.id ?? "");
+                              }
+                            }}
+                            disabled={generating !== null}
+                            className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+                          >
+                            {generating === post.id ? "…" : "✨ Regen"}
+                          </button>
+                          <button onClick={() => publish(post.id)} disabled={publishing === post.id} className="text-xs px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-full font-bold hover:opacity-80 transition-opacity disabled:opacity-50">
+                            {publishing === post.id ? "Publishing…" : "Publish"}
+                          </button>
+                          <button
+                            onClick={() => deleteDraft(post.id)}
+                            disabled={deleting === post.id}
+                            className="text-xs px-3 py-1.5 border border-red-100 text-red-400 rounded-full font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
+                          >
+                            {deleting === post.id ? "…" : "Delete"}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button onClick={() => startEdit(post)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors">Edit</button>
-                        <button
-                          onClick={() => generate()}
-                          disabled={generating !== null}
-                          className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
-                        >
-                          {generating === "freeform" ? "…" : "✨ Regen"}
-                        </button>
-                        <button onClick={() => publish(post.id)} disabled={publishing === post.id} className="text-xs px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-full font-bold hover:opacity-80 transition-opacity disabled:opacity-50">
-                          {publishing === post.id ? "Publishing…" : "Publish"}
-                        </button>
-                        <button
-                          onClick={() => deleteDraft(post.id)}
-                          disabled={deleting === post.id}
-                          className="text-xs px-3 py-1.5 border border-red-100 text-red-400 rounded-full font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
-                        >
-                          {deleting === post.id ? "…" : "Delete"}
-                        </button>
+                      {/* Inline tone + regen controls — always visible */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Tone:</span>
+                        {(Object.keys(TONE_LABELS) as Tone[]).map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setSelectedTone(t)}
+                            className={`text-xs px-2.5 py-1 rounded-full font-bold border transition-all ${
+                              selectedTone === t
+                                ? "bg-[var(--color-accent)] text-[#1c1c1e] border-transparent"
+                                : "text-gray-500 border-gray-200 hover:border-gray-300"
+                            }`}
+                          >
+                            {TONE_LABELS[t].label}
+                          </button>
+                        ))}
+                        {regenPickFor === post.id && (
+                          <>
+                            <select
+                              value={regenPickMatchId}
+                              onChange={(e) => setRegenPickMatchId(e.target.value)}
+                              className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:border-[var(--color-accent)]"
+                            >
+                              {matches.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  {formatDate(m.date)} vs {m.opponent}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => { setRegenPickFor(null); generate(regenPickMatchId); }}
+                              disabled={!regenPickMatchId || generating !== null}
+                              className="text-xs px-3 py-1 bg-[var(--color-accent)] text-[#1c1c1e] rounded-full font-bold disabled:opacity-50"
+                            >
+                              ✨ Generate
+                            </button>
+                            <button onClick={() => setRegenPickFor(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}

@@ -10,7 +10,7 @@ export async function DELETE() {
   return NextResponse.json({ ok: true, cleared: true });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const authed = await getNeoSession();
   if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -21,8 +21,11 @@ export async function GET() {
   );
 
   const redis = getRedis();
-  if (!redis) {
-    return NextResponse.json({ vapidOk, redis: false, subs: null });
+  if (!redis) return NextResponse.json({ vapidOk, redis: false, subs: null });
+
+  if (new URL(req.url).searchParams.get("clear") === "1") {
+    await redis.del("push:subs");
+    return NextResponse.json({ ok: true, cleared: true });
   }
 
   const subs = await redis.hgetall<Record<string, { endpoint?: string; keys?: unknown; expirationTime?: unknown }>>("push:subs");

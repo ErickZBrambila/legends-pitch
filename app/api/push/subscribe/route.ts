@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
-import { getRedis } from "@/lib/redis";
+import { saveSubscription, removeSubscription } from "@/lib/push";
+import type webpush from "web-push";
 
 export async function POST(req: NextRequest) {
   let subscription: unknown;
@@ -19,17 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
-  const redis = getRedis();
-  if (!redis) {
-    // No Redis configured — silently accept so the client doesn't error
-    return NextResponse.json({ ok: true });
-  }
-
-  const endpoint = (subscription as { endpoint: string }).endpoint;
-  const key = createHash("sha256").update(endpoint).digest("hex");
-
-  await redis.hset("push:subs", { [key]: JSON.stringify(subscription) });
-
+  await saveSubscription(subscription as webpush.PushSubscription);
   return NextResponse.json({ ok: true });
 }
 
@@ -48,11 +38,6 @@ export async function DELETE(req: NextRequest) {
 
   if (!endpoint) return NextResponse.json({ error: "endpoint required" }, { status: 400 });
 
-  const redis = getRedis();
-  if (redis) {
-    const key = createHash("sha256").update(endpoint).digest("hex");
-    await redis.hdel("push:subs", key);
-  }
-
+  await removeSubscription(endpoint);
   return NextResponse.json({ ok: true });
 }

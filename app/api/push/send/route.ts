@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import webpush from "web-push";
 import { getNeoSession } from "@/lib/neo-auth";
-import { getRedis } from "@/lib/redis";
-
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+import { broadcastPush } from "@/lib/push";
 
 export async function POST(req: NextRequest) {
   const authed = await getNeoSession();
@@ -25,45 +18,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "title is required" }, { status: 400 });
   }
 
-  const redis = getRedis();
-  if (!redis) return NextResponse.json({ error: "Redis not configured" }, { status: 503 });
-
-  const subs = await redis.hgetall<Record<string, string>>("push:subs");
-  if (!subs) return NextResponse.json({ ok: true, sent: 0 });
-
-  const payload = JSON.stringify({
-    title: String(title).slice(0, 100),
-    body: typeof message === "string" ? message.slice(0, 200) : "",
-    url: typeof url === "string" ? url : "/",
-  });
-
-  const staleKeys: string[] = [];
-  let sent = 0;
-
-  await Promise.allSettled(
-    Object.entries(subs).map(async ([key, raw]) => {
-      let sub: webpush.PushSubscription;
-      try {
-        sub = JSON.parse(raw) as webpush.PushSubscription;
-      } catch {
-        staleKeys.push(key);
-        return;
-      }
-      try {
-        await webpush.sendNotification(sub, payload);
-        sent++;
-      } catch (err: unknown) {
-        const status = (err as { statusCode?: number }).statusCode;
-        if (status === 404 || status === 410) {
-          staleKeys.push(key);
-        }
-      }
-    })
+  const sent = await broadcastPush(
+    title,
+    typeof message === "string" ? message : "",
+    typeof url === "string" ? url : "/"
   );
-
-  if (staleKeys.length > 0) {
-    await redis.hdel("push:subs", ...staleKeys);
-  }
 
   return NextResponse.json({ ok: true, sent });
 }

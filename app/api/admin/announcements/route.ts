@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { broadcastPush } from "@/lib/push";
 import { getAdminSession } from "@/lib/admin-auth";
 import { sanityWriteClient } from "@/lib/sanity/client";
 import { sanityClient } from "@/lib/sanity/client";
@@ -80,6 +81,13 @@ export async function POST(req: NextRequest) {
     ...(eventTime ? { eventTime } : {}),
     ...(imageAssetId ? { image: { _type: "image", asset: { _type: "reference", _ref: imageAssetId } } } : {}),
   });
+
+  // Fire-and-forget — push failure must never block the admin response
+  broadcastPush(
+    `📢 ${author.trim()}`,
+    message.trim().slice(0, 140),
+    "/announcements"
+  ).catch(() => {});
 
   return Response.json({ id: doc._id, message_es });
 }

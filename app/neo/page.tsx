@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getNeoSession } from "@/lib/neo-auth";
+import PushSender from "@/components/PushSender";
 import {
   SESSIONS, SERVICES, KICKREEL_RUNS, HARDWARE,
   totalHours, totalCommits, totalFeatures,
@@ -41,6 +42,8 @@ export default async function TrackerPage() {
             North Legends FC website — hours, cost, and features shipped.
           </p>
         </div>
+
+        <PushSender />
 
         {/* Summary stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">

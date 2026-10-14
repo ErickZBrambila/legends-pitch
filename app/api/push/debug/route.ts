@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { getNeoSession } from "@/lib/neo-auth";
 import { getRedis } from "@/lib/redis";
 
+export async function DELETE() {
+  const authed = await getNeoSession();
+  if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const redis = getRedis();
+  if (redis) await redis.del("push:subs");
+  return NextResponse.json({ ok: true, cleared: true });
+}
+
 export async function GET() {
   const authed = await getNeoSession();
   if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -7,6 +7,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import NavTip from "@/components/NavTip";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
+import PushPermission from "@/components/PushPermission";
 import LanguagePickerModal from "@/components/LanguagePickerModal";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -46,6 +47,7 @@ export default async function RootLayout({
           <main className="flex-1">{children}</main>
           {!isAdminRoute && <Footer />}
           {!isAdminRoute && <AddToHomeScreen />}
+          {!isAdminRoute && <PushPermission />}
         </NextIntlClientProvider>
         <Analytics />
         <SpeedInsights />

@@ -34,19 +34,24 @@ export default function PushPermission() {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    if (localStorage.getItem(STORAGE_KEY)) return;
 
     // iOS requires standalone mode for push
     if (isIos() && !isStandalone()) return;
 
     const perm = Notification.permission;
+
+    // Always re-subscribe when permission is already granted — pushManager.subscribe()
+    // is idempotent and this ensures the subscription is saved even if Redis was
+    // unavailable when the user first granted permission.
     if (perm === "granted") {
       ensureSubscribed();
       return;
     }
+
     if (perm === "denied") return;
 
-    setVisible(true);
+    // Only show the banner if the user hasn't dismissed it before
+    if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -46,7 +46,7 @@ export async function broadcastPush(
       try {
         await webpush.sendNotification(sub, payload, {
           TTL: 86400,       // keep for 24h if device is offline
-          urgency: "normal",
+          urgency: "high",
         });
         sent++;
       } catch (err: unknown) {

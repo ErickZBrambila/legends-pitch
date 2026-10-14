@@ -44,7 +44,10 @@ export async function broadcastPush(
     Object.entries(subs).map(async ([key, sub]) => {
       if (!sub?.endpoint) { staleKeys.push(key); return; }
       try {
-        await webpush.sendNotification(sub, payload);
+        await webpush.sendNotification(sub, payload, {
+          TTL: 86400,       // keep for 24h if device is offline
+          urgency: "normal",
+        });
         sent++;
       } catch (err: unknown) {
         const status = (err as { statusCode?: number }).statusCode;

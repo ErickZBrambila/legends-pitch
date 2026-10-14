@@ -525,13 +525,38 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                           <textarea rows={5} value={editState.body_es} onChange={(e) => setEditState((s) => s ? { ...s, body_es: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                         </div>
                       </div>
+                      {/* Tone row inside edit form */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Tone:</span>
+                        {(Object.keys(TONE_LABELS) as Tone[]).map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setSelectedTone(t)}
+                            className={`text-xs px-2.5 py-1 rounded-full font-bold border transition-all ${
+                              selectedTone === t
+                                ? "bg-[var(--color-accent)] text-[#1c1c1e] border-transparent"
+                                : "text-gray-500 border-gray-200 hover:border-gray-300"
+                            }`}
+                          >
+                            {TONE_LABELS[t].label}
+                          </button>
+                        ))}
+                      </div>
                       <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
                         <button onClick={() => setEditState(null)} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
                         <button onClick={saveEdit} disabled={saving} className="px-4 py-2 rounded-lg bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold hover:opacity-90 disabled:opacity-50">
                           {saving ? "Saving…" : "Save Changes"}
                         </button>
                         <button
-                          onClick={() => { setEditState(null); generate(post.sourceMatchId); }}
+                          onClick={() => {
+                            setEditState(null);
+                            if (post.sourceMatchId) {
+                              generate(post.sourceMatchId);
+                            } else {
+                              setRegenPickFor(post.id);
+                              setRegenPickMatchId("");
+                            }
+                          }}
                           disabled={generating !== null}
                           className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                         >
@@ -568,7 +593,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                                 generate(post.sourceMatchId);
                               } else {
                                 setRegenPickFor(post.id);
-                                setRegenPickMatchId(matches[0]?.id ?? "");
+                                setRegenPickMatchId("");
                               }
                             }}
                             disabled={generating !== null}
@@ -611,11 +636,14 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                               onChange={(e) => setRegenPickMatchId(e.target.value)}
                               className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:border-[var(--color-accent)]"
                             >
-                              {matches.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                  {formatDate(m.date)} vs {m.opponent}
-                                </option>
-                              ))}
+                              <option value="">— pick a match —</option>
+                              {[...matches]
+                                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                .map((m) => (
+                                  <option key={m.id} value={m.id}>
+                                    {formatDate(m.date)} vs {m.opponent}
+                                  </option>
+                                ))}
                             </select>
                             <button
                               onClick={() => { setRegenPickFor(null); generate(regenPickMatchId); }}

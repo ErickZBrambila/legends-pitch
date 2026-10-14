@@ -64,10 +64,13 @@ export default function PushPermission() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
+      // Use toJSON() explicitly — JSON.stringify(PushSubscription) doesn't always
+      // include the keys property in all browser implementations
+      const subJson = sub.toJSON();
       await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sub),
+        body: JSON.stringify(subJson),
       });
     } catch {
       // Non-fatal — subscription failed silently

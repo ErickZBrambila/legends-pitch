@@ -6,6 +6,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import NavTip from "@/components/NavTip";
+import AddToHomeScreen from "@/components/AddToHomeScreen";
 import LanguagePickerModal from "@/components/LanguagePickerModal";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -20,6 +21,9 @@ export const metadata: Metadata = {
   },
   description:
     "Official website of the North Legends FC youth soccer team — schedules, roster, news, and more.",
+  icons: {
+    apple: "/apple-icon.png",
+  },
 };
 
 export default async function RootLayout({
@@ -41,6 +45,7 @@ export default async function RootLayout({
           {!isAdminRoute && <NavTip />}
           <main className="flex-1">{children}</main>
           {!isAdminRoute && <Footer />}
+          {!isAdminRoute && <AddToHomeScreen />}
         </NextIntlClientProvider>
         <Analytics />
         <SpeedInsights />

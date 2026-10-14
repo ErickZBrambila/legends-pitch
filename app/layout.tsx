@@ -9,6 +9,8 @@ import NavTip from "@/components/NavTip";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import PushPermission from "@/components/PushPermission";
 import LanguagePickerModal from "@/components/LanguagePickerModal";
+import SiteBanner from "@/components/SiteBanner";
+import { getBanner } from "@/lib/banner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { headers } from "next/headers";
@@ -36,12 +38,14 @@ export default async function RootLayout({
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? headersList.get("x-invoke-path") ?? "";
   const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/neo");
+  const banner = isAdminRoute ? null : await getBanner();
 
   return (
     <html lang={locale} className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>
           {!isAdminRoute && <LanguagePickerModal />}
+          {!isAdminRoute && banner && <SiteBanner banner={banner} />}
           {!isAdminRoute && <Nav />}
           {!isAdminRoute && <NavTip />}
           <main className="flex-1">{children}</main>

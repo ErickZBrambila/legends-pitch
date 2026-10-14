@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getNeoSession } from "@/lib/neo-auth";
 import PushSender from "@/components/PushSender";
+import BannerControl from "@/components/BannerControl";
+import { getBanner } from "@/lib/banner";
 import {
   SESSIONS, SERVICES, KICKREEL_RUNS, HARDWARE,
   totalHours, totalCommits, totalFeatures,
@@ -23,6 +25,8 @@ export default async function TrackerPage() {
   const authed = await getNeoSession();
   if (!authed) redirect("/neo/login");
 
+  const activeBanner = await getBanner();
+
   const months = Math.round(
     (new Date().getTime() - new Date("2026-07-03").getTime()) / (1000 * 60 * 60 * 24 * 30)
   );
@@ -42,6 +46,8 @@ export default async function TrackerPage() {
             North Legends FC website — hours, cost, and features shipped.
           </p>
         </div>
+
+        <BannerControl active={activeBanner} />
 
         <PushSender />
 

@@ -1,8 +1,39 @@
-import { sanityClient } from "./client";
+import { sanityClient, sanityWriteClient } from "./client";
 import { urlForImage } from "./image";
 import type { Announcement, Match, Player, NewsPost, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
 
 export type TeamSlug = "u11" | "u12";
+
+export async function getAllAnnouncements(team: TeamSlug): Promise<Announcement[]> {
+  const raw = await sanityClient.fetch<Array<{
+    _id: string;
+    message: string;
+    message_es?: string;
+    author: string;
+    publishedAt: string;
+    location?: string;
+    eventTime?: string;
+    locationLat?: number;
+    locationLng?: number;
+  }>>(
+    `*[_type == "announcement" && team->ageGroup == $team] | order(publishedAt desc){
+      _id, message, message_es, author, publishedAt, location, eventTime, locationLat, locationLng
+    }`,
+    { team },
+    { next: { revalidate: 300 } }
+  );
+  return raw.map((r) => ({
+    id: r._id,
+    message: r.message,
+    message_es: r.message_es,
+    author: r.author,
+    publishedAt: r.publishedAt,
+    location: r.location,
+    eventTime: r.eventTime,
+    locationLat: r.locationLat,
+    locationLng: r.locationLng,
+  }));
+}
 
 export async function getLatestAnnouncement(team: TeamSlug): Promise<Announcement | null> {
   const raw = await sanityClient.fetch<{
@@ -47,14 +78,15 @@ export async function getMatchesByTeam(team: TeamSlug): Promise<Match[]> {
       goalsFor: number | null;
       goalsAgainst: number | null;
       result: "W" | "L" | "D" | null;
+      coachNotes?: string;
     }>
   >(
     `*[_type == "match" && team->ageGroup == $team]{
-      _id, date, opponent, location, homeAway, goalsFor, goalsAgainst, result
+      _id, date, opponent, location, homeAway, goalsFor, goalsAgainst, result, coachNotes
     } | order(date asc)`,
     { team }
   );
-  return raw.map((m) => ({ ...m, id: m._id }));
+  return raw.map((m) => ({ ...m, id: m._id, coachNotes: m.coachNotes }));
 }
 
 export async function getPlayersByTeam(team: TeamSlug): Promise<Player[]> {
@@ -88,10 +120,11 @@ export async function getPostsByTeam(team: TeamSlug): Promise<NewsPost[]> {
       body_es?: unknown[];
       publishedAt: string;
       author: string;
+      status?: string;
     }>
   >(
-    `*[_type == "post" && team->ageGroup == $team]{
-      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author
+    `*[_type == "post" && team->ageGroup == $team && (status == "published" || !defined(status))]{
+      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, status
     } | order(publishedAt desc)`,
     { team }
   );
@@ -106,6 +139,47 @@ export async function getPostsByTeam(team: TeamSlug): Promise<NewsPost[]> {
     body_es: p.body_es,
     publishedAt: p.publishedAt,
     author: p.author ?? "",
+    status: (p.status as "draft" | "published") ?? "published",
+  }));
+}
+
+export async function getPostsByTeamAdmin(team: TeamSlug): Promise<NewsPost[]> {
+  const raw = await sanityClient.fetch<
+    Array<{
+      _id: string;
+      title: string;
+      title_es?: string;
+      slug: { current: string };
+      excerpt: string;
+      excerpt_es?: string;
+      body: unknown[];
+      body_es?: unknown[];
+      publishedAt: string;
+      author: string;
+      status?: string;
+      sourceMatchId?: string;
+      sourceFreeFormContext?: string;
+    }>
+  >(
+    `*[_type == "post" && team->ageGroup == $team]{
+      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, status, sourceMatchId, sourceFreeFormContext
+    } | order(publishedAt desc)`,
+    { team }
+  );
+  return raw.map((p) => ({
+    id: p._id,
+    title: p.title,
+    title_es: p.title_es,
+    slug: p.slug.current,
+    excerpt: p.excerpt ?? "",
+    excerpt_es: p.excerpt_es,
+    body: p.body ?? [],
+    body_es: p.body_es,
+    publishedAt: p.publishedAt,
+    author: p.author ?? "",
+    status: (p.status as "draft" | "published") ?? "published",
+    sourceMatchId: p.sourceMatchId,
+    sourceFreeFormContext: p.sourceFreeFormContext,
   }));
 }
 
@@ -389,6 +463,18 @@ export interface CoachSubmission {
   headCoachEmail: string;
   assistants: { name: string; role: string }[];
   practiceSlots: { day: string; time: string; location: string }[];
+}
+
+export async function purgeOldDrafts(): Promise<number> {
+  const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const ids = await sanityClient.fetch<string[]>(
+    `*[_type == "post" && status == "draft" && _createdAt < $cutoff]._id`,
+    { cutoff },
+    { cache: "no-store" }
+  );
+  if (ids.length === 0) return 0;
+  await Promise.all(ids.map((id) => sanityWriteClient.delete(id)));
+  return ids.length;
 }
 
 export async function getCoachSubmission(team: TeamSlug): Promise<CoachSubmission | null> {

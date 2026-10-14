@@ -20,7 +20,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 
 export default async function TrackerPage() {
   const authed = await getAdminSession();
-  if (!authed) redirect("/admin");
+  if (!authed) redirect("/neo/login");
 
   const months = Math.round(
     (new Date().getTime() - new Date("2026-07-03").getTime()) / (1000 * 60 * 60 * 24 * 30)

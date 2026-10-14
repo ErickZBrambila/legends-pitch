@@ -8,6 +8,7 @@ export interface Announcement {
   eventTime?: string;
   locationLat?: number;
   locationLng?: number;
+  imageUrl?: string;
 }
 
 export type MatchResult = "W" | "L" | "D" | null;
@@ -22,6 +23,7 @@ export interface Match {
   goalsFor: number | null;
   goalsAgainst: number | null;
   result: MatchResult;
+  coachNotes?: string;
 }
 
 export interface Player {
@@ -42,6 +44,10 @@ export interface NewsPost {
   body_es?: unknown[];
   publishedAt: string;
   author: string;
+  status?: "draft" | "published";
+  coverImageUrl?: string;
+  sourceMatchId?: string;
+  sourceFreeFormContext?: string;
 }
 
 export interface GalleryEvent {

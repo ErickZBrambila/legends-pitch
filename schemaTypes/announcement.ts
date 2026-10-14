@@ -14,6 +14,7 @@ export default defineType({
     defineField({ name: "locationLng", title: "Longitude", type: "number" }),
     defineField({ name: "author", title: "Coach", type: "string", validation: (r) => r.required() }),
     defineField({ name: "publishedAt", title: "Posted At", type: "datetime", validation: (r) => r.required() }),
+    defineField({ name: "image", title: "Image (optional)", type: "image", options: { hotspot: true } }),
   ],
   preview: {
     select: { title: "author", subtitle: "publishedAt", message: "message" },

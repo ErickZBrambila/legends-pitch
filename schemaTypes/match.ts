@@ -30,6 +30,7 @@ export default defineType({
         ],
       },
     }),
+    defineField({ name: "coachNotes", title: "Coach Notes (for article generation)", type: "text", rows: 4, description: "Optional notes the coach wants to highlight — used as context when generating a match article." }),
   ],
   preview: {
     select: { opponent: "opponent", date: "date", result: "result" },

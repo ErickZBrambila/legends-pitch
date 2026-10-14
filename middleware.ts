@@ -22,7 +22,9 @@ export async function middleware(req: NextRequest) {
     if (token !== expected) {
       return NextResponse.redirect(new URL("/admin", req.url));
     }
-    return NextResponse.next();
+    const res = NextResponse.next();
+    res.headers.set("x-pathname", pathname);
+    return res;
   }
 
   // Family gate — /videos and /gallery require FAMILY_PASSCODE cookie
@@ -36,12 +38,18 @@ export async function middleware(req: NextRequest) {
       url.searchParams.set("next", pathname);
       return NextResponse.redirect(url);
     }
-    return NextResponse.next();
+    const res = NextResponse.next();
+    res.headers.set("x-pathname", pathname);
+    return res;
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  res.headers.set("x-pathname", pathname);
+  return res;
 }
 
 export const config = {
-  matcher: ["/admin/:path+", "/videos/:path*", "/gallery/:path*", "/highlights/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)",
+  ],
 };

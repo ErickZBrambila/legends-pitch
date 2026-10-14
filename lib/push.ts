@@ -27,8 +27,8 @@ export async function broadcastPush(
     return 0;
   }
 
-  const subs = await redis.hgetall<Record<string, string>>("push:subs");
-  console.log("[push] subs from Redis:", subs ? Object.keys(subs).length : "null");
+  // @upstash/redis auto-parses JSON on reads, so values come back as objects
+  const subs = await redis.hgetall<Record<string, webpush.PushSubscription>>("push:subs");
   if (!subs) return 0;
 
   const payload = JSON.stringify({
@@ -41,14 +41,8 @@ export async function broadcastPush(
   let sent = 0;
 
   await Promise.allSettled(
-    Object.entries(subs).map(async ([key, raw]) => {
-      let sub: webpush.PushSubscription;
-      try {
-        sub = JSON.parse(raw) as webpush.PushSubscription;
-      } catch {
-        staleKeys.push(key);
-        return;
-      }
+    Object.entries(subs).map(async ([key, sub]) => {
+      if (!sub?.endpoint) { staleKeys.push(key); return; }
       try {
         await webpush.sendNotification(sub, payload);
         sent++;
@@ -71,7 +65,7 @@ export async function saveSubscription(subscription: webpush.PushSubscription): 
   const redis = getRedis();
   if (!redis) return;
   const key = createHash("sha256").update(subscription.endpoint).digest("hex");
-  await redis.hset("push:subs", { [key]: JSON.stringify(subscription) });
+  await redis.hset("push:subs", { [key]: subscription });
 }
 
 export async function removeSubscription(endpoint: string): Promise<void> {

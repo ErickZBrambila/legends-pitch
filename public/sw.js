@@ -1,13 +1,29 @@
 self.addEventListener("push", (event) => {
-  const data = event.data?.json() ?? {};
-  const title = data.title ?? "North Legends FC";
+  let title = "North Legends FC";
+  let body = "";
+  let url = "/";
+
+  try {
+    const data = event.data?.json() ?? {};
+    title = data.title ?? title;
+    body = data.body ?? body;
+    url = data.url ?? url;
+  } catch {
+    // malformed payload — show a generic notification anyway
+  }
+
+  // Keep options minimal for iOS compatibility (badge not supported on iOS web push)
   const options = {
-    body: data.body ?? "",
+    body,
     icon: "/apple-icon.png",
-    badge: "/apple-icon.png",
-    data: { url: data.url ?? "/" },
+    data: { url },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+
+  event.waitUntil(
+    self.registration.showNotification(title, options).catch((err) => {
+      console.error("[sw] showNotification failed:", err);
+    })
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {

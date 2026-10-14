@@ -24,6 +24,7 @@ export default defineType({
       initialValue: "published",
     }),
     defineField({ name: "sourceMatchId", title: "Source Match ID", type: "string", hidden: true }),
+    defineField({ name: "sourceFreeFormContext", title: "Source Free-Form Context", type: "text", hidden: true }),
   ],
   preview: {
     select: { title: "title", subtitle: "publishedAt" },

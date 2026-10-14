@@ -158,10 +158,11 @@ export async function getPostsByTeamAdmin(team: TeamSlug): Promise<NewsPost[]> {
       author: string;
       status?: string;
       sourceMatchId?: string;
+      sourceFreeFormContext?: string;
     }>
   >(
     `*[_type == "post" && team->ageGroup == $team]{
-      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, status, sourceMatchId
+      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, status, sourceMatchId, sourceFreeFormContext
     } | order(publishedAt desc)`,
     { team }
   );
@@ -178,6 +179,7 @@ export async function getPostsByTeamAdmin(team: TeamSlug): Promise<NewsPost[]> {
     author: p.author ?? "",
     status: (p.status as "draft" | "published") ?? "published",
     sourceMatchId: p.sourceMatchId,
+    sourceFreeFormContext: p.sourceFreeFormContext,
   }));
 }
 

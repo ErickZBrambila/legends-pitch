@@ -171,6 +171,7 @@ Keep each language version 150-250 words. Return ONLY the JSON object.`;
     author,
     ...(coverImageAssetId ? { coverImage: { _type: "image", asset: { _type: "reference", _ref: coverImageAssetId } } } : {}),
     ...(matchId ? { sourceMatchId: matchId } : {}),
+    ...(!matchId && freeFormContext?.trim() ? { sourceFreeFormContext: freeFormContext.trim() } : {}),
     status: "draft",
   });
 
@@ -184,6 +185,7 @@ Keep each language version 150-250 words. Return ONLY the JSON object.`;
     body_en: article.body_en,
     body_es: article.body_es,
     sourceMatchId: matchId ?? null,
+    sourceFreeFormContext: !matchId ? (freeFormContext?.trim() ?? null) : null,
     status: "draft",
   });
 }

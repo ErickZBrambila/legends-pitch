@@ -48,6 +48,7 @@ function blocksToText(blocks: unknown): string {
 interface DraftPreview {
   id: string;
   sourceMatchId?: string;
+  sourceFreeFormContext?: string;
   slug: string;
   title: string;
   title_es: string;
@@ -84,15 +85,13 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
   const [showPreview, setShowPreview] = useState(false);
   const [editState, setEditState] = useState<EditState | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // For saved drafts that have no sourceMatchId — show inline match picker
-  const [regenPickFor, setRegenPickFor] = useState<string | null>(null);
-  const [regenPickMatchId, setRegenPickMatchId] = useState<string>("");
 
   const draftPosts = posts.filter((p) => p.status === "draft");
 
-  async function generate(matchId?: string) {
-    if (!matchId && !freeFormContext.trim()) {
-      setError("No match linked to this draft. Pick a match from the table above to regenerate, or switch to Free Form mode.");
+  async function generate(matchId?: string, overrideFreeFormContext?: string) {
+    const ctx = overrideFreeFormContext ?? freeFormContext;
+    if (!matchId && !ctx.trim()) {
+      setError("Fill in the Free Form context at the top, then click Regen.");
       return;
     }
     const key = matchId ?? "freeform";
@@ -107,8 +106,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           team,
-          ...(matchId ? { matchId } : {}),
-          ...(mode === "freeform" ? { freeFormContext } : {}),
+          ...(matchId ? { matchId } : { freeFormContext: ctx }),
           tone: selectedTone,
           author,
           ...(coachNotes.trim() ? { coachNotes: coachNotes.trim() } : {}),
@@ -117,7 +115,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Unknown error");
-      setDraft({ id: data.id, sourceMatchId: matchId, ...data });
+      setDraft({ id: data.id, sourceMatchId: matchId, sourceFreeFormContext: data.sourceFreeFormContext ?? undefined, ...data });
       setShowPreview(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate article");
@@ -384,7 +382,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                     {saving ? "Saving…" : "Save Changes"}
                   </button>
                   <button
-                    onClick={() => { setEditState(null); draft.sourceMatchId ? generate(draft.sourceMatchId) : generate(); }}
+                    onClick={() => { setEditState(null); generate(draft.sourceMatchId, draft.sourceFreeFormContext); }}
                     disabled={generating !== null}
                     className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                   >
@@ -424,7 +422,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                 <div className="flex gap-2 mt-4 pt-4 border-t border-amber-200">
                   <button onClick={discard} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Discard</button>
                   <button onClick={() => startEdit(draft)} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Edit</button>
-                  <button onClick={() => draft.sourceMatchId ? generate(draft.sourceMatchId) : generate()} disabled={generating !== null} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">Regenerate</button>
+                  <button onClick={() => generate(draft.sourceMatchId, draft.sourceFreeFormContext)} disabled={generating !== null} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">Regenerate</button>
                   <button onClick={() => publish(draft.id)} disabled={publishing === draft.id} className="ml-auto px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
                     {publishing === draft.id ? "Publishing…" : "Publish Article"}
                   </button>
@@ -548,15 +546,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                           {saving ? "Saving…" : "Save Changes"}
                         </button>
                         <button
-                          onClick={() => {
-                            setEditState(null);
-                            if (post.sourceMatchId) {
-                              generate(post.sourceMatchId);
-                            } else {
-                              setRegenPickFor(post.id);
-                              setRegenPickMatchId("");
-                            }
-                          }}
+                          onClick={() => { setEditState(null); generate(post.sourceMatchId, post.sourceFreeFormContext); }}
                           disabled={generating !== null}
                           className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                         >
@@ -588,14 +578,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                         <div className="flex gap-1 shrink-0">
                           <button onClick={() => startEdit(post)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors">Edit</button>
                           <button
-                            onClick={() => {
-                              if (post.sourceMatchId) {
-                                generate(post.sourceMatchId);
-                              } else {
-                                setRegenPickFor(post.id);
-                                setRegenPickMatchId("");
-                              }
-                            }}
+                            onClick={() => generate(post.sourceMatchId, post.sourceFreeFormContext)}
                             disabled={generating !== null}
                             className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
                           >
@@ -629,32 +612,6 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                             {TONE_LABELS[t].label}
                           </button>
                         ))}
-                        {regenPickFor === post.id && (
-                          <>
-                            <select
-                              value={regenPickMatchId}
-                              onChange={(e) => setRegenPickMatchId(e.target.value)}
-                              className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:border-[var(--color-accent)]"
-                            >
-                              <option value="">— pick a match —</option>
-                              {[...matches]
-                                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                .map((m) => (
-                                  <option key={m.id} value={m.id}>
-                                    {formatDate(m.date)} vs {m.opponent}
-                                  </option>
-                                ))}
-                            </select>
-                            <button
-                              onClick={() => { setRegenPickFor(null); generate(regenPickMatchId); }}
-                              disabled={!regenPickMatchId || generating !== null}
-                              className="text-xs px-3 py-1 bg-[var(--color-accent)] text-[#1c1c1e] rounded-full font-bold disabled:opacity-50"
-                            >
-                              ✨ Generate
-                            </button>
-                            <button onClick={() => setRegenPickFor(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
-                          </>
-                        )}
                       </div>
                     </div>
                   )}

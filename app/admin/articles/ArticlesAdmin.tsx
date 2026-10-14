@@ -546,7 +546,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                           {saving ? "Saving…" : "Save Changes"}
                         </button>
                         <button
-                          onClick={() => { setEditState(null); generate(post.sourceMatchId, post.sourceFreeFormContext); }}
+                          onClick={() => { setEditState(null); generate(post.sourceMatchId, post.sourceFreeFormContext ?? `${post.title}. ${post.excerpt}`); }}
                           disabled={generating !== null}
                           className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                         >
@@ -578,7 +578,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                         <div className="flex gap-1 shrink-0">
                           <button onClick={() => startEdit(post)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors">Edit</button>
                           <button
-                            onClick={() => generate(post.sourceMatchId, post.sourceFreeFormContext)}
+                            onClick={() => generate(post.sourceMatchId, post.sourceFreeFormContext ?? `${post.title}. ${post.excerpt}`)}
                             disabled={generating !== null}
                             className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
                           >

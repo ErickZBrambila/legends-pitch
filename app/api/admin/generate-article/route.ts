@@ -1,0 +1,170 @@
+import { NextRequest } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { getAdminSession } from "@/lib/admin-auth";
+import { sanityWriteClient } from "@/lib/sanity/client";
+import { sanityClient } from "@/lib/sanity/client";
+import type { TeamSlug } from "@/lib/sanity/queries";
+
+const anthropic = new Anthropic();
+
+type Tone = "friendly" | "formal" | "hype";
+
+async function getTeamRef(team: TeamSlug): Promise<{ id: string; name: string } | null> {
+  const result = await sanityClient.fetch<{ _id: string; name: string } | null>(
+    `*[_type == "team" && ageGroup == $team][0]{ _id, name }`,
+    { team }
+  );
+  return result ? { id: result._id, name: result.name } : null;
+}
+
+function makeSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 80) + "-" + Date.now();
+}
+
+function textToBlocks(text: string) {
+  return text
+    .split(/\n\n+/)
+    .filter(Boolean)
+    .map((para) => ({
+      _type: "block",
+      _key: Math.random().toString(36).slice(2, 10),
+      style: "normal",
+      children: [{ _type: "span", _key: Math.random().toString(36).slice(2, 10), text: para.trim(), marks: [] }],
+      markDefs: [],
+    }));
+}
+
+const TONE_INSTRUCTIONS: Record<Tone, string> = {
+  friendly: "Write in a warm, encouraging tone that parents and families will love. Celebrate effort as much as results.",
+  formal: "Write in a professional, measured tone suitable for club communications. Factual and respectful.",
+  hype: "Write with energy and excitement — pump up the team, celebrate big moments, use dynamic language that gets kids fired up.",
+};
+
+export async function POST(req: NextRequest) {
+  const authed = await getAdminSession();
+  if (!authed) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const { team, matchId, tone = "friendly", author = "Coach", coachNotes, coverImageAssetId } = body as {
+    team: TeamSlug;
+    matchId: string;
+    tone?: Tone;
+    author?: string;
+    coachNotes?: string;
+    coverImageAssetId?: string;
+  };
+
+  if (!team || !matchId) {
+    return Response.json({ error: "team and matchId are required" }, { status: 400 });
+  }
+
+  const match = await sanityClient.fetch<{
+    _id: string;
+    date: string;
+    opponent: string;
+    location?: string;
+    homeAway: string;
+    goalsFor?: number;
+    goalsAgainst?: number;
+    result?: string;
+    coachNotes?: string;
+  } | null>(
+    `*[_type == "match" && _id == $matchId][0]{
+      _id, date, opponent, location, homeAway, goalsFor, goalsAgainst, result, coachNotes
+    }`,
+    { matchId }
+  );
+
+  if (!match) return Response.json({ error: "Match not found" }, { status: 404 });
+  if (!match.result) return Response.json({ error: "Match has no result yet" }, { status: 400 });
+
+  const teamInfo = await getTeamRef(team);
+  if (!teamInfo) return Response.json({ error: "Team not found" }, { status: 404 });
+
+  const matchContext = [
+    `Team: ${teamInfo.name}`,
+    `Opponent: ${match.opponent}`,
+    `Date: ${new Date(match.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`,
+    `Home/Away: ${match.homeAway}`,
+    `Score: ${match.goalsFor ?? 0} – ${match.goalsAgainst ?? 0}`,
+    `Result: ${match.result === "W" ? "Win" : match.result === "L" ? "Loss" : "Draw"}`,
+    match.location ? `Location: ${match.location}` : null,
+    coachNotes?.trim() ? `Coach notes: ${coachNotes.trim()}` : match.coachNotes ? `Coach notes: ${match.coachNotes}` : null,
+  ].filter(Boolean).join("\n");
+
+  const prompt = `You are writing a short match recap article for a youth soccer team website. ${TONE_INSTRUCTIONS[tone]}
+
+Match details:
+${matchContext}
+
+Write a bilingual article (English + Spanish). Return a JSON object with this exact shape:
+{
+  "title_en": "...",
+  "title_es": "...",
+  "excerpt_en": "one sentence summary in English",
+  "excerpt_es": "one sentence summary in Spanish",
+  "body_en": "3-4 paragraphs in English",
+  "body_es": "3-4 paragraphs in Spanish"
+}
+
+Keep each language version 150-250 words. Return ONLY the JSON object.`;
+
+  const response = await anthropic.messages.create({
+    model: "claude-haiku-4-5",
+    max_tokens: 2048,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const textBlock = response.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    return Response.json({ error: "Claude returned no text" }, { status: 502 });
+  }
+
+  let article: {
+    title_en: string; title_es: string;
+    excerpt_en: string; excerpt_es: string;
+    body_en: string; body_es: string;
+  };
+  try {
+    const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
+    article = JSON.parse(jsonMatch?.[0] ?? textBlock.text);
+  } catch {
+    return Response.json({ error: "Failed to parse Claude response" }, { status: 502 });
+  }
+
+  const slug = makeSlug(article.title_en);
+  const publishedAt = new Date().toISOString();
+
+  const doc = await sanityWriteClient.create({
+    _type: "post",
+    team: { _type: "reference", _ref: teamInfo.id },
+    title: article.title_en,
+    title_es: article.title_es,
+    slug: { _type: "slug", current: slug },
+    excerpt: article.excerpt_en,
+    excerpt_es: article.excerpt_es,
+    body: textToBlocks(article.body_en),
+    body_es: textToBlocks(article.body_es),
+    publishedAt,
+    author,
+    ...(coverImageAssetId ? { coverImage: { _type: "image", asset: { _type: "reference", _ref: coverImageAssetId } } } : {}),
+    status: "draft",
+  });
+
+  return Response.json({
+    id: doc._id,
+    slug,
+    title: article.title_en,
+    title_es: article.title_es,
+    excerpt: article.excerpt_en,
+    excerpt_es: article.excerpt_es,
+    body_en: article.body_en,
+    body_es: article.body_es,
+    status: "draft",
+  });
+}

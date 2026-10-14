@@ -15,6 +15,14 @@ export default defineType({
     defineField({ name: "body_es", title: "Cuerpo (ES)", type: "array", of: [{ type: "block" }] }),
     defineField({ name: "publishedAt", title: "Published At", type: "datetime", validation: (r) => r.required() }),
     defineField({ name: "author", title: "Author", type: "string" }),
+    defineField({ name: "coverImage", title: "Cover Image", type: "image", options: { hotspot: true } }),
+    defineField({
+      name: "status",
+      title: "Status",
+      type: "string",
+      options: { list: [{ title: "Draft", value: "draft" }, { title: "Published", value: "published" }] },
+      initialValue: "published",
+    }),
   ],
   preview: {
     select: { title: "title", subtitle: "publishedAt" },

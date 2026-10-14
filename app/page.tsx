@@ -207,7 +207,7 @@ export default async function Home({
         <section className="lg:col-span-2">
           {latestAnnouncement && (
             <div className="mb-6">
-              <AnnouncementBanner announcement={latestAnnouncement} locale={locale} />
+              <AnnouncementBanner announcement={latestAnnouncement} locale={locale} team={team} showAllLink />
             </div>
           )}
           <h2 className="text-lg font-bold text-gray-800 mb-4">{t("latestNews")}</h2>

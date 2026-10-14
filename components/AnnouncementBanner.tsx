@@ -1,12 +1,15 @@
+import Link from "next/link";
 import type { Announcement } from "@/lib/types";
 import GameWeather from "@/components/GameWeather";
 
 interface Props {
   announcement: Announcement;
   locale: string;
+  team?: string;
+  showAllLink?: boolean;
 }
 
-export default function AnnouncementBanner({ announcement, locale }: Props) {
+export default function AnnouncementBanner({ announcement, locale, team, showAllLink }: Props) {
   const message =
     locale === "es" && announcement.message_es
       ? announcement.message_es
@@ -57,6 +60,17 @@ export default function AnnouncementBanner({ announcement, locale }: Props) {
                   gameIso={announcement.eventTime!}
                 />
               )}
+            </div>
+          )}
+
+          {showAllLink && (
+            <div className="mt-3">
+              <Link
+                href={`/announcements${team ? `?team=${team}` : ""}`}
+                className="text-xs font-semibold text-amber-700 hover:underline"
+              >
+                See all announcements →
+              </Link>
             </div>
           )}
         </div>

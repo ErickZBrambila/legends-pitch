@@ -10,6 +10,7 @@ const TYPES: { value: BannerType; label: string; color: string }[] = [
 ];
 
 export default function BannerControl({ active }: { active: { message: string; type: BannerType } | null }) {
+  const [currentActive, setCurrentActive] = useState(active);
   const [message, setMessage] = useState(active?.message ?? "");
   const [type, setType] = useState<BannerType>(active?.type ?? "maintenance");
   const [status, setStatus] = useState<"idle" | "saving" | "clearing" | "ok" | "error">("idle");
@@ -29,6 +30,7 @@ export default function BannerControl({ active }: { active: { message: string; t
     if (!message.trim()) return;
     setStatus("saving");
     const { ok, sent: s } = await post({ message, type });
+    if (ok) setCurrentActive({ message, type });
     setSent(ok ? s : null);
     setStatus(ok ? "ok" : "error");
     setTimeout(() => setStatus("idle"), 3000);
@@ -36,8 +38,8 @@ export default function BannerControl({ active }: { active: { message: string; t
 
   async function handleClear() {
     setStatus("clearing");
-    const ok = await post({ clear: true });
-    if (ok) { setMessage(""); setStatus("idle"); }
+    const { ok } = await post({ clear: true });
+    if (ok) { setCurrentActive(null); setMessage(""); setStatus("idle"); }
     else { setStatus("error"); setTimeout(() => setStatus("idle"), 3000); }
   }
 
@@ -46,11 +48,11 @@ export default function BannerControl({ active }: { active: { message: string; t
       <h2 className="text-base font-black text-gray-900 mb-4">Site-Wide Banner</h2>
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4">
 
-        {active && (
+        {currentActive && (
           <div className="flex items-center justify-between gap-4 bg-gray-50 rounded-xl px-4 py-3">
             <p className="text-sm text-gray-700">
-              <span className="font-bold">Active:</span> {active.message}
-              <span className="ml-2 text-xs text-gray-400">[{active.type}]</span>
+              <span className="font-bold">Active:</span> {currentActive.message}
+              <span className="ml-2 text-xs text-gray-400">[{currentActive.type}]</span>
             </p>
             <button
               onClick={handleClear}
@@ -90,7 +92,7 @@ export default function BannerControl({ active }: { active: { message: string; t
             disabled={!message.trim() || status === "saving"}
             className="bg-gray-900 text-white text-sm font-black px-6 py-2.5 rounded-xl hover:bg-gray-700 disabled:opacity-40 transition-colors"
           >
-            {status === "saving" ? "Posting…" : active ? "Update banner" : "Post banner"}
+            {status === "saving" ? "Posting…" : currentActive ? "Update banner" : "Post banner"}
           </button>
           {status === "ok" && (
             <p className="text-sm text-green-600 font-bold">

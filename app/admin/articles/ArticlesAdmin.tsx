@@ -71,6 +71,7 @@ interface EditState {
 export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Props) {
   const [posts, setPosts] = useState<NewsPost[]>(initialPosts);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("match");
   const [freeFormContext, setFreeFormContext] = useState("");
   const [generating, setGenerating] = useState<string | null>(null);
@@ -189,12 +190,12 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
   }
 
   async function deleteDraft(postId: string) {
-    if (!confirm("Delete this draft permanently?")) return;
+    setConfirmDeleteId(null);
     setDeleting(postId);
     setError(null);
     try {
       const res = await fetch("/api/admin/delete-article", {
-        method: "DELETE",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postId }),
       });
@@ -552,13 +553,25 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                         >
                           ✨ Regenerate with AI
                         </button>
-                        <button
-                          onClick={() => deleteDraft(post.id)}
-                          disabled={deleting === post.id}
-                          className="px-4 py-2 rounded-lg border border-red-100 text-red-400 text-sm font-semibold hover:bg-red-50 disabled:opacity-50"
-                        >
-                          {deleting === post.id ? "Deleting…" : "Delete Draft"}
-                        </button>
+                        {confirmDeleteId === post.id ? (
+                          <span className="flex gap-2 items-center">
+                            <span className="text-sm text-red-500 font-semibold">Sure?</span>
+                            <button onClick={() => deleteDraft(post.id)} disabled={deleting === post.id} className="px-3 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 disabled:opacity-50">
+                              {deleting === post.id ? "Deleting…" : "Yes, delete"}
+                            </button>
+                            <button onClick={() => setConfirmDeleteId(null)} className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                              Cancel
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(post.id)}
+                            disabled={deleting === post.id}
+                            className="px-4 py-2 rounded-lg border border-red-100 text-red-400 text-sm font-semibold hover:bg-red-50 disabled:opacity-50"
+                          >
+                            Delete Draft
+                          </button>
+                        )}
                         <button onClick={() => publish(post.id)} disabled={publishing === post.id} className="ml-auto px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 disabled:opacity-50">
                           {publishing === post.id ? "Publishing…" : "Publish"}
                         </button>
@@ -587,13 +600,24 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                           <button onClick={() => publish(post.id)} disabled={publishing === post.id} className="text-xs px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-full font-bold hover:opacity-80 transition-opacity disabled:opacity-50">
                             {publishing === post.id ? "Publishing…" : "Publish"}
                           </button>
-                          <button
-                            onClick={() => deleteDraft(post.id)}
-                            disabled={deleting === post.id}
-                            className="text-xs px-3 py-1.5 border border-red-100 text-red-400 rounded-full font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
-                          >
-                            {deleting === post.id ? "…" : "Delete"}
-                          </button>
+                          {confirmDeleteId === post.id ? (
+                            <>
+                              <button onClick={() => deleteDraft(post.id)} disabled={deleting === post.id} className="text-xs px-3 py-1.5 bg-red-500 text-white rounded-full font-bold hover:bg-red-600 disabled:opacity-50">
+                                {deleting === post.id ? "…" : "Sure?"}
+                              </button>
+                              <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50">
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteId(post.id)}
+                              disabled={deleting === post.id}
+                              className="text-xs px-3 py-1.5 border border-red-100 text-red-400 rounded-full font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </div>
                       {/* Inline tone + regen controls — always visible */}

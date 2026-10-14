@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getNeoSession } from "@/lib/neo-auth";
 import {
   SESSIONS, SERVICES, KICKREEL_RUNS, HARDWARE,
   totalHours, totalCommits, totalFeatures,
@@ -19,7 +19,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 }
 
 export default async function TrackerPage() {
-  const authed = await getAdminSession();
+  const authed = await getNeoSession();
   if (!authed) redirect("/neo/login");
 
   const months = Math.round(

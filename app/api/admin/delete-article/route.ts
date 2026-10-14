@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { sanityWriteClient } from "@/lib/sanity/client";
 
-export async function DELETE(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const authed = await getAdminSession();
   if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

@@ -57,7 +57,7 @@ export default function NeoLogin() {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/admin/login", {
+    const res = await fetch("/api/neo/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),

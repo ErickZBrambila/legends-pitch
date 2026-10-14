@@ -155,6 +155,24 @@ export const SESSIONS: WorkSession[] = [
       "KickReel tracker: Oct 10 vs Elgin United (72 clips, 7 goals, analytics) added",
     ],
   },
+  {
+    date: "2026-10-13",
+    title: "Session 8 — Article Generator & Admin Polish",
+    hours: 7,
+    commits: 1,
+    claudeCostUSD: 22,
+    features: [
+      "EN/ES language selector hidden on /admin and /neo routes (middleware x-pathname header)",
+      "AI article generator — Claude Haiku writes bilingual match recaps from match data or free-form context",
+      "Tone picker (Friendly / Formal / Hype) on generate form, draft cards, and edit form",
+      "Draft cards: collapsed preview with Regen + tone controls, expandable edit form",
+      "Delete button on draft cards with 90-day server-side auto-purge on page load",
+      "sourceMatchId + sourceFreeFormContext stored on posts — Regen always uses original context",
+      "Regen fallback: old drafts with no source data use title + excerpt as context",
+      "Free-form article mode — write about anything (team news, tournaments, off-season)",
+      "Matrix-themed /neo login page with canvas rain animation",
+    ],
+  },
 ];
 
 export const KICKREEL_RUNS: KickReelRun[] = [

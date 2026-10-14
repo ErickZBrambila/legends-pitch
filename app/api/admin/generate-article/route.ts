@@ -50,57 +50,74 @@ export async function POST(req: NextRequest) {
   if (!authed) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { team, matchId, tone = "friendly", author = "Coach", coachNotes, coverImageAssetId } = body as {
+  const { team, matchId, tone = "friendly", author = "Coach", coachNotes, coverImageAssetId, freeFormContext } = body as {
     team: TeamSlug;
-    matchId: string;
+    matchId?: string;
     tone?: Tone;
     author?: string;
     coachNotes?: string;
     coverImageAssetId?: string;
+    freeFormContext?: string;
   };
 
-  if (!team || !matchId) {
-    return Response.json({ error: "team and matchId are required" }, { status: 400 });
+  if (!team) {
+    return Response.json({ error: "team is required" }, { status: 400 });
   }
-
-  const match = await sanityClient.fetch<{
-    _id: string;
-    date: string;
-    opponent: string;
-    location?: string;
-    homeAway: string;
-    goalsFor?: number;
-    goalsAgainst?: number;
-    result?: string;
-    coachNotes?: string;
-  } | null>(
-    `*[_type == "match" && _id == $matchId][0]{
-      _id, date, opponent, location, homeAway, goalsFor, goalsAgainst, result, coachNotes
-    }`,
-    { matchId }
-  );
-
-  if (!match) return Response.json({ error: "Match not found" }, { status: 404 });
-  if (!match.result) return Response.json({ error: "Match has no result yet" }, { status: 400 });
+  if (!matchId && !freeFormContext?.trim()) {
+    return Response.json({ error: "Either matchId or freeFormContext is required" }, { status: 400 });
+  }
 
   const teamInfo = await getTeamRef(team);
   if (!teamInfo) return Response.json({ error: "Team not found" }, { status: 404 });
 
-  const matchContext = [
-    `Team: ${teamInfo.name}`,
-    `Opponent: ${match.opponent}`,
-    `Date: ${new Date(match.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`,
-    `Home/Away: ${match.homeAway}`,
-    `Score: ${match.goalsFor ?? 0} – ${match.goalsAgainst ?? 0}`,
-    `Result: ${match.result === "W" ? "Win" : match.result === "L" ? "Loss" : "Draw"}`,
-    match.location ? `Location: ${match.location}` : null,
-    coachNotes?.trim() ? `Coach notes: ${coachNotes.trim()}` : match.coachNotes ? `Coach notes: ${match.coachNotes}` : null,
-  ].filter(Boolean).join("\n");
+  let articleContext: string;
 
-  const prompt = `You are writing a short match recap article for a youth soccer team website. ${TONE_INSTRUCTIONS[tone]}
+  if (matchId) {
+    const match = await sanityClient.fetch<{
+      _id: string;
+      date: string;
+      opponent: string;
+      location?: string;
+      homeAway: string;
+      goalsFor?: number;
+      goalsAgainst?: number;
+      result?: string;
+      coachNotes?: string;
+    } | null>(
+      `*[_type == "match" && _id == $matchId][0]{
+        _id, date, opponent, location, homeAway, goalsFor, goalsAgainst, result, coachNotes
+      }`,
+      { matchId }
+    );
 
-Match details:
-${matchContext}
+    if (!match) return Response.json({ error: "Match not found" }, { status: 404 });
+
+    articleContext = [
+      `Team: ${teamInfo.name}`,
+      `Opponent: ${match.opponent}`,
+      `Date: ${new Date(match.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`,
+      `Home/Away: ${match.homeAway}`,
+      match.result
+        ? `Score: ${match.goalsFor ?? 0} – ${match.goalsAgainst ?? 0}`
+        : "Result: Upcoming match",
+      match.result
+        ? `Result: ${match.result === "W" ? "Win" : match.result === "L" ? "Loss" : "Draw"}`
+        : null,
+      match.location ? `Location: ${match.location}` : null,
+      coachNotes?.trim() ? `Coach notes: ${coachNotes.trim()}` : match.coachNotes ? `Coach notes: ${match.coachNotes}` : null,
+    ].filter(Boolean).join("\n");
+  } else {
+    articleContext = [
+      `Team: ${teamInfo.name}`,
+      coachNotes?.trim() ? `Coach notes: ${coachNotes.trim()}` : null,
+      `Context: ${freeFormContext!.trim()}`,
+    ].filter(Boolean).join("\n");
+  }
+
+  const prompt = `You are writing a short article for a youth soccer team website. ${TONE_INSTRUCTIONS[tone]}
+
+Context:
+${articleContext}
 
 Write a bilingual article (English + Spanish). Return a JSON object with this exact shape:
 {

@@ -1,4 +1,4 @@
-import { sanityClient } from "./client";
+import { sanityClient, sanityWriteClient } from "./client";
 import { urlForImage } from "./image";
 import type { Announcement, Match, Player, NewsPost, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
 
@@ -459,6 +459,18 @@ export interface CoachSubmission {
   headCoachEmail: string;
   assistants: { name: string; role: string }[];
   practiceSlots: { day: string; time: string; location: string }[];
+}
+
+export async function purgeOldDrafts(): Promise<number> {
+  const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const ids = await sanityClient.fetch<string[]>(
+    `*[_type == "post" && status == "draft" && _createdAt < $cutoff]._id`,
+    { cutoff },
+    { cache: "no-store" }
+  );
+  if (ids.length === 0) return 0;
+  await Promise.all(ids.map((id) => sanityWriteClient.delete(id)));
+  return ids.length;
 }
 
 export async function getCoachSubmission(team: TeamSlug): Promise<CoachSubmission | null> {

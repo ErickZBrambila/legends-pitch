@@ -90,11 +90,6 @@ export default async function DashboardPage() {
             description="Manage all site content — schedule, roster, news, gallery, KickReel sessions, sponsors, and coach info."
             badge="Live"
           />
-          <HubCard
-            href="/neo"
-            title="Project Tracker"
-            description="Hours, features shipped, KickReel pipeline runs, Claude cost, and running service costs."
-          />
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ import NavTip from "@/components/NavTip";
 import LanguagePickerModal from "@/components/LanguagePickerModal";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { headers } from "next/headers";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
@@ -27,16 +28,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? headersList.get("x-invoke-path") ?? "";
+  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/neo");
 
   return (
     <html lang={locale} className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>
-          <LanguagePickerModal />
-          <Nav />
-          <NavTip />
+          {!isAdminRoute && <LanguagePickerModal />}
+          {!isAdminRoute && <Nav />}
+          {!isAdminRoute && <NavTip />}
           <main className="flex-1">{children}</main>
-          <Footer />
+          {!isAdminRoute && <Footer />}
         </NextIntlClientProvider>
         <Analytics />
         <SpeedInsights />

@@ -16,12 +16,19 @@ export async function broadcastPush(
   body: string,
   url = "/"
 ): Promise<number> {
-  if (!initVapid()) return 0;
+  if (!initVapid()) {
+    console.error("[push] VAPID init failed — check VAPID_SUBJECT, NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY");
+    return 0;
+  }
 
   const redis = getRedis();
-  if (!redis) return 0;
+  if (!redis) {
+    console.error("[push] Redis not configured — check UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN");
+    return 0;
+  }
 
   const subs = await redis.hgetall<Record<string, string>>("push:subs");
+  console.log("[push] subs from Redis:", subs ? Object.keys(subs).length : "null");
   if (!subs) return 0;
 
   const payload = JSON.stringify({
@@ -47,6 +54,7 @@ export async function broadcastPush(
         sent++;
       } catch (err: unknown) {
         const status = (err as { statusCode?: number }).statusCode;
+        console.error("[push] sendNotification failed:", status, (err as Error).message);
         if (status === 404 || status === 410) staleKeys.push(key);
       }
     })

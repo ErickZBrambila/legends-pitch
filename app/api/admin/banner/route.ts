@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getNeoSession } from "@/lib/neo-auth";
 import { getBanner, setBanner, clearBanner, type BannerType } from "@/lib/banner";
+import { broadcastPush } from "@/lib/push";
 
 const VALID_TYPES = new Set<BannerType>(["maintenance", "incident", "info"]);
 
@@ -26,5 +27,6 @@ export async function POST(req: NextRequest) {
   if (!message) return NextResponse.json({ error: "message required" }, { status: 400 });
 
   await setBanner(message, type);
-  return NextResponse.json({ ok: true });
+  const sent = await broadcastPush(`📢 ${message}`, "Tap to view the site for details.", "/").catch(() => 0);
+  return NextResponse.json({ ok: true, sent });
 }

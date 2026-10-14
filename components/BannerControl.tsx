@@ -13,6 +13,7 @@ export default function BannerControl({ active }: { active: { message: string; t
   const [message, setMessage] = useState(active?.message ?? "");
   const [type, setType] = useState<BannerType>(active?.type ?? "maintenance");
   const [status, setStatus] = useState<"idle" | "saving" | "clearing" | "ok" | "error">("idle");
+  const [sent, setSent] = useState<number | null>(null);
 
   async function post(body: object) {
     const res = await fetch("/api/admin/banner", {
@@ -20,13 +21,15 @@ export default function BannerControl({ active }: { active: { message: string; t
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    return res.ok;
+    const data = res.ok ? await res.json().catch(() => ({})) : {};
+    return { ok: res.ok, sent: data.sent ?? null };
   }
 
   async function handlePost() {
     if (!message.trim()) return;
     setStatus("saving");
-    const ok = await post({ message, type });
+    const { ok, sent: s } = await post({ message, type });
+    setSent(ok ? s : null);
     setStatus(ok ? "ok" : "error");
     setTimeout(() => setStatus("idle"), 3000);
   }
@@ -89,7 +92,11 @@ export default function BannerControl({ active }: { active: { message: string; t
           >
             {status === "saving" ? "Posting…" : active ? "Update banner" : "Post banner"}
           </button>
-          {status === "ok" && <p className="text-sm text-green-600 font-bold">Banner posted ✓</p>}
+          {status === "ok" && (
+            <p className="text-sm text-green-600 font-bold">
+              Banner posted ✓{sent !== null ? ` · notified ${sent} device${sent === 1 ? "" : "s"}` : ""}
+            </p>
+          )}
           {status === "error" && <p className="text-sm text-red-500 font-bold">Failed — try again</p>}
         </div>
       </div>

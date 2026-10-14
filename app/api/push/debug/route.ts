@@ -17,11 +17,22 @@ export async function GET() {
     return NextResponse.json({ vapidOk, redis: false, subs: null });
   }
 
-  const subs = await redis.hgetall("push:subs");
+  const subs = await redis.hgetall<Record<string, { endpoint?: string; keys?: unknown; expirationTime?: unknown }>>("push:subs");
+
+  const subDetails = subs
+    ? Object.entries(subs).map(([key, sub]) => ({
+        key,
+        endpointHost: sub?.endpoint ? new URL(sub.endpoint).hostname : "missing",
+        endpointPrefix: sub?.endpoint ? sub.endpoint.slice(0, 60) : "missing",
+        hasKeys: !!(sub?.keys),
+        expirationTime: sub?.expirationTime ?? null,
+      }))
+    : [];
+
   return NextResponse.json({
     vapidOk,
     redis: true,
-    subCount: subs ? Object.keys(subs).length : 0,
-    subKeys: subs ? Object.keys(subs) : [],
+    subCount: subDetails.length,
+    subs: subDetails,
   });
 }

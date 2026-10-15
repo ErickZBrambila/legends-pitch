@@ -44,6 +44,8 @@ const CONTENT = {
         { emoji: "🖼️", title: "Player profile photos", desc: "Upload a photo for your child's roster card." },
         { emoji: "🍊", title: "Snack signup", desc: "Replace SignUpGenius — sign up for snacks directly on the site." },
         { emoji: "🔔", title: "Game-day reminders", desc: "Push notifications before each game with time, field, and weather." },
+        { emoji: "🔍", title: "Search", desc: "Search across news, announcements, schedules, and roster from anywhere on the site." },
+        { emoji: "🗳️", title: "Community voting", desc: "Vote on which features matter most to you — parents and coaches each get a say." },
       ],
     },
     wishlist: {
@@ -92,6 +94,8 @@ const CONTENT = {
         { emoji: "🖼️", title: "Fotos de perfil de jugadores", desc: "Sube una foto para la tarjeta de tu hijo en la alineación." },
         { emoji: "🍊", title: "Registro de snacks", desc: "Reemplaza SignUpGenius — regístrate para llevar snacks directamente en el sitio." },
         { emoji: "🔔", title: "Recordatorios del día del partido", desc: "Notificaciones antes de cada partido con hora, campo y clima." },
+        { emoji: "🔍", title: "Búsqueda", desc: "Busca noticias, anuncios, calendarios y alineaciones desde cualquier parte del sitio." },
+        { emoji: "🗳️", title: "Votación de la comunidad", desc: "Vota por las funciones que más te importan — padres y entrenadores tienen voz." },
       ],
     },
     wishlist: {

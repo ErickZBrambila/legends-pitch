@@ -158,7 +158,7 @@ export const SESSIONS: WorkSession[] = [
   {
     date: "2026-10-14",
     title: "Session 9 — Push Notifications, iOS PWA & Site Banner",
-    hours: 6,
+    hours: 4,
     commits: 17,
     claudeCostUSD: 28,
     features: [

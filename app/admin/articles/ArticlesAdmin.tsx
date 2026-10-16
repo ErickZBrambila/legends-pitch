@@ -6,6 +6,7 @@ import type { Match, NewsPost } from "@/lib/types";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import AdminImageUploader from "@/components/AdminImageUploader";
 import AdminLangToggle from "@/components/AdminLangToggle";
+import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 
 interface Props {
   team: TeamSlug;
@@ -25,6 +26,7 @@ const RESULT_BADGE: Record<string, string> = {
 
 const CONTENT = {
   en: {
+    dashboardLabel: "Dashboard",
     title: "Match Articles",
     subtitle: "Generate bilingual articles with Claude. Save as draft, edit, then publish.",
     viewNews: "View news ↗",
@@ -80,6 +82,7 @@ const CONTENT = {
     freeFormError: "Fill in the article context above, then click Regen.",
   },
   es: {
+    dashboardLabel: "Panel",
     title: "Artículos de Partidos",
     subtitle: "Genera artículos bilingües con Claude. Guarda como borrador, edita y publica.",
     viewNews: "Ver noticias ↗",
@@ -336,7 +339,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[var(--color-accent)] shadow-md flex-shrink-0">
               <Image src="/logo.jpg" alt="crest" width={32} height={32} className="object-cover" />
             </div>
-            <span className="font-bold text-white text-sm">{c.title}</span>
+            <AdminBreadcrumb crumbs={[{ label: c.dashboardLabel, href: "/admin/dashboard" }, { label: c.title }]} />
           </div>
           <div className="flex items-center gap-3">
             <AdminLangToggle locale={locale} />

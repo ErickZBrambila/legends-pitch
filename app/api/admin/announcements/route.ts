@@ -31,9 +31,10 @@ export async function POST(req: NextRequest) {
   if (!authed) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { team, message, author, location, locationLat, locationLng, eventTime, imageAssetId } = body as {
+  const { team, message, language, author, location, locationLat, locationLng, eventTime, imageAssetId } = body as {
     team: TeamSlug;
     message: string;
+    language: "en" | "es";
     author: string;
     location?: string;
     locationLat?: number;
@@ -49,8 +50,12 @@ export async function POST(req: NextRequest) {
   const teamRef = await getTeamRef(team);
   if (!teamRef) return Response.json({ error: "Team not found" }, { status: 404 });
 
-  // message is Spanish (Hugo writes in Spanish) — auto-translate to English via Claude
-  let message_en: string | null = null;
+  const sourceLang = language === "es" ? "es" : "en";
+  const [fromLang, toLang] = sourceLang === "en"
+    ? ["English", "Spanish"]
+    : ["Spanish", "English"];
+
+  let translated: string | null = null;
   try {
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5",
@@ -58,21 +63,24 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "user",
-          content: `Translate the following youth soccer coach announcement from Spanish to natural, friendly English. Return ONLY the translated text — no preamble, no quotes.\n\n${message}`,
+          content: `Translate the following youth soccer coach announcement from ${fromLang} to natural, friendly ${toLang}. Return ONLY the translated text — no preamble, no quotes.\n\n${message}`,
         },
       ],
     });
     const textBlock = response.content.find((b) => b.type === "text");
-    if (textBlock?.type === "text") message_en = textBlock.text.trim();
+    if (textBlock?.type === "text") translated = textBlock.text.trim();
   } catch {
     // Translation is best-effort — proceed without it
   }
 
+  const message_en = sourceLang === "en" ? message.trim() : (translated ?? message.trim());
+  const message_es = sourceLang === "es" ? message.trim() : (translated ?? null);
+
   const doc = await sanityWriteClient.create({
     _type: "announcement",
     team: { _type: "reference", _ref: teamRef },
-    message: message_en ?? message.trim(),  // EN field: translated or fallback to original
-    message_es: message.trim(),              // ES field: Hugo's original Spanish
+    message: message_en,
+    ...(message_es ? { message_es } : {}),
     author: author.trim(),
     publishedAt: new Date().toISOString(),
     ...(location ? { location } : {}),
@@ -89,5 +97,5 @@ export async function POST(req: NextRequest) {
     "/announcements"
   ).catch(() => {});
 
-  return Response.json({ id: doc._id, message_en });
+  return Response.json({ id: doc._id, message_en, message_es, translated, sourceLang });
 }

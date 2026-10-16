@@ -49,15 +49,25 @@ export async function getAllVotes(): Promise<VoteData[]> {
   return results;
 }
 
-export async function toggleCommunityVote(slug: string, hasVoted: boolean): Promise<number> {
+export async function toggleCommunityVote(
+  slug: string,
+  deviceId: string
+): Promise<{ count: number; hasVoted: boolean }> {
   const redis = getRedis();
-  if (!redis) return 0;
-  const key = communityKey(slug);
-  if (hasVoted) {
-    const count = await redis.decr(key);
-    return Math.max(0, count);
+  if (!redis) return { count: 0, hasVoted: false };
+
+  const countKey = communityKey(slug);
+  const votersKey = `vote:community:voters:${slug}`;
+
+  const alreadyVoted = await redis.sismember(votersKey, deviceId);
+  if (alreadyVoted) {
+    await redis.srem(votersKey, deviceId);
+    const count = await redis.decr(countKey);
+    return { count: Math.max(0, count), hasVoted: false };
   } else {
-    return redis.incr(key);
+    await redis.sadd(votersKey, deviceId);
+    const count = await redis.incr(countKey);
+    return { count, hasVoted: true };
   }
 }
 

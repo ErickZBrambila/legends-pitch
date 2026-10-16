@@ -45,34 +45,32 @@ export default function WishlistSection({ badge, title, items, initialVotes }: P
 
   async function handleVote(slug: string) {
     if (pending.has(slug)) return;
-    const hasVoted = localVotes.has(slug);
+    const optimisticVoted = localVotes.has(slug);
 
     setPending((p) => new Set(p).add(slug));
-
     // Optimistic update
-    setVotes((v) => ({ ...v, [slug]: Math.max(0, v[slug] + (hasVoted ? -1 : 1)) }));
-    const next = new Set(localVotes);
-    if (hasVoted) next.delete(slug); else next.add(slug);
-    setLocalVotes(next);
-    saveLocalVotes(next);
+    setVotes((v) => ({ ...v, [slug]: Math.max(0, v[slug] + (optimisticVoted ? -1 : 1)) }));
 
     try {
       const res = await fetch("/api/vote/community", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, hasVoted }),
+        body: JSON.stringify({ slug }), // server is authoritative — no hasVoted
       });
       if (res.ok) {
         const data = await res.json();
+        // Sync count and voted state from server
         setVotes((v) => ({ ...v, [slug]: data.communityCount }));
+        const next = new Set(localVotes);
+        if (data.hasVoted) next.add(slug); else next.delete(slug);
+        setLocalVotes(next);
+        saveLocalVotes(next);
+      } else {
+        // Revert optimistic update on server error
+        setVotes((v) => ({ ...v, [slug]: Math.max(0, v[slug] + (optimisticVoted ? 1 : -1)) }));
       }
     } catch {
-      // Revert on error
-      setVotes((v) => ({ ...v, [slug]: Math.max(0, v[slug] + (hasVoted ? 1 : -1)) }));
-      const reverted = new Set(localVotes);
-      if (hasVoted) reverted.add(slug); else reverted.delete(slug);
-      setLocalVotes(reverted);
-      saveLocalVotes(reverted);
+      setVotes((v) => ({ ...v, [slug]: Math.max(0, v[slug] + (optimisticVoted ? 1 : -1)) }));
     } finally {
       setPending((p) => { const s = new Set(p); s.delete(slug); return s; });
     }

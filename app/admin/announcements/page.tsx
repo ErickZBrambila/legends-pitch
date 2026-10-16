@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import AnnouncementsAdmin from "./AnnouncementsAdmin";
 import { getAllAnnouncements } from "@/lib/sanity/queries";
@@ -16,7 +17,10 @@ export default async function AdminAnnouncementsPage({
   const { team: teamParam } = await searchParams;
   const team = teamParam === "u12" ? "u12" : ("u11" as const);
 
-  const announcements = await getAllAnnouncements(team);
+  const [announcements, locale] = await Promise.all([
+    getAllAnnouncements(team),
+    getLocale(),
+  ]);
 
-  return <AnnouncementsAdmin initialAnnouncements={announcements} team={team} />;
+  return <AnnouncementsAdmin initialAnnouncements={announcements} team={team} locale={locale} />;
 }

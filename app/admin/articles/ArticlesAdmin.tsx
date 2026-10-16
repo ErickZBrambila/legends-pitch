@@ -4,28 +4,136 @@ import { useState } from "react";
 import Image from "next/image";
 import type { Match, NewsPost } from "@/lib/types";
 import type { TeamSlug } from "@/lib/sanity/queries";
-import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 import AdminImageUploader from "@/components/AdminImageUploader";
+import AdminLangToggle from "@/components/AdminLangToggle";
 
 interface Props {
   team: TeamSlug;
   matches: Match[];
   posts: NewsPost[];
+  locale: string;
 }
 
 type Tone = "friendly" | "formal" | "hype";
 type Mode = "match" | "freeform";
 
-const TONE_LABELS: Record<Tone, { label: string; desc: string }> = {
-  friendly: { label: "Friendly", desc: "Warm & encouraging for families" },
-  formal:   { label: "Formal",   desc: "Professional club communication" },
-  hype:     { label: "Hype",     desc: "High energy, pump-up the team" },
-};
-
 const RESULT_BADGE: Record<string, string> = {
   W: "bg-green-100 text-green-800",
   L: "bg-red-100 text-red-800",
   D: "bg-yellow-100 text-yellow-800",
+};
+
+const CONTENT = {
+  en: {
+    title: "Match Articles",
+    subtitle: "Generate bilingual articles with Claude. Save as draft, edit, then publish.",
+    viewNews: "View news ↗",
+    modeMatch: "Link to Match",
+    modeFreeform: "Free Form",
+    settingsLabel: "Generation Settings",
+    toneLabel: "Tone",
+    tones: {
+      friendly: { label: "Friendly", desc: "Warm & encouraging for families" },
+      formal:   { label: "Formal",   desc: "Professional club communication" },
+      hype:     { label: "Hype",     desc: "High energy, pump-up the team" },
+    } as Record<Tone, { label: string; desc: string }>,
+    authorLabel: "Author",
+    authorPlaceholder: "Coach",
+    freeFormLabel: "What's the article about?",
+    freeFormRequired: "*",
+    freeFormPlaceholder: "e.g. Preview of Saturday's match against FC Dallas — we've been training hard on set pieces and the team is ready.",
+    notesLabel: "Coach Notes",
+    notesHint: "(optional — player shoutouts, key moments)",
+    notesPlaceholder: "e.g. Alex scored twice, Marco had an outstanding game in goal, great team effort in the second half.",
+    generateBtn: "✨ Generate Article",
+    generating: "Generating…",
+    draftBadge: "Draft Preview",
+    editingBadge: "Editing Draft",
+    colEn: "English",
+    colEs: "Español",
+    discard: "Discard",
+    edit: "Edit",
+    regen: "Regenerate",
+    regenAI: "✨ Regenerate with AI",
+    publish: "Publish Article",
+    publishing: "Publishing…",
+    save: "Save Changes",
+    saving: "Saving…",
+    cancel: "Cancel",
+    titleEnLabel: "Title (EN)",
+    titleEsLabel: "Título (ES)",
+    excerptEnLabel: "Excerpt (EN)",
+    excerptEsLabel: "Resumen (ES)",
+    bodyEnLabel: "Body (EN)",
+    bodyEsLabel: "Cuerpo (ES)",
+    toneRowLabel: "Tone:",
+    deleteDraft: "Delete Draft",
+    deleteConfirm: "Sure?",
+    deleteYes: "Yes, delete",
+    deleting: "Deleting…",
+    draftsHeading: "Saved Drafts",
+    matchesHeading: "All Matches",
+    noMatches: "No matches yet — add them in Sanity Studio.",
+    tableCols: { date: "Date", opponent: "Opponent", score: "Score", result: "Result", article: "Article" },
+    upcoming: "Upcoming",
+    generateShort: "✨ Generate",
+    freeFormError: "Fill in the article context above, then click Regen.",
+  },
+  es: {
+    title: "Artículos de Partidos",
+    subtitle: "Genera artículos bilingües con Claude. Guarda como borrador, edita y publica.",
+    viewNews: "Ver noticias ↗",
+    modeMatch: "Vincular a Partido",
+    modeFreeform: "Forma Libre",
+    settingsLabel: "Configuración de Generación",
+    toneLabel: "Tono",
+    tones: {
+      friendly: { label: "Amistoso",    desc: "Cálido y alentador para las familias" },
+      formal:   { label: "Formal",      desc: "Comunicación profesional del club" },
+      hype:     { label: "Emocionante", desc: "Alta energía, motiva al equipo" },
+    } as Record<Tone, { label: string; desc: string }>,
+    authorLabel: "Autor",
+    authorPlaceholder: "Entrenador",
+    freeFormLabel: "¿De qué trata el artículo?",
+    freeFormRequired: "*",
+    freeFormPlaceholder: "p.ej. Vista previa del partido del sábado contra FC Dallas — hemos entrenado mucho los tiros de esquina y el equipo está listo.",
+    notesLabel: "Notas del Entrenador",
+    notesHint: "(opcional — menciones de jugadores, momentos clave)",
+    notesPlaceholder: "p.ej. Alex anotó dos goles, Marco tuvo un partido sobresaliente en el arco, gran esfuerzo del equipo en el segundo tiempo.",
+    generateBtn: "✨ Generar Artículo",
+    generating: "Generando…",
+    draftBadge: "Vista Previa del Borrador",
+    editingBadge: "Editando Borrador",
+    colEn: "English",
+    colEs: "Español",
+    discard: "Descartar",
+    edit: "Editar",
+    regen: "Regenerar",
+    regenAI: "✨ Regenerar con IA",
+    publish: "Publicar Artículo",
+    publishing: "Publicando…",
+    save: "Guardar Cambios",
+    saving: "Guardando…",
+    cancel: "Cancelar",
+    titleEnLabel: "Título (EN)",
+    titleEsLabel: "Título (ES)",
+    excerptEnLabel: "Resumen (EN)",
+    excerptEsLabel: "Resumen (ES)",
+    bodyEnLabel: "Cuerpo (EN)",
+    bodyEsLabel: "Cuerpo (ES)",
+    toneRowLabel: "Tono:",
+    deleteDraft: "Eliminar Borrador",
+    deleteConfirm: "¿Seguro?",
+    deleteYes: "Sí, eliminar",
+    deleting: "Eliminando…",
+    draftsHeading: "Borradores Guardados",
+    matchesHeading: "Todos los Partidos",
+    noMatches: "Sin partidos aún — agrégalos en Sanity Studio.",
+    tableCols: { date: "Fecha", opponent: "Rival", score: "Marcador", result: "Resultado", article: "Artículo" },
+    upcoming: "Próximo",
+    generateShort: "✨ Generar",
+    freeFormError: "Rellena el contexto del artículo arriba y haz clic en Regenerar.",
+  },
 };
 
 function formatDate(iso: string) {
@@ -68,7 +176,9 @@ interface EditState {
   body_es: string;
 }
 
-export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Props) {
+export default function ArticlesAdmin({ team, matches, posts: initialPosts, locale }: Props) {
+  const c = locale === "es" ? CONTENT.es : CONTENT.en;
+
   const [posts, setPosts] = useState<NewsPost[]>(initialPosts);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -79,8 +189,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<DraftPreview | null>(null);
   const [selectedTone, setSelectedTone] = useState<Tone>("friendly");
-  const [coachLanguage, setCoachLanguage] = useState<"en" | "es">("en");
-  const [author, setAuthor] = useState("Coach");
+  const [author, setAuthor] = useState("");
   const [coachNotes, setCoachNotes] = useState("");
   const [coverImageAssetId, setCoverImageAssetId] = useState<string | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
@@ -93,7 +202,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
   async function generate(matchId?: string, overrideFreeFormContext?: string) {
     const ctx = overrideFreeFormContext ?? freeFormContext;
     if (!matchId && !ctx.trim()) {
-      setError("Fill in the Free Form context at the top, then click Regen.");
+      setError(c.freeFormError);
       return;
     }
     const key = matchId ?? "freeform";
@@ -110,8 +219,8 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
           team,
           ...(matchId ? { matchId } : { freeFormContext: ctx }),
           tone: selectedTone,
-          author,
-          coachLanguage,
+          author: author || (locale === "es" ? "Entrenador" : "Coach"),
+          coachLanguage: locale,
           ...(coachNotes.trim() ? { coachNotes: coachNotes.trim() } : {}),
           ...(coverImageAssetId ? { coverImageAssetId } : {}),
         }),
@@ -227,11 +336,12 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[var(--color-accent)] shadow-md flex-shrink-0">
               <Image src="/logo.jpg" alt="crest" width={32} height={32} className="object-cover" />
             </div>
-            <AdminBreadcrumb crumbs={[{ label: "Dashboard", href: "/admin/dashboard" }, { label: "Match Articles" }]} />
+            <span className="font-bold text-white text-sm">{c.title}</span>
           </div>
           <div className="flex items-center gap-3">
+            <AdminLangToggle locale={locale} />
             <a href={`/news?team=${team}`} target="_blank" className="text-xs text-gray-400 hover:text-white transition-colors">
-              View news ↗
+              {c.viewNews}
             </a>
           </div>
         </div>
@@ -240,8 +350,8 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-xl font-black text-gray-900">AI Match Articles</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Generate bilingual articles with Claude. Save as draft, edit, then publish.</p>
+            <h1 className="text-xl font-black text-gray-900">{c.title}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{c.subtitle}</p>
           </div>
           <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm shrink-0">
             {([["u11", "U11"], ["u12", "U12"]] as [string, string][]).map(([t, label]) => (
@@ -262,7 +372,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
 
         {/* Mode toggle */}
         <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit shadow-sm mb-6">
-          {([["match", "Link to Match"], ["freeform", "Free Form"]] as [Mode, string][]).map(([m, label]) => (
+          {([["match", c.modeMatch], ["freeform", c.modeFreeform]] as [Mode, string][]).map(([m, label]) => (
             <button
               key={m}
               onClick={() => setMode(m)}
@@ -277,34 +387,13 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
 
         {/* Generation settings */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Generation Settings</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{c.settingsLabel}</p>
           <div className="flex flex-col gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Language / Tu Idioma</label>
-              <div className="flex gap-2">
-                {([["en", "English"], ["es", "Español"]] as ["en" | "es", string][]).map(([val, label]) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => setCoachLanguage(val)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${
-                      coachLanguage === val
-                        ? "bg-[var(--color-accent)] text-[#1c1c1e] border-transparent shadow-sm"
-                        : "text-gray-500 border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-gray-400 mt-1">Write your notes in your language — Claude writes the article in both English and Spanish.</p>
-            </div>
-
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tone</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{c.toneLabel}</label>
                 <div className="flex gap-2">
-                  {(Object.keys(TONE_LABELS) as Tone[]).map((t) => (
+                  {(Object.keys(c.tones) as Tone[]).map((t) => (
                     <button
                       key={t}
                       onClick={() => setSelectedTone(t)}
@@ -314,19 +403,19 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                           : "text-gray-500 border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      {TONE_LABELS[t].label}
+                      {c.tones[t].label}
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">{TONE_LABELS[selectedTone].desc}</p>
+                <p className="text-xs text-gray-400 mt-1">{c.tones[selectedTone].desc}</p>
               </div>
               <div className="sm:w-48">
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Author</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{c.authorLabel}</label>
                 <input
                   type="text"
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
-                  placeholder="Coach"
+                  placeholder={c.authorPlaceholder}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
                 />
               </div>
@@ -335,17 +424,13 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
             {mode === "freeform" && (
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  {coachLanguage === "en" ? "What's the article about?" : "¿De qué trata el artículo?"} <span className="text-red-400">*</span>
+                  {c.freeFormLabel} <span className="text-red-400">{c.freeFormRequired}</span>
                 </label>
                 <textarea
                   rows={3}
                   value={freeFormContext}
                   onChange={(e) => setFreeFormContext(e.target.value)}
-                  placeholder={
-                    coachLanguage === "en"
-                      ? "e.g. Preview of Saturday's match against FC Dallas — we've been training hard on set pieces and the team is ready. Carlos has been outstanding in practice this week."
-                      : "p.ej. Vista previa del partido del sábado contra FC Dallas — hemos entrenado mucho los tiros de esquina y el equipo está listo. Carlos ha destacado en los entrenamientos esta semana."
-                  }
+                  placeholder={c.freeFormPlaceholder}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none"
                 />
               </div>
@@ -353,20 +438,13 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                {coachLanguage === "en"
-                  ? <span>Coach Notes <span className="text-gray-300 font-normal normal-case">(optional — player shoutouts, key moments)</span></span>
-                  : <span>Notas del Entrenador <span className="text-gray-300 font-normal normal-case">(opcional — menciones de jugadores, momentos clave)</span></span>
-                }
+                {c.notesLabel} <span className="text-gray-300 font-normal normal-case">{c.notesHint}</span>
               </label>
               <textarea
                 rows={2}
                 value={coachNotes}
                 onChange={(e) => setCoachNotes(e.target.value)}
-                placeholder={
-                  coachLanguage === "en"
-                    ? "e.g. Alex scored twice, Marco had an outstanding game in goal, great team effort in the second half."
-                    : "p.ej. Alex anotó dos goles, Marco tuvo un partido sobresaliente en el arco, gran esfuerzo del equipo en el segundo tiempo."
-                }
+                placeholder={c.notesPlaceholder}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none"
               />
             </div>
@@ -382,7 +460,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                 disabled={!freeFormContext.trim() || generating !== null}
                 className="w-full py-2.5 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {generating === "freeform" ? "Generating…" : "✨ Generate Article"}
+                {generating === "freeform" ? c.generating : c.generateBtn}
               </button>
             )}
           </div>
@@ -396,61 +474,59 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
         {showPreview && draft && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
             {editState?.postId === draft.id ? (
-              /* Edit mode */
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-200 text-amber-800">Editing Draft</span>
-                  <button onClick={() => setEditState(null)} className="text-xs text-gray-500 hover:text-gray-800">Cancel</button>
+                  <span className="text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-200 text-amber-800">{c.editingBadge}</span>
+                  <button onClick={() => setEditState(null)} className="text-xs text-gray-500 hover:text-gray-800">{c.cancel}</button>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Title (EN)</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.titleEnLabel}</label>
                     <input value={editState.title} onChange={(e) => setEditState((s) => s ? { ...s, title: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Título (ES)</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.titleEsLabel}</label>
                     <input value={editState.title_es} onChange={(e) => setEditState((s) => s ? { ...s, title_es: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Excerpt (EN)</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.excerptEnLabel}</label>
                     <textarea rows={2} value={editState.excerpt} onChange={(e) => setEditState((s) => s ? { ...s, excerpt: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Resumen (ES)</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.excerptEsLabel}</label>
                     <textarea rows={2} value={editState.excerpt_es} onChange={(e) => setEditState((s) => s ? { ...s, excerpt_es: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Body (EN)</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.bodyEnLabel}</label>
                     <textarea rows={6} value={editState.body_en} onChange={(e) => setEditState((s) => s ? { ...s, body_en: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cuerpo (ES)</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.bodyEsLabel}</label>
                     <textarea rows={6} value={editState.body_es} onChange={(e) => setEditState((s) => s ? { ...s, body_es: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-amber-200">
-                  <button onClick={() => setEditState(null)} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                  <button onClick={() => setEditState(null)} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50">{c.cancel}</button>
                   <button onClick={saveEdit} disabled={saving} className="px-4 py-2 rounded-lg bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold hover:opacity-90 disabled:opacity-50">
-                    {saving ? "Saving…" : "Save Changes"}
+                    {saving ? c.saving : c.save}
                   </button>
                   <button
                     onClick={() => { setEditState(null); generate(draft.sourceMatchId, draft.sourceFreeFormContext); }}
                     disabled={generating !== null}
                     className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                   >
-                    ✨ Regenerate with AI
+                    {c.regenAI}
                   </button>
                   <button onClick={() => publish(draft.id)} disabled={publishing === draft.id} className="ml-auto px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 disabled:opacity-50">
-                    {publishing === draft.id ? "Publishing…" : "Publish"}
+                    {publishing === draft.id ? c.publishing : c.publish}
                   </button>
                 </div>
               </div>
             ) : (
-              /* Preview mode */
               <>
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1">
-                    <span className="text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-200 text-amber-800">Draft Preview</span>
+                    <span className="text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-200 text-amber-800">{c.draftBadge}</span>
                     <h2 className="text-lg font-black text-gray-900 mt-2">{draft.title}</h2>
                     <p className="text-sm text-gray-500 italic">{draft.title_es}</p>
                   </div>
@@ -461,22 +537,22 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                 </div>
                 <div className="grid sm:grid-cols-2 gap-4 mt-4">
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">English</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{c.colEn}</p>
                     <p className="text-xs text-gray-500 italic mb-2">{draft.excerpt}</p>
                     <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{draft.body_en}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Español</p>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{c.colEs}</p>
                     <p className="text-xs text-gray-500 italic mb-2">{draft.excerpt_es}</p>
                     <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{draft.body_es}</p>
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4 pt-4 border-t border-amber-200">
-                  <button onClick={discard} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Discard</button>
-                  <button onClick={() => startEdit(draft)} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Edit</button>
-                  <button onClick={() => generate(draft.sourceMatchId, draft.sourceFreeFormContext)} disabled={generating !== null} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">Regenerate</button>
+                  <button onClick={discard} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">{c.discard}</button>
+                  <button onClick={() => startEdit(draft)} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">{c.edit}</button>
+                  <button onClick={() => generate(draft.sourceMatchId, draft.sourceFreeFormContext)} disabled={generating !== null} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">{c.regen}</button>
                   <button onClick={() => publish(draft.id)} disabled={publishing === draft.id} className="ml-auto px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
-                    {publishing === draft.id ? "Publishing…" : "Publish Article"}
+                    {publishing === draft.id ? c.publishing : c.publish}
                   </button>
                 </div>
               </>
@@ -484,22 +560,22 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
           </div>
         )}
 
-        {/* Completed matches (match mode only) */}
+        {/* All matches (match mode only) */}
         {mode === "match" && (
           <div className="mb-8">
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-3">All Matches</h2>
+            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-3">{c.matchesHeading}</h2>
             {matches.length === 0 ? (
-              <p className="text-gray-400 text-sm py-8 text-center">No matches yet — add them in Sanity Studio.</p>
+              <p className="text-gray-400 text-sm py-8 text-center">{c.noMatches}</p>
             ) : (
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-gray-400 uppercase text-xs tracking-wider">
                     <tr>
-                      <th className="px-4 py-3 text-left">Date</th>
-                      <th className="px-4 py-3 text-left">Opponent</th>
-                      <th className="px-4 py-3 text-center">Score</th>
-                      <th className="px-4 py-3 text-center">Result</th>
-                      <th className="px-4 py-3 text-right">Article</th>
+                      <th className="px-4 py-3 text-left">{c.tableCols.date}</th>
+                      <th className="px-4 py-3 text-left">{c.tableCols.opponent}</th>
+                      <th className="px-4 py-3 text-center">{c.tableCols.score}</th>
+                      <th className="px-4 py-3 text-center">{c.tableCols.result}</th>
+                      <th className="px-4 py-3 text-right">{c.tableCols.article}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -512,7 +588,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                             <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(m.date)}</td>
                             <td className="px-4 py-3 font-semibold text-gray-800">vs {m.opponent}</td>
                             <td className="px-4 py-3 text-center font-bold text-gray-700">
-                              {m.result ? `${m.goalsFor} – ${m.goalsAgainst}` : <span className="text-gray-300 font-normal text-xs">Upcoming</span>}
+                              {m.result ? `${m.goalsFor} – ${m.goalsAgainst}` : <span className="text-gray-300 font-normal text-xs">{c.upcoming}</span>}
                             </td>
                             <td className="px-4 py-3 text-center">
                               {m.result ? (
@@ -527,7 +603,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                                 disabled={isGenerating || generating !== null}
                                 className="text-xs px-3 py-1.5 bg-[var(--color-accent)] text-[#1c1c1e] rounded-full font-bold hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                {isGenerating ? "Generating…" : "✨ Generate"}
+                                {isGenerating ? c.generating : c.generateShort}
                               </button>
                             </td>
                           </tr>
@@ -543,7 +619,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
         {/* Draft articles */}
         {draftPosts.length > 0 && (
           <div>
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-3">Saved Drafts</h2>
+            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-3">{c.draftsHeading}</h2>
             <div className="flex flex-col gap-3">
               {draftPosts.map((post) => (
                 <div key={post.id} className="bg-white rounded-xl border border-amber-100 shadow-sm p-4">
@@ -551,34 +627,33 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                     <div className="flex flex-col gap-3">
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Title (EN)</label>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.titleEnLabel}</label>
                           <input value={editState.title} onChange={(e) => setEditState((s) => s ? { ...s, title: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]" />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Título (ES)</label>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.titleEsLabel}</label>
                           <input value={editState.title_es} onChange={(e) => setEditState((s) => s ? { ...s, title_es: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]" />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Excerpt (EN)</label>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.excerptEnLabel}</label>
                           <textarea rows={2} value={editState.excerpt} onChange={(e) => setEditState((s) => s ? { ...s, excerpt: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Resumen (ES)</label>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.excerptEsLabel}</label>
                           <textarea rows={2} value={editState.excerpt_es} onChange={(e) => setEditState((s) => s ? { ...s, excerpt_es: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Body (EN)</label>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.bodyEnLabel}</label>
                           <textarea rows={5} value={editState.body_en} onChange={(e) => setEditState((s) => s ? { ...s, body_en: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Cuerpo (ES)</label>
+                          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.bodyEsLabel}</label>
                           <textarea rows={5} value={editState.body_es} onChange={(e) => setEditState((s) => s ? { ...s, body_es: e.target.value } : s)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none" />
                         </div>
                       </div>
-                      {/* Tone row inside edit form */}
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Tone:</span>
-                        {(Object.keys(TONE_LABELS) as Tone[]).map((t) => (
+                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{c.toneRowLabel}</span>
+                        {(Object.keys(c.tones) as Tone[]).map((t) => (
                           <button
                             key={t}
                             onClick={() => setSelectedTone(t)}
@@ -588,30 +663,30 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                                 : "text-gray-500 border-gray-200 hover:border-gray-300"
                             }`}
                           >
-                            {TONE_LABELS[t].label}
+                            {c.tones[t].label}
                           </button>
                         ))}
                       </div>
                       <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                        <button onClick={() => setEditState(null)} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
+                        <button onClick={() => setEditState(null)} className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">{c.cancel}</button>
                         <button onClick={saveEdit} disabled={saving} className="px-4 py-2 rounded-lg bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold hover:opacity-90 disabled:opacity-50">
-                          {saving ? "Saving…" : "Save Changes"}
+                          {saving ? c.saving : c.save}
                         </button>
                         <button
                           onClick={() => { setEditState(null); generate(post.sourceMatchId, post.sourceFreeFormContext ?? `${post.title}. ${post.excerpt}`); }}
                           disabled={generating !== null}
                           className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                         >
-                          ✨ Regenerate with AI
+                          {c.regenAI}
                         </button>
                         {confirmDeleteId === post.id ? (
                           <span className="flex gap-2 items-center">
-                            <span className="text-sm text-red-500 font-semibold">Sure?</span>
+                            <span className="text-sm text-red-500 font-semibold">{c.deleteConfirm}</span>
                             <button onClick={() => deleteDraft(post.id)} disabled={deleting === post.id} className="px-3 py-2 rounded-lg bg-red-500 text-white text-sm font-bold hover:bg-red-600 disabled:opacity-50">
-                              {deleting === post.id ? "Deleting…" : "Yes, delete"}
+                              {deleting === post.id ? c.deleting : c.deleteYes}
                             </button>
                             <button onClick={() => setConfirmDeleteId(null)} className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-                              Cancel
+                              {c.cancel}
                             </button>
                           </span>
                         ) : (
@@ -620,11 +695,11 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                             disabled={deleting === post.id}
                             className="px-4 py-2 rounded-lg border border-red-100 text-red-400 text-sm font-semibold hover:bg-red-50 disabled:opacity-50"
                           >
-                            Delete Draft
+                            {c.deleteDraft}
                           </button>
                         )}
                         <button onClick={() => publish(post.id)} disabled={publishing === post.id} className="ml-auto px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 disabled:opacity-50">
-                          {publishing === post.id ? "Publishing…" : "Publish"}
+                          {publishing === post.id ? c.publishing : c.publish}
                         </button>
                       </div>
                     </div>
@@ -640,21 +715,21 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                           <p className="text-gray-400 text-xs mt-1 line-clamp-2">{post.excerpt}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
-                          <button onClick={() => startEdit(post)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors">Edit</button>
+                          <button onClick={() => startEdit(post)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors">{c.edit}</button>
                           <button
                             onClick={() => generate(post.sourceMatchId, post.sourceFreeFormContext ?? `${post.title}. ${post.excerpt}`)}
                             disabled={generating !== null}
                             className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
                           >
-                            {generating === post.id ? "…" : "✨ Regen"}
+                            {generating === post.id ? "…" : c.regen}
                           </button>
                           <button onClick={() => publish(post.id)} disabled={publishing === post.id} className="text-xs px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-full font-bold hover:opacity-80 transition-opacity disabled:opacity-50">
-                            {publishing === post.id ? "Publishing…" : "Publish"}
+                            {publishing === post.id ? c.publishing : c.publish}
                           </button>
                           {confirmDeleteId === post.id ? (
                             <>
                               <button onClick={() => deleteDraft(post.id)} disabled={deleting === post.id} className="text-xs px-3 py-1.5 bg-red-500 text-white rounded-full font-bold hover:bg-red-600 disabled:opacity-50">
-                                {deleting === post.id ? "…" : "Sure?"}
+                                {deleting === post.id ? "…" : c.deleteConfirm}
                               </button>
                               <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50">
                                 ✕
@@ -666,15 +741,14 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                               disabled={deleting === post.id}
                               className="text-xs px-3 py-1.5 border border-red-100 text-red-400 rounded-full font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
                             >
-                              Delete
+                              {c.deleteDraft}
                             </button>
                           )}
                         </div>
                       </div>
-                      {/* Inline tone + regen controls — always visible */}
                       <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
-                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Tone:</span>
-                        {(Object.keys(TONE_LABELS) as Tone[]).map((t) => (
+                        <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">{c.toneRowLabel}</span>
+                        {(Object.keys(c.tones) as Tone[]).map((t) => (
                           <button
                             key={t}
                             onClick={() => setSelectedTone(t)}
@@ -684,7 +758,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
                                 : "text-gray-500 border-gray-200 hover:border-gray-300"
                             }`}
                           >
-                            {TONE_LABELS[t].label}
+                            {c.tones[t].label}
                           </button>
                         ))}
                       </div>

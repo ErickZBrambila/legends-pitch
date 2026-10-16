@@ -4,15 +4,69 @@ import { useState } from "react";
 import Image from "next/image";
 import type { Announcement } from "@/lib/types";
 import type { TeamSlug } from "@/lib/sanity/queries";
-import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 import AdminImageUploader from "@/components/AdminImageUploader";
+import AdminLangToggle from "@/components/AdminLangToggle";
 
 type TargetTeam = "u11" | "u12" | "both";
 
 interface Props {
   initialAnnouncements: Announcement[];
   team: TeamSlug;
+  locale: string;
 }
+
+const CONTENT = {
+  en: {
+    title: "Announcements",
+    subtitle: "Write in English — Claude translates to Spanish automatically.",
+    newBtn: "+ New Announcement",
+    formHeading: "New Announcement",
+    teamLabel: "Team",
+    both: "Both",
+    messageLabel: "Message (English)",
+    messagePlaceholder: "Practice moves to Thursday at 6pm at Brushy Creek. Bring shin guards!",
+    messageHelper: "Claude will translate to Spanish automatically.",
+    coachLabel: "Coach Name",
+    coachPlaceholder: "Coach Hugo",
+    locationLabel: "Location (optional)",
+    locationPlaceholder: "Brushy Creek Park Field 3",
+    dateLabel: "Event Date & Time (optional)",
+    dateHelper: "Shows a weather forecast on the announcement.",
+    cancel: "Cancel",
+    submitBoth: "Post for Both Teams",
+    submitOne: "Post Announcement",
+    submitting: "Posting…",
+    translationLabel: "Spanish translation (auto-generated)",
+    empty: "No announcements yet",
+    emptyHint: 'Click "+ New Announcement" to post one.',
+    viewPublic: "View public ↗",
+  },
+  es: {
+    title: "Anuncios",
+    subtitle: "Escribe en español — Claude traduce al inglés automáticamente.",
+    newBtn: "+ Nuevo Anuncio",
+    formHeading: "Nuevo Anuncio",
+    teamLabel: "Equipo",
+    both: "Ambos",
+    messageLabel: "Mensaje (Español)",
+    messagePlaceholder: "El práctica se mueve al jueves a las 6pm en Brushy Creek. ¡Traigan espinilleras!",
+    messageHelper: "Claude traduce al inglés automáticamente.",
+    coachLabel: "Nombre del Entrenador",
+    coachPlaceholder: "Entrenador Hugo",
+    locationLabel: "Ubicación (opcional)",
+    locationPlaceholder: "Brushy Creek Park Campo 3",
+    dateLabel: "Fecha y Hora del Evento (opcional)",
+    dateHelper: "Muestra el pronóstico del tiempo en el anuncio.",
+    cancel: "Cancelar",
+    submitBoth: "Publicar para Ambos Equipos",
+    submitOne: "Publicar Anuncio",
+    submitting: "Publicando…",
+    translationLabel: "Traducción al inglés (generada automáticamente)",
+    empty: "Sin anuncios aún",
+    emptyHint: 'Haz clic en "+ Nuevo Anuncio" para publicar uno.',
+    viewPublic: "Ver público ↗",
+  },
+};
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -21,14 +75,15 @@ function formatDate(iso: string) {
   });
 }
 
-export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props) {
+export default function AnnouncementsAdmin({ initialAnnouncements, team, locale }: Props) {
+  const c = locale === "es" ? CONTENT.es : CONTENT.en;
+
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ message: "", author: "", location: "", eventTime: "" });
-  const [language, setLanguage] = useState<"en" | "es">("en");
   const [targetTeam, setTargetTeam] = useState<TargetTeam>(team);
   const [submitting, setSubmitting] = useState(false);
-  const [translation, setTranslation] = useState<{ text: string; lang: "en" | "es" } | null>(null);
+  const [translation, setTranslation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imageAssetId, setImageAssetId] = useState<string | null>(null);
 
@@ -39,7 +94,7 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
       body: JSON.stringify({
         team: t,
         message: form.message,
-        language,
+        language: locale,
         author: form.author,
         ...(form.location.trim() ? { location: form.location.trim() } : {}),
         ...(form.eventTime ? { eventTime: new Date(form.eventTime).toISOString() } : {}),
@@ -63,9 +118,7 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
       const results = await Promise.all(teamsToPost.map(postToTeam));
       const firstResult = results[0];
 
-      if (firstResult.translated) {
-        setTranslation({ text: firstResult.translated, lang: language === "en" ? "es" : "en" });
-      }
+      if (firstResult.translated) setTranslation(firstResult.translated);
 
       const newAnnouncement: Announcement = {
         id: firstResult.id,
@@ -89,18 +142,18 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top bar */}
       <header className="bg-[#1c1c1e] border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[var(--color-accent)] shadow-md flex-shrink-0">
               <Image src="/logo.jpg" alt="crest" width={32} height={32} className="object-cover" />
             </div>
-            <AdminBreadcrumb crumbs={[{ label: "Dashboard", href: "/admin/dashboard" }, { label: "Announcements" }]} />
+            <span className="font-bold text-white text-sm">{c.title}</span>
           </div>
           <div className="flex items-center gap-3">
+            <AdminLangToggle locale={locale} />
             <a href={`/announcements?team=${team}`} target="_blank" className="text-xs text-gray-400 hover:text-white transition-colors">
-              View public ↗
+              {c.viewPublic}
             </a>
           </div>
         </div>
@@ -109,46 +162,25 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-black text-gray-900">Announcements / Anuncios</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Write in your language — Claude translates automatically.</p>
+            <h1 className="text-xl font-black text-gray-900">{c.title}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{c.subtitle}</p>
           </div>
           <button
             onClick={() => { setShowForm(true); setTranslation(null); setError(null); }}
             className="px-4 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors"
           >
-            + New Announcement
+            {c.newBtn}
           </button>
         </div>
 
-        {/* New announcement form */}
         {showForm && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
-            <h2 className="text-base font-black text-gray-800 mb-4">New Announcement / Nuevo Anuncio</h2>
+            <h2 className="text-base font-black text-gray-800 mb-4">{c.formHeading}</h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Your Language / Tu Idioma</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.teamLabel}</label>
                 <div className="flex gap-2">
-                  {([["en", "English"], ["es", "Español"]] as ["en" | "es", string][]).map(([val, label]) => (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => setLanguage(val)}
-                      className={`px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${
-                        language === val
-                          ? "bg-[var(--color-accent)] text-[#1c1c1e] border-transparent shadow-sm"
-                          : "text-gray-500 border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Team / Equipo</label>
-                <div className="flex gap-2">
-                  {([["u11", "U11"], ["u12", "U12"], ["both", "Ambos / Both"]] as [TargetTeam, string][]).map(([val, label]) => (
+                  {([["u11", "U11"], ["u12", "U12"], ["both", c.both]] as [TargetTeam, string][]).map(([val, label]) => (
                     <button
                       key={val}
                       type="button"
@@ -166,61 +198,51 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  {language === "en" ? "Message (English)" : "Mensaje (Español)"}
-                </label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.messageLabel}</label>
                 <textarea
                   rows={4}
                   value={form.message}
                   onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                  placeholder={
-                    language === "en"
-                      ? "Practice moves to Thursday at 6pm at Brushy Creek. Bring shin guards!"
-                      : "El práctica se mueve al jueves a las 6pm en Brushy Creek. ¡Traigan espinilleras!"
-                  }
+                  placeholder={c.messagePlaceholder}
                   required
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none"
                 />
-                <p className="text-xs text-gray-400 mt-1">
-                  {language === "en"
-                    ? "Claude will translate to Spanish automatically."
-                    : "Claude traduce al inglés automáticamente."}
-                </p>
+                <p className="text-xs text-gray-400 mt-1">{c.messageHelper}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Entrenador / Coach Name</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.coachLabel}</label>
                   <input
                     type="text"
                     value={form.author}
                     onChange={(e) => setForm((f) => ({ ...f, author: e.target.value }))}
-                    placeholder="Coach Hugo"
+                    placeholder={c.coachPlaceholder}
                     required
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Ubicación / Location (opcional)</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.locationLabel}</label>
                   <input
                     type="text"
                     value={form.location}
                     onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                    placeholder="Brushy Creek Park Field 3"
+                    placeholder={c.locationPlaceholder}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fecha y hora del evento / Event Date & Time (opcional)</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.dateLabel}</label>
                 <input
                   type="datetime-local"
                   value={form.eventTime}
                   onChange={(e) => setForm((f) => ({ ...f, eventTime: e.target.value }))}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] bg-white"
                 />
-                <p className="text-xs text-gray-400 mt-1">Muestra el pronóstico del tiempo en el anuncio. / Shows a weather forecast on the announcement.</p>
+                <p className="text-xs text-gray-400 mt-1">{c.dateHelper}</p>
               </div>
 
               <AdminImageUploader
@@ -236,34 +258,31 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
                   onClick={() => setShowForm(false)}
                   className="flex-1 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                 >
-                  Cancel
+                  {c.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="flex-1 py-2 rounded-lg bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold hover:bg-[var(--color-accent-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? "Publicando…" : targetTeam === "both" ? "Publicar para Ambos Equipos" : "Publicar Anuncio"}
+                  {submitting ? c.submitting : targetTeam === "both" ? c.submitBoth : c.submitOne}
                 </button>
               </div>
             </form>
 
             {translation && (
               <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
-                  {translation.lang === "es" ? "Spanish translation (auto-generated)" : "English translation (auto-generated)"}
-                </p>
-                <p className="text-sm text-blue-900 whitespace-pre-line">{translation.text}</p>
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">{c.translationLabel}</p>
+                <p className="text-sm text-blue-900 whitespace-pre-line">{translation}</p>
               </div>
             )}
           </div>
         )}
 
-        {/* Announcements list */}
         {announcements.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
-            <p className="text-lg mb-2">No announcements yet</p>
-            <p className="text-sm">Click &quot;+ New Announcement&quot; to post one.</p>
+            <p className="text-lg mb-2">{c.empty}</p>
+            <p className="text-sm">{c.emptyHint}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

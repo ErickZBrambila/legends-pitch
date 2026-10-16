@@ -29,6 +29,22 @@ export interface ServiceLine {
 
 export const SESSIONS: WorkSession[] = [
   {
+    date: "2026-10-16",
+    title: "Session 11 — Admin Bug Fixes",
+    hours: 0.5,
+    commits: 1,
+    claudeCostUSD: 1.98,
+    features: [
+      "Announcements admin fully bilingual — all labels show ES/EN side by side",
+      "Translation direction reversed: Hugo writes in Spanish, Claude translates to English",
+      "Announcements form: U11 / U12 / Ambos team picker — 'both' sends two requests",
+      "Articles admin: U11/U12 tab switcher in header for quick team switching",
+      "Coach votes admin: bilingual labels (Prioridad/Priority, Estadísticas/Player stats, etc.)",
+      "Tracker work log now sorts sessions ascending by session number (1→11)",
+      "Community voting moved from Coming Next to Live Now on roadmap (EN + ES)",
+    ],
+  },
+  {
     date: "2026-10-15",
     title: "Session 10 — Community + Coach Voting",
     hours: 0.5,

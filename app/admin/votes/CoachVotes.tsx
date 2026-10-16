@@ -3,12 +3,14 @@
 import { useState } from "react";
 import Image from "next/image";
 import AdminLangToggle from "@/components/AdminLangToggle";
+import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 import type { VoteData } from "@/lib/votes";
 
 const CONTENT = {
   en: {
     heading: "Feature Voting",
     subheading: "Mark the features you want to prioritize as a coaching staff. See what parents are voting for too.",
+    dashboardLabel: "Dashboard",
     backToDashboard: "← Dashboard",
     prioritized: "⭐ Priority",
     markPriority: "Mark Priority",
@@ -22,6 +24,7 @@ const CONTENT = {
   es: {
     heading: "Votación de Funciones",
     subheading: "Marca las funciones que quieres priorizar como cuerpo técnico. Ve también lo que votan los padres.",
+    dashboardLabel: "Panel",
     backToDashboard: "← Panel",
     prioritized: "⭐ Prioridad",
     markPriority: "Marcar Prioridad",
@@ -65,11 +68,10 @@ export default function CoachVotes({ initialVotes, locale }: { initialVotes: Vot
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[var(--color-accent)] shadow-md flex-shrink-0">
               <Image src="/logo.jpg" alt="crest" width={32} height={32} className="object-cover" />
             </div>
-            <span className="font-bold text-white text-sm">{c.heading}</span>
+            <AdminBreadcrumb crumbs={[{ label: c.dashboardLabel, href: "/admin/dashboard" }, { label: c.heading }]} />
           </div>
           <div className="flex items-center gap-3">
             <AdminLangToggle locale={locale} />
-            <a href="/admin/dashboard" className="text-xs text-gray-400 hover:text-white transition-colors">{c.backToDashboard}</a>
           </div>
         </div>
       </header>

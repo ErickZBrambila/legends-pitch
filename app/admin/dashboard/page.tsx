@@ -4,6 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import Link from "next/link";
 import Image from "next/image";
 import AdminLangToggle from "@/components/AdminLangToggle";
+import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 
 export const metadata = { title: "Admin · North Legends FC" };
 
@@ -127,7 +128,7 @@ export default async function DashboardPage() {
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[var(--color-accent)] shadow-md flex-shrink-0">
               <Image src="/logo.jpg" alt="crest" width={32} height={32} className="object-cover" />
             </div>
-            <span className="font-bold text-white text-sm">{c.label}</span>
+            <AdminBreadcrumb crumbs={[{ label: c.label }]} />
           </div>
           <div className="flex items-center gap-3">
             <AdminLangToggle locale={locale} />

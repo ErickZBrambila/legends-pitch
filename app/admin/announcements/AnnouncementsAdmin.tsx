@@ -6,6 +6,7 @@ import type { Announcement } from "@/lib/types";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import AdminImageUploader from "@/components/AdminImageUploader";
 import AdminLangToggle from "@/components/AdminLangToggle";
+import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 
 type TargetTeam = "u11" | "u12" | "both";
 
@@ -17,6 +18,7 @@ interface Props {
 
 const CONTENT = {
   en: {
+    dashboardLabel: "Dashboard",
     title: "Announcements",
     subtitle: "Write in English — Claude translates to Spanish automatically.",
     newBtn: "+ New Announcement",
@@ -65,6 +67,7 @@ const CONTENT = {
     empty: "Sin anuncios aún",
     emptyHint: 'Haz clic en "+ Nuevo Anuncio" para publicar uno.',
     viewPublic: "Ver público ↗",
+    dashboardLabel: "Panel",
   },
 };
 
@@ -148,7 +151,7 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team, locale 
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[var(--color-accent)] shadow-md flex-shrink-0">
               <Image src="/logo.jpg" alt="crest" width={32} height={32} className="object-cover" />
             </div>
-            <span className="font-bold text-white text-sm">{c.title}</span>
+            <AdminBreadcrumb crumbs={[{ label: c.dashboardLabel, href: "/admin/dashboard" }, { label: c.title }]} />
           </div>
           <div className="flex items-center gap-3">
             <AdminLangToggle locale={locale} />

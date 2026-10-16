@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
   const teamRef = await getTeamRef(team);
   if (!teamRef) return Response.json({ error: "Team not found" }, { status: 404 });
 
-  // Auto-translate to Spanish via Claude
-  let message_es: string | null = null;
+  // message is Spanish (Hugo writes in Spanish) — auto-translate to English via Claude
+  let message_en: string | null = null;
   try {
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5",
@@ -58,12 +58,12 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "user",
-          content: `Translate the following youth soccer coach announcement to natural, friendly Mexican Spanish. Return ONLY the translated text — no preamble, no quotes.\n\n${message}`,
+          content: `Translate the following youth soccer coach announcement from Spanish to natural, friendly English. Return ONLY the translated text — no preamble, no quotes.\n\n${message}`,
         },
       ],
     });
     const textBlock = response.content.find((b) => b.type === "text");
-    if (textBlock?.type === "text") message_es = textBlock.text.trim();
+    if (textBlock?.type === "text") message_en = textBlock.text.trim();
   } catch {
     // Translation is best-effort — proceed without it
   }
@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
   const doc = await sanityWriteClient.create({
     _type: "announcement",
     team: { _type: "reference", _ref: teamRef },
-    message: message.trim(),
-    ...(message_es ? { message_es } : {}),
+    message: message_en ?? message.trim(),  // EN field: translated or fallback to original
+    message_es: message.trim(),              // ES field: Hugo's original Spanish
     author: author.trim(),
     publishedAt: new Date().toISOString(),
     ...(location ? { location } : {}),
@@ -89,5 +89,5 @@ export async function POST(req: NextRequest) {
     "/announcements"
   ).catch(() => {});
 
-  return Response.json({ id: doc._id, message_es });
+  return Response.json({ id: doc._id, message_en });
 }

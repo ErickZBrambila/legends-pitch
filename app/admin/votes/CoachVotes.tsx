@@ -3,10 +3,10 @@
 import { useState } from "react";
 import type { VoteData } from "@/lib/votes";
 
-const LABELS: Record<string, { emoji: string; title: string }> = {
-  "player-stats":        { emoji: "📊", title: "Player stats" },
-  "attendance-tracking": { emoji: "✅", title: "Attendance tracking" },
-  "season-awards":       { emoji: "🏆", title: "Season awards" },
+const LABELS: Record<string, { emoji: string; title: string; title_es: string }> = {
+  "player-stats":        { emoji: "📊", title: "Player stats",        title_es: "Estadísticas de jugadores" },
+  "attendance-tracking": { emoji: "✅", title: "Attendance tracking", title_es: "Control de asistencia" },
+  "season-awards":       { emoji: "🏆", title: "Season awards",       title_es: "Premios de temporada" },
 };
 
 export default function CoachVotes({ initialVotes }: { initialVotes: VoteData[] }) {
@@ -41,8 +41,8 @@ export default function CoachVotes({ initialVotes }: { initialVotes: VoteData[] 
           <div key={item.slug} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-4">
             <span className="text-2xl leading-none">{label.emoji}</span>
             <div className="flex-1">
-              <p className="font-bold text-gray-900 text-sm">{label.title}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{item.communityCount} community vote{item.communityCount !== 1 ? "s" : ""}</p>
+              <p className="font-bold text-gray-900 text-sm">{label.title_es} / {label.title}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{item.communityCount} voto{item.communityCount !== 1 ? "s" : ""} / vote{item.communityCount !== 1 ? "s" : ""}</p>
             </div>
             <button
               onClick={() => handleToggle(item.slug)}
@@ -53,7 +53,7 @@ export default function CoachVotes({ initialVotes }: { initialVotes: VoteData[] 
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200"
               }`}
             >
-              {item.coachVoted ? "⭐ Priority" : "Mark priority"}
+              {item.coachVoted ? "⭐ Prioridad / Priority" : "Marcar prioridad / Mark priority"}
             </button>
           </div>
         );

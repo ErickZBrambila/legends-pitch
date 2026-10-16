@@ -16,9 +16,9 @@ export default async function CoachVotesPage() {
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="mb-8">
           <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Admin · Coach Tools</p>
-          <h1 className="text-3xl font-black text-gray-900">Feature Voting</h1>
+          <h1 className="text-3xl font-black text-gray-900">Votación / Feature Voting</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Mark wishlist items as a coaching staff priority. These flags are shown to the admin alongside community votes.
+            Marca las funciones que quieres priorizar. / Mark wishlist items as a coaching staff priority.
           </p>
         </div>
         <CoachVotes initialVotes={votes} />

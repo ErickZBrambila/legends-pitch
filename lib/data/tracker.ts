@@ -29,6 +29,22 @@ export interface ServiceLine {
 
 export const SESSIONS: WorkSession[] = [
   {
+    date: "2026-10-15",
+    title: "Session 10 — Community + Coach Voting",
+    hours: 0.5,
+    commits: 2,
+    claudeCostUSD: 5.78,
+    features: [
+      "Community voting on wishlist cards — thumbs-up button, 1 vote per device, optimistic UI",
+      "Server-authoritative vote toggle — httpOnly device cookie + Redis Set eliminates vote inflation & underflow",
+      "Coach priority flags on /admin/votes — toggle per wishlist item, shows community counts",
+      "Voting admin table on /neo — community counts, coach flags, Easy/Medium/Hard difficulty selector",
+      "Feature Voting card added to /admin/dashboard hub",
+      "Upstash Redis credentials wired into .env.local (legends-pitch database)",
+      "Security fix: removed hasVoted client trust; server owns vote state via Redis SISMEMBER",
+    ],
+  },
+  {
     date: "2026-07-03",
     title: "Session 1 — Launch",
     hours: 4,

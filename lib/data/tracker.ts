@@ -30,6 +30,22 @@ export interface ServiceLine {
 export const SESSIONS: WorkSession[] = [
   {
     date: "2026-10-16",
+    title: "Session 12 — Full Admin Bilingual Split",
+    hours: 1.0,
+    commits: 4,
+    claudeCostUSD: 7.96,
+    features: [
+      "Admin UI fully split into English/Spanish pages — whole-page toggle (EN/ES pill) in every header, same locale cookie as main site",
+      "AdminLangToggle component: sets NEXT_LOCALE cookie + router.refresh(), consistent across all admin pages",
+      "Announcements admin: coaches write in their language (EN default), Claude auto-translates the other direction",
+      "Articles admin: coachLanguage driven by page locale — Spanish notes correctly interpreted by Claude",
+      "CoachVotes rebuilt with WishlistSection card style — emoji + title + desc + priority button, matches parents roadmap voting",
+      "AdminBreadcrumb restored to all admin pages with bilingual crumbs (Dashboard→Page, Panel→Página in Spanish)",
+      "All per-field language toggles removed in favor of whole-page locale switch",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Session 11 — Admin Bug Fixes",
     hours: 0.5,
     commits: 1,

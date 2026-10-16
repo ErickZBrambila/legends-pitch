@@ -50,11 +50,12 @@ export async function POST(req: NextRequest) {
   if (!authed) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { team, matchId, tone = "friendly", author = "Coach", coachNotes, coverImageAssetId, freeFormContext } = body as {
+  const { team, matchId, tone = "friendly", author = "Coach", coachLanguage = "en", coachNotes, coverImageAssetId, freeFormContext } = body as {
     team: TeamSlug;
     matchId?: string;
     tone?: Tone;
     author?: string;
+    coachLanguage?: "en" | "es";
     coachNotes?: string;
     coverImageAssetId?: string;
     freeFormContext?: string;
@@ -104,13 +105,13 @@ export async function POST(req: NextRequest) {
         ? `Result: ${match.result === "W" ? "Win" : match.result === "L" ? "Loss" : "Draw"}`
         : null,
       match.location ? `Location: ${match.location}` : null,
-      coachNotes?.trim() ? `Coach notes: ${coachNotes.trim()}` : match.coachNotes ? `Coach notes: ${match.coachNotes}` : null,
+      coachNotes?.trim() ? `Coach notes (written in ${coachLanguage === "es" ? "Spanish" : "English"}): ${coachNotes.trim()}` : match.coachNotes ? `Coach notes: ${match.coachNotes}` : null,
     ].filter(Boolean).join("\n");
   } else {
     articleContext = [
       `Team: ${teamInfo.name}`,
-      coachNotes?.trim() ? `Coach notes: ${coachNotes.trim()}` : null,
-      `Context: ${freeFormContext!.trim()}`,
+      coachNotes?.trim() ? `Coach notes (written in ${coachLanguage === "es" ? "Spanish" : "English"}): ${coachNotes.trim()}` : null,
+      `Context (written in ${coachLanguage === "es" ? "Spanish" : "English"}): ${freeFormContext!.trim()}`,
     ].filter(Boolean).join("\n");
   }
 

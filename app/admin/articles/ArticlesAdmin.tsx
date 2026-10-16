@@ -79,6 +79,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<DraftPreview | null>(null);
   const [selectedTone, setSelectedTone] = useState<Tone>("friendly");
+  const [coachLanguage, setCoachLanguage] = useState<"en" | "es">("en");
   const [author, setAuthor] = useState("Coach");
   const [coachNotes, setCoachNotes] = useState("");
   const [coverImageAssetId, setCoverImageAssetId] = useState<string | null>(null);
@@ -110,6 +111,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
           ...(matchId ? { matchId } : { freeFormContext: ctx }),
           tone: selectedTone,
           author,
+          coachLanguage,
           ...(coachNotes.trim() ? { coachNotes: coachNotes.trim() } : {}),
           ...(coverImageAssetId ? { coverImageAssetId } : {}),
         }),
@@ -277,6 +279,27 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Generation Settings</p>
           <div className="flex flex-col gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Your Language / Tu Idioma</label>
+              <div className="flex gap-2">
+                {([["en", "English"], ["es", "Español"]] as ["en" | "es", string][]).map(([val, label]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setCoachLanguage(val)}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${
+                      coachLanguage === val
+                        ? "bg-[var(--color-accent)] text-[#1c1c1e] border-transparent shadow-sm"
+                        : "text-gray-500 border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Write your notes in your language — Claude writes the article in both English and Spanish.</p>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tone</label>
@@ -312,13 +335,17 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
             {mode === "freeform" && (
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  What&apos;s the article about? <span className="text-red-400">*</span>
+                  {coachLanguage === "en" ? "What's the article about?" : "¿De qué trata el artículo?"} <span className="text-red-400">*</span>
                 </label>
                 <textarea
                   rows={3}
                   value={freeFormContext}
                   onChange={(e) => setFreeFormContext(e.target.value)}
-                  placeholder="e.g. Preview of Saturday's match against FC Dallas — we've been training hard on set pieces and the team is ready. Carlos has been outstanding in practice this week."
+                  placeholder={
+                    coachLanguage === "en"
+                      ? "e.g. Preview of Saturday's match against FC Dallas — we've been training hard on set pieces and the team is ready. Carlos has been outstanding in practice this week."
+                      : "p.ej. Vista previa del partido del sábado contra FC Dallas — hemos entrenado mucho los tiros de esquina y el equipo está listo. Carlos ha destacado en los entrenamientos esta semana."
+                  }
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none"
                 />
               </div>
@@ -326,13 +353,20 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Coach Notes <span className="text-gray-300 font-normal normal-case">(optional — player shoutouts, key moments)</span>
+                {coachLanguage === "en"
+                  ? <span>Coach Notes <span className="text-gray-300 font-normal normal-case">(optional — player shoutouts, key moments)</span></span>
+                  : <span>Notas del Entrenador <span className="text-gray-300 font-normal normal-case">(opcional — menciones de jugadores, momentos clave)</span></span>
+                }
               </label>
               <textarea
                 rows={2}
                 value={coachNotes}
                 onChange={(e) => setCoachNotes(e.target.value)}
-                placeholder="e.g. Alex scored twice, Marco had an outstanding game in goal, great team effort in the second half."
+                placeholder={
+                  coachLanguage === "en"
+                    ? "e.g. Alex scored twice, Marco had an outstanding game in goal, great team effort in the second half."
+                    : "p.ej. Alex anotó dos goles, Marco tuvo un partido sobresaliente en el arco, gran esfuerzo del equipo en el segundo tiempo."
+                }
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none"
               />
             </div>

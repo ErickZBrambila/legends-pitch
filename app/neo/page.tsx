@@ -291,7 +291,11 @@ export default async function TrackerPage() {
         <section>
           <h2 className="text-base font-black text-gray-900 mb-4">Work Log</h2>
           <div className="flex flex-col gap-5">
-            {[...SESSIONS].reverse().map((session) => (
+            {[...SESSIONS].sort((a, b) => {
+              const nA = parseInt(a.title.match(/Session (\d+)/)?.[1] ?? "0");
+              const nB = parseInt(b.title.match(/Session (\d+)/)?.[1] ?? "0");
+              return nA - nB;
+            }).map((session) => (
               <div key={session.date} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div>

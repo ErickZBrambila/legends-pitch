@@ -28,6 +28,7 @@ const CONTENT = {
         { emoji: "🔒", title: "Family-only access", desc: "Videos and gallery are passcode-protected — ask Coach Hugo for the code." },
         { emoji: "📰", title: "News & announcements", desc: "Pinned announcements from the coaching staff." },
         { emoji: "💬", title: "Team announcements feed", desc: "Coach posts a message in any language — the site translates it automatically, shows the location with a Maps link, and pulls a live weather forecast for the event." },
+        { emoji: "🗳️", title: "Community voting", desc: "Vote on which features matter most — parents and coaches each get a say." },
       ],
     },
     knownBugs: {
@@ -47,7 +48,6 @@ const CONTENT = {
         { emoji: "🍊", title: "Snack signup", desc: "Replace SignUpGenius — sign up for snacks directly on the site." },
         { emoji: "🔔", title: "Game-day reminders", desc: "Push notifications before each game with time, field, and weather." },
         { emoji: "🔍", title: "Search", desc: "Search across news, announcements, schedules, and roster from anywhere on the site." },
-        { emoji: "🗳️", title: "Community voting", desc: "Vote on which features matter most to you — parents and coaches each get a say." },
       ],
     },
     wishlist: {
@@ -78,6 +78,7 @@ const CONTENT = {
         { emoji: "🔒", title: "Acceso solo para familias", desc: "Videos y galería protegidos con contraseña — pídela al Entrenador Hugo." },
         { emoji: "📰", title: "Noticias y anuncios", desc: "Anuncios fijados del cuerpo técnico." },
         { emoji: "💬", title: "Feed de anuncios del equipo", desc: "El entrenador publica en cualquier idioma — el sitio lo traduce automáticamente, muestra la ubicación con enlace a Maps y el pronóstico del tiempo para el evento." },
+        { emoji: "🗳️", title: "Votación de la comunidad", desc: "Vota por las funciones que más te importan — padres y entrenadores tienen voz." },
       ],
     },
     knownBugs: {
@@ -97,7 +98,6 @@ const CONTENT = {
         { emoji: "🍊", title: "Registro de snacks", desc: "Reemplaza SignUpGenius — regístrate para llevar snacks directamente en el sitio." },
         { emoji: "🔔", title: "Recordatorios del día del partido", desc: "Notificaciones antes de cada partido con hora, campo y clima." },
         { emoji: "🔍", title: "Búsqueda", desc: "Busca noticias, anuncios, calendarios y alineaciones desde cualquier parte del sitio." },
-        { emoji: "🗳️", title: "Votación de la comunidad", desc: "Vota por las funciones que más te importan — padres y entrenadores tienen voz." },
       ],
     },
     wishlist: {

@@ -236,9 +236,26 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts }: Pr
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-xl font-black text-gray-900">AI Match Articles</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Generate bilingual articles with Claude. Save as draft, edit, then publish.</p>
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-xl font-black text-gray-900">AI Match Articles</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Generate bilingual articles with Claude. Save as draft, edit, then publish.</p>
+          </div>
+          <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm shrink-0">
+            {([["u11", "U11"], ["u12", "U12"]] as [string, string][]).map(([t, label]) => (
+              <a
+                key={t}
+                href={`?team=${t}`}
+                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  team === t
+                    ? "bg-[var(--color-accent)] text-[#1c1c1e] shadow-sm"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
         </div>
 
         {/* Mode toggle */}

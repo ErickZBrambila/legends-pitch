@@ -33,7 +33,7 @@ export const SESSIONS: WorkSession[] = [
     title: "Session 12 — Full Admin Bilingual Split",
     hours: 1.0,
     commits: 4,
-    claudeCostUSD: 7.96,
+    claudeCostUSD: 5.98,
     features: [
       "Admin UI fully split into English/Spanish pages — whole-page toggle (EN/ES pill) in every header, same locale cookie as main site",
       "AdminLangToggle component: sets NEXT_LOCALE cookie + router.refresh(), consistent across all admin pages",

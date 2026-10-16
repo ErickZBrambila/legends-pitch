@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import ArticlesAdmin from "./ArticlesAdmin";
 import { getMatchesByTeam, getPostsByTeamAdmin, purgeOldDrafts } from "@/lib/sanity/queries";
@@ -16,10 +17,11 @@ export default async function AdminArticlesPage({
   const { team: teamParam } = await searchParams;
   const team = teamParam === "u12" ? "u12" : ("u11" as const);
 
-  const [[matches, posts]] = await Promise.all([
+  const [locale, [matches, posts]] = await Promise.all([
+    getLocale(),
     Promise.all([getMatchesByTeam(team), getPostsByTeamAdmin(team)]),
     purgeOldDrafts(),
   ]);
 
-  return <ArticlesAdmin team={team} matches={matches} posts={posts} />;
+  return <ArticlesAdmin team={team} matches={matches} posts={posts} locale={locale} />;
 }

@@ -1,10 +1,80 @@
 import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import Link from "next/link";
 import Image from "next/image";
-import AdminBreadcrumb from "@/components/AdminBreadcrumb";
+import AdminLangToggle from "@/components/AdminLangToggle";
 
 export const metadata = { title: "Admin · North Legends FC" };
+
+const CONTENT = {
+  en: {
+    label: "Admin",
+    heading: "North Legends FC",
+    subheading: "Internal tools and content management.",
+    viewSite: "View Site ↗",
+    cards: [
+      {
+        href: "/admin/announcements",
+        title: "Announcements",
+        description: "Post coach announcements for families. Claude auto-translates every message.",
+        badge: "New",
+      },
+      {
+        href: "/admin/articles",
+        title: "Match Articles",
+        description: "Generate bilingual match recap articles with Claude. Choose tone — Friendly, Formal, or Hype — then review and publish.",
+        badge: "New",
+      },
+      {
+        href: "/admin/votes",
+        title: "Feature Voting",
+        description: "Mark wishlist items as coaching staff priorities. See community votes alongside your flags.",
+        badge: "New",
+      },
+      {
+        href: "/studio",
+        external: true,
+        title: "Sanity Studio",
+        description: "Manage all site content — schedule, roster, news, gallery, KickReel sessions, sponsors, and coach info.",
+        badge: "Live",
+      },
+    ],
+  },
+  es: {
+    label: "Admin",
+    heading: "North Legends FC",
+    subheading: "Herramientas internas y gestión de contenido.",
+    viewSite: "Ver Sitio ↗",
+    cards: [
+      {
+        href: "/admin/announcements",
+        title: "Anuncios",
+        description: "Publica anuncios para las familias. Claude traduce cada mensaje automáticamente.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/articles",
+        title: "Artículos de Partidos",
+        description: "Genera artículos bilingües sobre partidos con Claude. Elige el tono — Amistoso, Formal o Emocionante — y publícalos.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/votes",
+        title: "Votación de Funciones",
+        description: "Marca elementos de la lista de deseos como prioridades del cuerpo técnico. Ve los votos de la comunidad junto con tus banderas.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/studio",
+        external: true,
+        title: "Sanity Studio",
+        description: "Gestiona todo el contenido del sitio — calendario, jugadores, noticias, galería, sesiones KickReel, patrocinadores e info del entrenador.",
+        badge: "En vivo",
+      },
+    ],
+  },
+};
 
 function HubCard({
   href,
@@ -45,8 +115,9 @@ function HubCard({
 }
 
 export default async function DashboardPage() {
-  const authed = await getAdminSession();
+  const [authed, locale] = await Promise.all([getAdminSession(), getLocale()]);
   if (!authed) redirect("/admin");
+  const c = locale === "es" ? CONTENT.es : CONTENT.en;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -56,46 +127,24 @@ export default async function DashboardPage() {
             <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-[var(--color-accent)] shadow-md flex-shrink-0">
               <Image src="/logo.jpg" alt="crest" width={32} height={32} className="object-cover" />
             </div>
-            <AdminBreadcrumb crumbs={[{ label: "Dashboard" }]} />
+            <span className="font-bold text-white text-sm">{c.label}</span>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/" target="_blank" className="text-xs text-gray-400 hover:text-white transition-colors">View Site ↗</a>
+            <AdminLangToggle locale={locale} />
+            <a href="/" target="_blank" className="text-xs text-gray-400 hover:text-white transition-colors">{c.viewSite}</a>
           </div>
         </div>
       </header>
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Admin</p>
-          <h1 className="text-3xl font-black text-gray-900">North Legends FC</h1>
-          <p className="text-gray-500 text-sm mt-1">Internal tools and content management.</p>
+          <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">{c.label}</p>
+          <h1 className="text-3xl font-black text-gray-900">{c.heading}</h1>
+          <p className="text-gray-500 text-sm mt-1">{c.subheading}</p>
         </div>
-
         <div className="flex flex-col gap-4">
-          <HubCard
-            href="/admin/announcements"
-            title="Announcements"
-            description="Post coach announcements for families. Claude auto-translates every message to Spanish."
-            badge="New"
-          />
-          <HubCard
-            href="/admin/articles"
-            title="Match Articles"
-            description="Generate bilingual match recap articles with Claude. Choose tone — Friendly, Formal, or Hype — then review and publish."
-            badge="New"
-          />
-          <HubCard
-            href="/admin/votes"
-            title="Feature Voting"
-            description="Mark wishlist items as coaching staff priorities. See community votes alongside your flags."
-            badge="New"
-          />
-          <HubCard
-            href="/studio"
-            external
-            title="Sanity Studio"
-            description="Manage all site content — schedule, roster, news, gallery, KickReel sessions, sponsors, and coach info."
-            badge="Live"
-          />
+          {c.cards.map((card) => (
+            <HubCard key={card.href} {...card} />
+          ))}
         </div>
       </div>
     </div>

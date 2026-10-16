@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 import { getNeoSession } from "@/lib/neo-auth";
 import PushSender from "@/components/PushSender";
 import BannerControl from "@/components/BannerControl";
+import VotingDashboard from "@/components/VotingDashboard";
 import { getBanner } from "@/lib/banner";
+import { getAllVotes } from "@/lib/votes";
 import {
   SESSIONS, SERVICES, KICKREEL_RUNS, HARDWARE,
   totalHours, totalCommits, totalFeatures,
@@ -25,7 +27,7 @@ export default async function TrackerPage() {
   const authed = await getNeoSession();
   if (!authed) redirect("/neo/login");
 
-  const activeBanner = await getBanner();
+  const [activeBanner, votes] = await Promise.all([getBanner(), getAllVotes()]);
 
   const months = Math.round(
     (new Date().getTime() - new Date("2026-07-03").getTime()) / (1000 * 60 * 60 * 24 * 30)
@@ -50,6 +52,8 @@ export default async function TrackerPage() {
         <BannerControl active={activeBanner} />
 
         <PushSender />
+
+        <VotingDashboard initialVotes={votes} />
 
         {/* Summary stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">

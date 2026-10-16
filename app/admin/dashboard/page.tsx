@@ -84,6 +84,12 @@ export default async function DashboardPage() {
             badge="New"
           />
           <HubCard
+            href="/admin/votes"
+            title="Feature Voting"
+            description="Mark wishlist items as coaching staff priorities. See community votes alongside your flags."
+            badge="New"
+          />
+          <HubCard
             href="/studio"
             external
             title="Sanity Studio"

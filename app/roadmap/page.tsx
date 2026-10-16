@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
 import FeedbackForm from "./FeedbackForm";
+import WishlistSection from "./WishlistSection";
+import { getAllVotes } from "@/lib/votes";
 
 export const metadata: Metadata = {
   title: "What's Coming · North Legends FC",
@@ -52,9 +54,9 @@ const CONTENT = {
       badge: "💡 Exploring",
       title: "On the wishlist",
       items: [
-        { emoji: "📊", title: "Player stats", desc: "Goals, assists, and appearances per player across the season." },
-        { emoji: "✅", title: "Attendance tracking", desc: "Mark who showed up to practice and games." },
-        { emoji: "🏆", title: "Season awards", desc: "Vote for MVP, most improved, and best attitude at end of season." },
+        { slug: "player-stats", emoji: "📊", title: "Player stats", desc: "Goals, assists, and appearances per player across the season." },
+        { slug: "attendance-tracking", emoji: "✅", title: "Attendance tracking", desc: "Mark who showed up to practice and games." },
+        { slug: "season-awards", emoji: "🏆", title: "Season awards", desc: "Vote for MVP, most improved, and best attitude at end of season." },
       ],
     },
   },
@@ -102,9 +104,9 @@ const CONTENT = {
       badge: "💡 Explorando",
       title: "En la lista de deseos",
       items: [
-        { emoji: "📊", title: "Estadísticas de jugadores", desc: "Goles, asistencias y apariciones por jugador en la temporada." },
-        { emoji: "✅", title: "Control de asistencia", desc: "Registra quién asistió a los entrenamientos y partidos." },
-        { emoji: "🏆", title: "Premios de temporada", desc: "Vota por MVP, más mejorado y mejor actitud al final de la temporada." },
+        { slug: "player-stats", emoji: "📊", title: "Estadísticas de jugadores", desc: "Goles, asistencias y apariciones por jugador en la temporada." },
+        { slug: "attendance-tracking", emoji: "✅", title: "Control de asistencia", desc: "Registra quién asistió a los entrenamientos y partidos." },
+        { slug: "season-awards", emoji: "🏆", title: "Premios de temporada", desc: "Vota por MVP, más mejorado y mejor actitud al final de la temporada." },
       ],
     },
   },
@@ -138,7 +140,7 @@ function Section({ badge, title, badgeColor, items }: {
 }
 
 export default async function RoadmapPage() {
-  const locale = await getLocale();
+  const [locale, initialVotes] = await Promise.all([getLocale(), getAllVotes()]);
   const c = locale === "es" ? CONTENT.es : CONTENT.en;
 
   return (
@@ -151,7 +153,7 @@ export default async function RoadmapPage() {
       <Section badge={c.live.badge} title={c.live.title} badgeColor="bg-green-100 text-green-700" items={c.live.items} />
       <Section badge={c.knownBugs.badge} title={c.knownBugs.title} badgeColor="bg-red-100 text-red-700" items={c.knownBugs.items} />
       <Section badge={c.next.badge} title={c.next.title} badgeColor="bg-blue-100 text-blue-700" items={c.next.items} />
-      <Section badge={c.wishlist.badge} title={c.wishlist.title} badgeColor="bg-yellow-100 text-yellow-700" items={c.wishlist.items} />
+      <WishlistSection badge={c.wishlist.badge} title={c.wishlist.title} items={c.wishlist.items} initialVotes={initialVotes} />
 
       <section className="bg-gray-50 border border-gray-100 rounded-2xl p-6 shadow-sm">
         <h2 className="text-lg font-black text-gray-900 mb-1">{c.feedbackHeading}</h2>

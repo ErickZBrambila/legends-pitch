@@ -25,9 +25,10 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ message: "", author: "", location: "", eventTime: "" });
+  const [language, setLanguage] = useState<"en" | "es">("en");
   const [targetTeam, setTargetTeam] = useState<TargetTeam>(team);
   const [submitting, setSubmitting] = useState(false);
-  const [preview_en, setPreview_en] = useState<string | null>(null);
+  const [translation, setTranslation] = useState<{ text: string; lang: "en" | "es" } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imageAssetId, setImageAssetId] = useState<string | null>(null);
 
@@ -38,6 +39,7 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
       body: JSON.stringify({
         team: t,
         message: form.message,
+        language,
         author: form.author,
         ...(form.location.trim() ? { location: form.location.trim() } : {}),
         ...(form.eventTime ? { eventTime: new Date(form.eventTime).toISOString() } : {}),
@@ -54,19 +56,21 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
     if (!form.message.trim() || !form.author.trim()) return;
     setSubmitting(true);
     setError(null);
-    setPreview_en(null);
+    setTranslation(null);
 
     try {
       const teamsToPost: TeamSlug[] = targetTeam === "both" ? ["u11", "u12"] : [targetTeam];
       const results = await Promise.all(teamsToPost.map(postToTeam));
       const firstResult = results[0];
 
-      setPreview_en(firstResult.message_en ?? null);
+      if (firstResult.translated) {
+        setTranslation({ text: firstResult.translated, lang: language === "en" ? "es" : "en" });
+      }
 
       const newAnnouncement: Announcement = {
         id: firstResult.id,
         message: firstResult.message_en ?? form.message,
-        message_es: form.message,
+        message_es: firstResult.message_es ?? undefined,
         author: form.author,
         publishedAt: new Date().toISOString(),
         location: form.location.trim() || undefined,
@@ -105,11 +109,11 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
       <div className="max-w-3xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-black text-gray-900">Anuncios / Announcements</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Escribe en español — Claude traduce al inglés automáticamente.</p>
+            <h1 className="text-xl font-black text-gray-900">Announcements / Anuncios</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Write in your language — Claude translates automatically.</p>
           </div>
           <button
-            onClick={() => { setShowForm(true); setPreview_en(null); setError(null); }}
+            onClick={() => { setShowForm(true); setTranslation(null); setError(null); }}
             className="px-4 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors"
           >
             + New Announcement
@@ -119,10 +123,30 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
         {/* New announcement form */}
         {showForm && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
-            <h2 className="text-base font-black text-gray-800 mb-4">Nuevo Anuncio / New Announcement</h2>
+            <h2 className="text-base font-black text-gray-800 mb-4">New Announcement / Nuevo Anuncio</h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Equipo / Team</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Your Language / Tu Idioma</label>
+                <div className="flex gap-2">
+                  {([["en", "English"], ["es", "Español"]] as ["en" | "es", string][]).map(([val, label]) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setLanguage(val)}
+                      className={`px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${
+                        language === val
+                          ? "bg-[var(--color-accent)] text-[#1c1c1e] border-transparent shadow-sm"
+                          : "text-gray-500 border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Team / Equipo</label>
                 <div className="flex gap-2">
                   {([["u11", "U11"], ["u12", "U12"], ["both", "Ambos / Both"]] as [TargetTeam, string][]).map(([val, label]) => (
                     <button
@@ -142,16 +166,26 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Mensaje (Español)</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  {language === "en" ? "Message (English)" : "Mensaje (Español)"}
+                </label>
                 <textarea
                   rows={4}
                   value={form.message}
                   onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                  placeholder="El práctica se mueve al jueves a las 6pm en Brushy Creek. ¡Traigan espinilleras!"
+                  placeholder={
+                    language === "en"
+                      ? "Practice moves to Thursday at 6pm at Brushy Creek. Bring shin guards!"
+                      : "El práctica se mueve al jueves a las 6pm en Brushy Creek. ¡Traigan espinilleras!"
+                  }
                   required
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] resize-none"
                 />
-                <p className="text-xs text-gray-400 mt-1">Escribe en español — Claude traduce al inglés automáticamente. / Write in Spanish — Claude translates to English.</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {language === "en"
+                    ? "Claude will translate to Spanish automatically."
+                    : "Claude traduce al inglés automáticamente."}
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -214,10 +248,12 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team }: Props
               </div>
             </form>
 
-            {preview_en && (
+            {translation && (
               <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">English translation / Traducción al inglés (auto-generated)</p>
-                <p className="text-sm text-blue-900 whitespace-pre-line">{preview_en}</p>
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
+                  {translation.lang === "es" ? "Spanish translation (auto-generated)" : "English translation (auto-generated)"}
+                </p>
+                <p className="text-sm text-blue-900 whitespace-pre-line">{translation.text}</p>
               </div>
             )}
           </div>

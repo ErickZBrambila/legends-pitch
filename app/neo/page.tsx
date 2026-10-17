@@ -49,6 +49,15 @@ export default async function TrackerPage() {
           </p>
         </div>
 
+        {/* Quick nav */}
+        <div className="flex gap-3 mb-8">
+          <a href="/neo/monitoring" className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 hover:bg-gray-50 transition-colors">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-0.5">Site</p>
+            <p className="text-lg font-black text-gray-900">📊 Monitoring</p>
+            <p className="text-xs text-gray-400 mt-0.5">Page views, visitors, push subs</p>
+          </a>
+        </div>
+
         <BannerControl active={activeBanner} />
 
         <PushSender />

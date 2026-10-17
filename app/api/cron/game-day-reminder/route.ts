@@ -14,9 +14,10 @@ function formatTime(iso: string): string {
   });
 }
 
-export async function POST(req: NextRequest) {
-  const secret = req.headers.get("x-cron-secret");
-  if (!secret || secret !== process.env.CRON_SECRET) {
+export async function GET(req: NextRequest) {
+  // Vercel injects Authorization: Bearer <CRON_SECRET> automatically for cron calls
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

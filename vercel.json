@@ -4,5 +4,11 @@
     "deploymentEnabled": {
       "main": true
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/game-day-reminder",
+      "schedule": "0 17 * * *"
+    }
+  ]
 }

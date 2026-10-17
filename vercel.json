@@ -9,10 +9,6 @@
     {
       "path": "/api/cron/game-day-reminder",
       "schedule": "0 17 * * *"
-    },
-    {
-      "path": "/api/cron/result-checker",
-      "schedule": "*/30 13-23 * * *"
     }
   ]
 }

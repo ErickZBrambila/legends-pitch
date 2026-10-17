@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Client as QStash } from "@upstash/qstash";
 import { broadcastPush } from "@/lib/push";
 import { getGotSportData } from "@/lib/data/gotsport";
 import type { Match } from "@/lib/types";
+import type { ResultCheckerPayload } from "@/app/api/cron/result-checker/route";
 
 // Time window: notify for matches starting within the next 24 hours
 const WINDOW_MS = 24 * 60 * 60 * 1000;
+
+function appUrl() {
+  return process.env.APP_URL ?? "https://legends-pitch.vercel.app";
+}
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-US", {
@@ -42,6 +48,10 @@ export async function GET(req: NextRequest) {
   }
 
   let totalSent = 0;
+  let queued = 0;
+
+  const qstashToken = process.env.QSTASH_TOKEN;
+  const qstash = qstashToken ? new QStash({ token: qstashToken }) : null;
 
   for (const m of upcoming) {
     const time = formatTime(m.date);
@@ -50,7 +60,25 @@ export async function GET(req: NextRequest) {
     const body = `${time} · ${homeAway} · ${m.location}`;
     const sent = await broadcastPush(title, body, "/schedule");
     totalSent += sent;
+
+    // Schedule the result-checker to fire 90 min after kickoff
+    if (qstash) {
+      const kickoffMs = new Date(m.date).getTime();
+      const delaySec = Math.max(0, Math.round((kickoffMs - Date.now()) / 1000) + 90 * 60);
+      const checkerPayload: ResultCheckerPayload = {
+        team: m.team.toLowerCase() as "u11" | "u12",
+        matchId: m.id,
+        kickoffIso: m.date,
+        opponent: m.opponent,
+      };
+      await qstash.publishJSON({
+        url: `${appUrl()}/api/cron/result-checker`,
+        delay: delaySec,
+        body: checkerPayload,
+      });
+      queued++;
+    }
   }
 
-  return NextResponse.json({ ok: true, sent: totalSent, games: upcoming.length });
+  return NextResponse.json({ ok: true, sent: totalSent, games: upcoming.length, queued });
 }

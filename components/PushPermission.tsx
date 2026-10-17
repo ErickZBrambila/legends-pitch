@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import PushTutorialModal from "./PushTutorialModal";
 
 const STORAGE_KEY = "nlfc_push_dismissed";
@@ -30,6 +31,7 @@ function isStandalone() {
 type State = "idle" | "subscribing" | "granted" | "denied" | "dismissed";
 
 export default function PushPermission() {
+  const t = useTranslations("PushBanner");
   const [state, setState] = useState<State>("idle");
   const [visible, setVisible] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -124,12 +126,10 @@ export default function PushPermission() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-semibold leading-tight">
-              {needsInstall ? "Add to Home Screen" : "Stay in the loop"}
+              {needsInstall ? t("installTitle") : t("notifyTitle")}
             </p>
             <p className="text-white/50 text-xs mt-0.5 leading-tight">
-              {needsInstall
-                ? "Install the app to get game-day notifications"
-                : "Get notified about games, announcements & highlights"}
+              {needsInstall ? t("installDesc") : t("notifyDesc")}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -137,14 +137,14 @@ export default function PushPermission() {
               onClick={dismiss}
               className="text-white/40 hover:text-white/70 text-xs px-2 py-1"
             >
-              No thanks
+              {t("noThanks")}
             </button>
             <button
               onClick={needsInstall ? () => setShowTutorial(true) : handleEnable}
               disabled={state === "subscribing"}
               className="bg-[var(--color-accent)] text-[var(--color-navy)] text-xs font-bold px-3 py-2 rounded-lg active:opacity-80 disabled:opacity-50"
             >
-              {needsInstall ? "How to" : state === "subscribing" ? "…" : "Enable"}
+              {needsInstall ? t("howTo") : state === "subscribing" ? "…" : t("enable")}
             </button>
           </div>
         </div>

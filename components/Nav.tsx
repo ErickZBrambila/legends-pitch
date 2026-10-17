@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import LanguageSwitcher from "./LanguageSwitcher";
+import SearchModal from "./SearchModal";
 
 const HAND_KEY = "nlfc_hand";
 
@@ -24,10 +25,23 @@ export default function Nav() {
   const pathname = usePathname();
   const t = useTranslations("Nav");
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [leftHanded, setLeftHanded] = useState(false);
 
   useEffect(() => {
     setLeftHanded(localStorage.getItem(HAND_KEY) === "left");
+  }, []);
+
+  // Cmd+K / Ctrl+K opens search
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   // Close menu on route change
@@ -92,15 +106,37 @@ export default function Nav() {
               {t(link.key)}
             </Link>
           ))}
+          <button
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+            className="ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-gray-400 bg-white/5 hover:bg-white/10 hover:text-white transition-colors border border-white/10"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            <span className="hidden lg:inline">Search</span>
+            <kbd className="hidden lg:inline text-[10px] text-gray-600 bg-white/5 px-1 rounded border border-white/10">⌘K</kbd>
+          </button>
           <LanguageSwitcher className="ml-2" />
         </nav>
 
-        {/* Mobile: language switcher + hamburger — order follows hand preference */}
+        {/* Mobile: search + language switcher + hamburger — order follows hand preference */}
         <div className={`flex items-center gap-2 md:hidden ${leftHanded ? "flex-row-reverse" : ""}`}>
+          <button
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+            className="p-2 rounded-md text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+          </button>
           <LanguageSwitcher />
           {hamburger}
         </div>
       </div>
+
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Mobile drawer */}
       {open && (

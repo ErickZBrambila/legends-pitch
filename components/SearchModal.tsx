@@ -5,13 +5,15 @@ import { useRouter, usePathname } from "next/navigation";
 import type { SearchResult } from "@/app/api/search/route";
 
 const TYPE_LABEL: Record<SearchResult["type"], string> = {
-  news: "News",
-  announcement: "Announcement",
-  match: "Schedule",
+  page: "Pages",
   player: "Roster",
+  match: "Schedule",
+  news: "News",
+  announcement: "Announcements",
 };
 
 const TYPE_ICON: Record<SearchResult["type"], string> = {
+  page: "🔗",
   news: "📰",
   announcement: "📣",
   match: "⚽",
@@ -128,7 +130,7 @@ export default function SearchModal({ open, onClose }: Props) {
         {/* Results */}
         {results.length > 0 && (
           <div className="max-h-[60vh] overflow-y-auto py-2">
-            {(["news", "announcement", "match", "player"] as SearchResult["type"][]).map((type) => {
+            {(["page", "player", "match", "news", "announcement"] as SearchResult["type"][]).map((type) => {
               const group = grouped[type];
               if (!group?.length) return null;
               return (
@@ -154,8 +156,9 @@ export default function SearchModal({ open, onClose }: Props) {
                           </p>
                           <p className="text-xs text-gray-500 truncate">
                             {r.subtitle}
-                            {" · "}
-                            <span className="uppercase">{r.team}</span>
+                            {r.team !== "all" && (
+                              <><span className="mx-1">·</span><span className="uppercase">{r.team}</span></>
+                            )}
                           </p>
                         </div>
                       </button>

@@ -202,13 +202,13 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
 
   const draftPosts = posts.filter((p) => p.status === "draft");
 
-  async function generate(matchId?: string, overrideFreeFormContext?: string) {
+  async function generate(match?: Match, overrideFreeFormContext?: string) {
     const ctx = overrideFreeFormContext ?? freeFormContext;
-    if (!matchId && !ctx.trim()) {
+    if (!match && !ctx.trim()) {
       setError(c.freeFormError);
       return;
     }
-    const key = matchId ?? "freeform";
+    const key = match?.id ?? "freeform";
     setGenerating(key);
     setError(null);
     setDraft(null);
@@ -220,7 +220,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           team,
-          ...(matchId ? { matchId } : { freeFormContext: ctx }),
+          ...(match ? { matchData: match } : { freeFormContext: ctx }),
           tone: selectedTone,
           author: author || (locale === "es" ? "Entrenador" : "Coach"),
           coachLanguage: locale,
@@ -230,7 +230,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Unknown error");
-      setDraft({ id: data.id, sourceMatchId: matchId, sourceFreeFormContext: data.sourceFreeFormContext ?? undefined, ...data });
+      setDraft({ id: data.id, sourceMatchId: match?.id, sourceFreeFormContext: data.sourceFreeFormContext ?? undefined, ...data });
       setShowPreview(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate article");
@@ -514,7 +514,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
                     {saving ? c.saving : c.save}
                   </button>
                   <button
-                    onClick={() => { setEditState(null); generate(draft.sourceMatchId, draft.sourceFreeFormContext); }}
+                    onClick={() => { setEditState(null); generate(matches.find(m => m.id === draft.sourceMatchId), draft.sourceFreeFormContext); }}
                     disabled={generating !== null}
                     className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                   >
@@ -553,7 +553,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
                 <div className="flex gap-2 mt-4 pt-4 border-t border-amber-200">
                   <button onClick={discard} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">{c.discard}</button>
                   <button onClick={() => startEdit(draft)} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">{c.edit}</button>
-                  <button onClick={() => generate(draft.sourceMatchId, draft.sourceFreeFormContext)} disabled={generating !== null} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">{c.regen}</button>
+                  <button onClick={() => generate(matches.find(m => m.id === draft.sourceMatchId), draft.sourceFreeFormContext)} disabled={generating !== null} className="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">{c.regen}</button>
                   <button onClick={() => publish(draft.id)} disabled={publishing === draft.id} className="ml-auto px-5 py-2 rounded-lg bg-[var(--color-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
                     {publishing === draft.id ? c.publishing : c.publish}
                   </button>
@@ -602,7 +602,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
                             </td>
                             <td className="px-4 py-3 text-right">
                               <button
-                                onClick={() => generate(m.id)}
+                                onClick={() => generate(m)}
                                 disabled={isGenerating || generating !== null}
                                 className="text-xs px-3 py-1.5 bg-[var(--color-accent)] text-[#1c1c1e] rounded-full font-bold hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                               >
@@ -676,7 +676,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
                           {saving ? c.saving : c.save}
                         </button>
                         <button
-                          onClick={() => { setEditState(null); generate(post.sourceMatchId, post.sourceFreeFormContext ?? `${post.title}. ${post.excerpt}`); }}
+                          onClick={() => { setEditState(null); generate(matches.find(m => m.id === post.sourceMatchId), post.sourceFreeFormContext ?? `${post.title}. ${post.excerpt}`); }}
                           disabled={generating !== null}
                           className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                         >
@@ -720,7 +720,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
                         <div className="flex gap-1 shrink-0">
                           <button onClick={() => startEdit(post)} className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors">{c.edit}</button>
                           <button
-                            onClick={() => generate(post.sourceMatchId, post.sourceFreeFormContext ?? `${post.title}. ${post.excerpt}`)}
+                            onClick={() => generate(matches.find(m => m.id === post.sourceMatchId), post.sourceFreeFormContext ?? `${post.title}. ${post.excerpt}`)}
                             disabled={generating !== null}
                             className="text-xs px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
                           >

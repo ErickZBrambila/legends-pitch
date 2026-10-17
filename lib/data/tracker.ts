@@ -30,6 +30,24 @@ export interface ServiceLine {
 export const SESSIONS: WorkSession[] = [
   {
     date: "2026-10-16",
+    title: "Session 13 — Search, Photo Submissions, Game-Day Push, Monitoring & Tutorials",
+    hours: 1.5,
+    commits: 8,
+    claudeCostUSD: 14.31,
+    features: [
+      "Global search (⌘K) — covers players, news, announcements, real schedule (GotSport), and nav pages; fixed GROQ wildcard + month-name lookup (oct, storm, etc.)",
+      "Parent photo submission flow — family-passcode gated, submit/update/delete from roster, admin approval queue at /admin/photos",
+      "Game-day push reminders — Vercel native cron (noon CDT daily) calls /api/cron/game-day-reminder, fires broadcastPush for each U11+U12 match within 24h",
+      "GotSport scraper expanded from Monday-only to Sat+Sun+Mon nights",
+      "Site monitoring dashboard at /neo/monitoring — anonymous page-view tracking in Redis (ZINCRBY + HINCRBY + HyperLogLog), 14-day bar chart, top pages, push subscriber count",
+      "What's New modal — 3-step bilingual walkthrough (Search, Photos, Push) shown once per version; bumped to v3 after bilingual fix",
+      "Push notification tutorial modal — iOS and Android step-by-step how-to (EN + ES); PushPermission now shows install prompt to iOS non-standalone users",
+      "All new modals fully bilingual (EN/ES) via next-intl — WhatsNew, PushTutorial, PushBanner keys added to both message files",
+      "Removed 3 accidental Finder duplicate component files (ScrollDepthTracker 2, TrackedAnchor 2, TrackedLink 2)",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Session 12 — Full Admin Bilingual Split",
     hours: 1.0,
     commits: 4,

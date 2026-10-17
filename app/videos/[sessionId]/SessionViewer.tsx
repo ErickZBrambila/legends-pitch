@@ -249,6 +249,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   })).filter((s) => s.clips.length > 0);
 
   const goals = activeVideo.clips.filter((c) => c.clipType === "goal");
+  const rivalGoals = activeVideo.clips.filter((c) => c.clipType === "rival_goal");
   const driveUrl = session.videos.find((v) => v.driveUrl)?.driveUrl;
 
   return (
@@ -385,6 +386,32 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                 }`}
               >
                 ⚽ {i + 1} · {c.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Rival goals */}
+      {rivalGoals.length > 0 && (
+        <section className="mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🚨</span>
+            <h2 className="text-sm font-black text-red-800 uppercase tracking-wide">{t("conceded")}</h2>
+            <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">{rivalGoals.length}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {rivalGoals.map((c, i) => (
+              <button
+                key={c.id}
+                onClick={() => playClip(c.r2Url, false)}
+                className={`px-3 py-1.5 border text-sm font-semibold rounded-full transition-colors ${
+                  activeClipUrl === c.r2Url
+                    ? "bg-red-600 text-white border-red-600"
+                    : "bg-white text-red-800 border-red-300 hover:bg-red-100"
+                }`}
+              >
+                🚨 {i + 1} · {c.label}
               </button>
             ))}
           </div>

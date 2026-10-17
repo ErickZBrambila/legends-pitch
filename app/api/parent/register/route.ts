@@ -10,9 +10,9 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "register");
   if (limited) return limited;
 
-  let email: unknown, password: unknown, displayName: unknown, playerName: unknown;
+  let email: unknown, password: unknown, displayName: unknown;
   try {
-    ({ email, password, displayName, playerName } = await req.json());
+    ({ email, password, displayName } = await req.json());
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
@@ -20,22 +20,16 @@ export async function POST(req: NextRequest) {
   if (
     typeof email !== "string" ||
     typeof password !== "string" ||
-    typeof displayName !== "string" ||
-    typeof playerName !== "string"
+    typeof displayName !== "string"
   ) {
     return NextResponse.json({ error: "All fields are required" }, { status: 400 });
   }
 
-  if (!email || !password || !displayName || !playerName) {
+  if (!email || !password || !displayName) {
     return NextResponse.json({ error: "All fields are required" }, { status: 400 });
   }
 
-  if (
-    email.length > 200 ||
-    password.length > 200 ||
-    displayName.length > 200 ||
-    playerName.length > 200
-  ) {
+  if (email.length > 200 || password.length > 200 || displayName.length > 200) {
     return NextResponse.json({ error: "Fields exceed maximum length" }, { status: 400 });
   }
 
@@ -47,7 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
   }
 
-  const result = await createAccount({ email, password, displayName, playerName });
+  const result = await createAccount({ email, password, displayName });
 
   if ("error" in result) {
     const status = result.error === "Service unavailable" ? 503 : 409;

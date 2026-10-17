@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anthropic Pitch — North Legends FC</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #f5f5f5;
+    }
+
+    .page {
+      max-width: 680px;
+      margin: 48px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 32px 40px 28px;
+    }
+
+    .header .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .header .subject {
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: #fff;
+    }
+
+    .meta {
+      padding: 16px 40px;
+      background: #f9f9f9;
+      border-bottom: 1px solid #ebebeb;
+      display: flex;
+      gap: 32px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .meta span strong {
+      color: #1a1a1a;
+      font-weight: 500;
+    }
+
+    .body {
+      padding: 36px 40px 44px;
+    }
+
+    p {
+      margin-bottom: 18px;
+      color: #2a2a2a;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #ebebeb;
+      margin: 28px 0;
+    }
+
+    .stat-block {
+      background: #f7f7f7;
+      border-left: 3px solid #1a1a1a;
+      border-radius: 0 8px 8px 0;
+      padding: 18px 22px;
+      margin: 24px 0;
+    }
+
+    .stat-block ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .stat-block ul li {
+      font-size: 14px;
+      color: #333;
+      padding: 4px 0;
+    }
+
+    .stat-block ul li strong {
+      color: #1a1a1a;
+    }
+
+    .highlight {
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .link {
+      color: #1a1a1a;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .sig {
+      margin-top: 28px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .sig strong {
+      display: block;
+      font-size: 15px;
+      color: #1a1a1a;
+      margin-bottom: 2px;
+    }
+
+    .footer {
+      background: #f9f9f9;
+      border-top: 1px solid #ebebeb;
+      padding: 14px 40px;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { margin: 0; box-shadow: none; border-radius: 0; }
+      @page { margin: 0.5in; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="header">
+      <div class="label">Draft Outreach — Anthropic Social Impact</div>
+      <div class="subject">A coach in central Texas wants soccer to be free — here's what we built to help make that happen</div>
+    </div>
+
+    <div class="meta">
+      <span><strong>From:</strong> Erick Brambila</span>
+      <span><strong>To:</strong> Anthropic Social Impact Team</span>
+      <span><strong>Date:</strong> Draft — Oct 2026</span>
+    </div>
+
+    <div class="body">
+
+      <p>Hey Anthropic team,</p>
+
+      <p>My name is Erick Brambila. I'm a DevOps engineer out of Liberty Hill, Texas. Most of the kids on our team are from Jarrell — small town north of Austin, working families, and youth sports can get expensive fast.</p>
+
+      <p>Our coach, Hugo, has this belief that's pretty simple: no kid should have to quit soccer because their family can't cover the fees. Registration, cleats, tournament travel — it adds up, and when it does, families just quietly disappear. No announcement, the kid just isn't at practice one week. Hugo wants to change that. His goal is to make the program free for any kid who needs it.</p>
+
+      <p>That stuck with me. So I built something.</p>
+
+      <hr class="divider" />
+
+      <p>I'm not a frontend developer. My background is DevOps and infrastructure. But over 12 sessions — about 62 hours — I built a full platform for the club using Claude Code:</p>
+
+      <div class="stat-block">
+        <ul>
+          <li>🌐 &nbsp;<strong>Bilingual website</strong> (EN + ES) — schedule with live weather, photo gallery, roster, news</li>
+          <li>⚙️ &nbsp;<strong>Coach admin panel</strong> that auto-translates announcements so Hugo doesn't have to write everything twice</li>
+          <li>📝 &nbsp;<strong>AI-generated match recaps</strong> in both languages</li>
+          <li>🎥 &nbsp;<strong>KickReel</strong> — highlight pipeline where Hugo taps a button on the sideline camera, and by the time parents get home there's a 30-second clip of their kid on the site. Free. No subscription.</li>
+        </ul>
+      </div>
+
+      <p>A boutique agency would quote <span class="highlight">$35,000–$50,000</span> for this. My total Claude API cost across those 62 hours was <span class="highlight">$215</span>.</p>
+
+      <p>I bought the camera because I wanted something cool for the kids — that's on me. But the platform itself? $215.</p>
+
+      <p>You can see it live at <a class="link" href="https://legends-pitch.vercel.app">legends-pitch.vercel.app</a></p>
+
+      <hr class="divider" />
+
+      <p>I'm not asking for money right now. I just wanted to put this in front of someone at Anthropic and see if it resonates.</p>
+
+      <p>This is what AI helping a real community looks like — not a demo, not a retrospective case study. A youth club in central Texas, a coach who genuinely believes soccer should be for every kid, and a parent who built the tools to help make that possible.</p>
+
+      <p>If there's someone on your team who works on social impact or community use cases, I'd love to talk.</p>
+
+      <p>Thanks for reading.</p>
+
+      <div class="sig">
+        <strong>Erick Brambila</strong>
+        Liberty Hill, TX
+      </div>
+
+    </div>
+
+    <div class="footer">
+      Draft for feedback — North Legends FC · legends-pitch.vercel.app
+    </div>
+
+  </div>
+</body>
+</html>

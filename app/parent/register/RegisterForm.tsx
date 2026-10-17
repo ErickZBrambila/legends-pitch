@@ -6,7 +6,6 @@ import Link from "next/link";
 
 export default function RegisterForm() {
   const [displayName, setDisplayName] = useState("");
-  const [playerName, setPlayerName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,7 +15,6 @@ export default function RegisterForm() {
 
   function validate(): string | null {
     if (!displayName.trim()) return "Your name is required.";
-    if (!playerName.trim()) return "Player name is required.";
     if (!email.trim()) return "Email is required.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Please enter a valid email address.";
     if (password.length < 8) return "Password must be at least 8 characters.";
@@ -40,7 +38,7 @@ export default function RegisterForm() {
       const res = await fetch("/api/parent/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, displayName, playerName }),
+        body: JSON.stringify({ email, password, displayName }),
       });
 
       if (res.ok) {
@@ -97,24 +95,6 @@ export default function RegisterForm() {
               placeholder="e.g. Maria Garcia"
               required
               autoFocus
-              className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[var(--color-accent)] transition-colors text-sm"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="playerName"
-              className="block text-xs font-semibold text-gray-300 uppercase tracking-widest mb-2"
-            >
-              Player Name
-            </label>
-            <input
-              id="playerName"
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Your child's name on the team"
-              required
               className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[var(--color-accent)] transition-colors text-sm"
             />
           </div>
@@ -198,6 +178,10 @@ export default function RegisterForm() {
           >
             {loading ? "Creating account…" : "Create Account"}
           </button>
+
+          <p className="text-center text-xs text-gray-400">
+            You&apos;ll link your child&apos;s player profile after signing in.
+          </p>
         </form>
 
         <p className="text-center text-xs text-gray-500 mt-6">

@@ -119,14 +119,14 @@ export default function ParentAccountsTable({
                     {account.email}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 md:hidden">
-                    {account.playerName}
+                    {account.playerIds.length > 0 ? `${account.playerIds.length} player(s)` : "—"}
                   </p>
                 </td>
                 <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
                   {account.email}
                 </td>
                 <td className="px-4 py-3 text-gray-500 hidden md:table-cell">
-                  {account.playerName}
+                  {account.playerIds.length > 0 ? `${account.playerIds.length} player(s)` : "—"}
                 </td>
                 <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell font-mono">
                   {formatDate(account.createdAt)}

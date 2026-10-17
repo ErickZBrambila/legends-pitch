@@ -15,6 +15,8 @@ export default defineType({
     defineField({ name: "author", title: "Coach", type: "string", validation: (r) => r.required() }),
     defineField({ name: "publishedAt", title: "Posted At", type: "datetime", validation: (r) => r.required() }),
     defineField({ name: "image", title: "Image (optional)", type: "image", options: { hotspot: true } }),
+    defineField({ name: "expiresAt", title: "Expires At", type: "datetime", description: "Leave blank to keep active indefinitely. Set a date/time to auto-expire this announcement." }),
+    defineField({ name: "publishesAt", title: "Publish At", type: "datetime", description: "Leave blank to publish immediately. Set a future date/time to schedule this announcement." }),
   ],
   preview: {
     select: { title: "author", subtitle: "publishedAt", message: "message" },

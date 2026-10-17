@@ -205,9 +205,19 @@ export default async function Home({
 
         {/* Latest News */}
         <section className="lg:col-span-2">
-          {latestAnnouncement && (
+          {latestAnnouncement ? (
             <div className="mb-6">
               <AnnouncementBanner announcement={latestAnnouncement} locale={locale} team={team} showAllLink />
+            </div>
+          ) : (
+            <div className="mb-6">
+              <Link
+                href={`/announcements?team=${team}`}
+                className="inline-flex items-center gap-1.5 text-xs text-amber-700 font-semibold hover:underline"
+              >
+                <span aria-hidden>📣</span>
+                {locale === "es" ? "Ver anuncios anteriores →" : "View past announcements →"}
+              </Link>
             </div>
           )}
           <h2 className="text-lg font-bold text-gray-800 mb-4">{t("latestNews")}</h2>

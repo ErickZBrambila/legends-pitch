@@ -34,14 +34,26 @@ const CONTENT = {
     locationPlaceholder: "Brushy Creek Park Field 3",
     dateLabel: "Event Date & Time (optional)",
     dateHelper: "Shows a weather forecast on the announcement.",
+    expiresLabel: "Expires At (optional)",
+    expiresHelper: "Announcement hides from the main page after this time. Leave blank to keep it active indefinitely.",
+    scheduleToggle: "Schedule for later",
+    publishesLabel: "Publish At",
+    publishesHelper: "Announcement will be hidden until this date and time.",
     cancel: "Cancel",
     submitBoth: "Post for Both Teams",
     submitOne: "Post Announcement",
+    submitScheduled: "Schedule Announcement",
     submitting: "Posting…",
     translationLabel: "Spanish translation (auto-generated)",
     empty: "No announcements yet",
     emptyHint: 'Click "+ New Announcement" to post one.',
     viewPublic: "View public ↗",
+    deleteConfirm: "Delete this announcement?",
+    deleting: "Deleting…",
+    expired: "Expired",
+    active: "Active",
+    permanent: "No expiry",
+    scheduled: "Scheduled",
   },
   es: {
     title: "Anuncios",
@@ -59,15 +71,27 @@ const CONTENT = {
     locationPlaceholder: "Brushy Creek Park Campo 3",
     dateLabel: "Fecha y Hora del Evento (opcional)",
     dateHelper: "Muestra el pronóstico del tiempo en el anuncio.",
+    expiresLabel: "Expira El (opcional)",
+    expiresHelper: "El anuncio se oculta de la página principal después de esta hora. Deja en blanco para mantenerlo activo indefinidamente.",
+    scheduleToggle: "Programar para después",
+    publishesLabel: "Publicar El",
+    publishesHelper: "El anuncio estará oculto hasta esta fecha y hora.",
     cancel: "Cancelar",
     submitBoth: "Publicar para Ambos Equipos",
     submitOne: "Publicar Anuncio",
+    submitScheduled: "Programar Anuncio",
     submitting: "Publicando…",
     translationLabel: "Traducción al inglés (generada automáticamente)",
     empty: "Sin anuncios aún",
     emptyHint: 'Haz clic en "+ Nuevo Anuncio" para publicar uno.',
     viewPublic: "Ver público ↗",
     dashboardLabel: "Panel",
+    deleteConfirm: "¿Eliminar este anuncio?",
+    deleting: "Eliminando…",
+    expired: "Expirado",
+    active: "Activo",
+    permanent: "Sin expiración",
+    scheduled: "Programado",
   },
 };
 
@@ -78,17 +102,33 @@ function formatDate(iso: string) {
   });
 }
 
+function defaultExpiry() {
+  const d = new Date(Date.now() + 48 * 60 * 60 * 1000);
+  // datetime-local format: YYYY-MM-DDTHH:mm
+  return d.toISOString().slice(0, 16);
+}
+
+function isExpired(expiresAt?: string) {
+  return !!expiresAt && new Date(expiresAt) <= new Date();
+}
+
+function isScheduled(publishesAt?: string) {
+  return !!publishesAt && new Date(publishesAt) > new Date();
+}
+
 export default function AnnouncementsAdmin({ initialAnnouncements, team, locale }: Props) {
   const c = locale === "es" ? CONTENT.es : CONTENT.en;
 
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ message: "", author: "", location: "", eventTime: "" });
+  const [form, setForm] = useState({ message: "", author: "", location: "", eventTime: "", expiresAt: defaultExpiry(), publishesAt: "" });
+  const [scheduleMode, setScheduleMode] = useState(false);
   const [targetTeam, setTargetTeam] = useState<TargetTeam>(team);
   const [submitting, setSubmitting] = useState(false);
   const [translation, setTranslation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [imageAssetId, setImageAssetId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function postToTeam(t: TeamSlug) {
     const res = await fetch("/api/admin/announcements", {
@@ -102,11 +142,25 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team, locale 
         ...(form.location.trim() ? { location: form.location.trim() } : {}),
         ...(form.eventTime ? { eventTime: new Date(form.eventTime).toISOString() } : {}),
         ...(imageAssetId ? { imageAssetId } : {}),
+        ...(form.expiresAt ? { expiresAt: new Date(form.expiresAt).toISOString() } : {}),
+        ...(scheduleMode && form.publishesAt ? { publishesAt: new Date(form.publishesAt).toISOString() } : {}),
       }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Unknown error");
     return data;
+  }
+
+  async function handleDelete(id: string) {
+    if (!window.confirm(c.deleteConfirm)) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -133,7 +187,8 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team, locale 
         eventTime: form.eventTime ? new Date(form.eventTime).toISOString() : undefined,
       };
       setAnnouncements((prev) => [newAnnouncement, ...prev]);
-      setForm({ message: "", author: "", location: "", eventTime: "" });
+      setForm({ message: "", author: "", location: "", eventTime: "", expiresAt: defaultExpiry(), publishesAt: "" });
+      setScheduleMode(false);
       setImageAssetId(null);
       setShowForm(false);
     } catch (err) {
@@ -169,7 +224,7 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team, locale 
             <p className="text-sm text-gray-500 mt-0.5">{c.subtitle}</p>
           </div>
           <button
-            onClick={() => { setShowForm(true); setTranslation(null); setError(null); }}
+            onClick={() => { setShowForm(true); setTranslation(null); setError(null); setScheduleMode(false); }}
             className="px-4 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors"
           >
             {c.newBtn}
@@ -248,6 +303,49 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team, locale 
                 <p className="text-xs text-gray-400 mt-1">{c.dateHelper}</p>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.expiresLabel}</label>
+                <input
+                  type="datetime-local"
+                  value={form.expiresAt}
+                  onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] bg-white"
+                />
+                <p className="text-xs text-gray-400 mt-1">{c.expiresHelper}</p>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer w-fit">
+                  <input
+                    type="checkbox"
+                    checked={scheduleMode}
+                    onChange={(e) => {
+                      setScheduleMode(e.target.checked);
+                      if (e.target.checked && !form.publishesAt) {
+                        // default to 1 hour from now
+                        const d = new Date(Date.now() + 60 * 60 * 1000);
+                        setForm((f) => ({ ...f, publishesAt: d.toISOString().slice(0, 16) }));
+                      }
+                    }}
+                    className="w-4 h-4 accent-[var(--color-accent)]"
+                  />
+                  <span className="text-xs font-semibold text-gray-600">🕐 {c.scheduleToggle}</span>
+                </label>
+                {scheduleMode && (
+                  <div className="mt-2">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{c.publishesLabel}</label>
+                    <input
+                      type="datetime-local"
+                      value={form.publishesAt}
+                      onChange={(e) => setForm((f) => ({ ...f, publishesAt: e.target.value }))}
+                      required={scheduleMode}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] bg-white"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">{c.publishesHelper}</p>
+                  </div>
+                )}
+              </div>
+
               <AdminImageUploader
                 onUploaded={(assetId) => setImageAssetId(assetId)}
                 onCleared={() => setImageAssetId(null)}
@@ -268,7 +366,7 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team, locale 
                   disabled={submitting}
                   className="flex-1 py-2 rounded-lg bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold hover:bg-[var(--color-accent-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? c.submitting : targetTeam === "both" ? c.submitBoth : c.submitOne}
+                  {submitting ? c.submitting : scheduleMode ? c.submitScheduled : targetTeam === "both" ? c.submitBoth : c.submitOne}
                 </button>
               </div>
             </form>
@@ -289,22 +387,52 @@ export default function AnnouncementsAdmin({ initialAnnouncements, team, locale 
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {announcements.map((a) => (
-              <div key={a.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-500 mb-1">
-                      {a.author} · {formatDate(a.publishedAt)}
-                      {a.location && <span className="ml-2 text-gray-400">📍 {a.location}</span>}
-                    </p>
-                    <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">{a.message_es ?? a.message}</p>
-                    {a.message_es && (
-                      <p className="text-xs text-gray-400 mt-2 italic whitespace-pre-line">{a.message}</p>
-                    )}
+            {announcements.map((a) => {
+              const expired = isExpired(a.expiresAt);
+              const scheduled = isScheduled(a.publishesAt);
+              const dimmed = expired || scheduled;
+              return (
+                <div key={a.id} className={`bg-white rounded-xl border shadow-sm p-4 ${dimmed ? "border-gray-100 opacity-60" : "border-gray-200"}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <p className="text-xs font-semibold text-gray-500">
+                          {a.author} · {formatDate(a.publishedAt)}
+                          {a.location && <span className="ml-2 text-gray-400">📍 {a.location}</span>}
+                        </p>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          expired ? "bg-gray-100 text-gray-400"
+                          : scheduled ? "bg-blue-100 text-blue-600"
+                          : "bg-green-100 text-green-700"
+                        }`}>
+                          {expired ? c.expired : scheduled ? c.scheduled : (a.expiresAt ? c.active : c.permanent)}
+                        </span>
+                        {scheduled && a.publishesAt && (
+                          <span className="text-[10px] text-blue-400">publishes {formatDate(a.publishesAt)}</span>
+                        )}
+                        {!scheduled && a.expiresAt && (
+                          <span className="text-[10px] text-gray-400">
+                            {expired ? "expired" : "expires"} {formatDate(a.expiresAt)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">{a.message_es ?? a.message}</p>
+                      {a.message_es && (
+                        <p className="text-xs text-gray-400 mt-2 italic whitespace-pre-line">{a.message}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDelete(a.id)}
+                      disabled={deletingId === a.id}
+                      className="flex-shrink-0 text-xs text-red-400 hover:text-red-600 font-semibold transition-colors disabled:opacity-50 mt-0.5"
+                      aria-label="Delete announcement"
+                    >
+                      {deletingId === a.id ? c.deleting : "✕"}
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

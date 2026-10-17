@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   if (!authed) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { team, message, language, author, location, locationLat, locationLng, eventTime, imageAssetId } = body as {
+  const { team, message, language, author, location, locationLat, locationLng, eventTime, imageAssetId, expiresAt, publishesAt } = body as {
     team: TeamSlug;
     message: string;
     language: "en" | "es";
@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
     locationLng?: number;
     eventTime?: string;
     imageAssetId?: string;
+    expiresAt?: string;
+    publishesAt?: string;
   };
 
   if (!team || !message?.trim() || !author?.trim()) {
@@ -88,6 +90,8 @@ export async function POST(req: NextRequest) {
     ...(locationLng != null ? { locationLng } : {}),
     ...(eventTime ? { eventTime } : {}),
     ...(imageAssetId ? { image: { _type: "image", asset: { _type: "reference", _ref: imageAssetId } } } : {}),
+    ...(expiresAt ? { expiresAt } : {}),
+    ...(publishesAt ? { publishesAt } : {}),
   });
 
   // Fire-and-forget — push failure must never block the admin response

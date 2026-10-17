@@ -9,6 +9,8 @@ export interface Announcement {
   locationLat?: number;
   locationLng?: number;
   imageUrl?: string;
+  expiresAt?: string;
+  publishesAt?: string;
 }
 
 export type MatchResult = "W" | "L" | "D" | null;

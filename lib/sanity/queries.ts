@@ -4,25 +4,22 @@ import type { Announcement, Match, Player, NewsPost, GalleryEvent, HighlightVide
 
 export type TeamSlug = "u11" | "u12";
 
-export async function getAllAnnouncements(team: TeamSlug): Promise<Announcement[]> {
-  const raw = await sanityClient.fetch<Array<{
-    _id: string;
-    message: string;
-    message_es?: string;
-    author: string;
-    publishedAt: string;
-    location?: string;
-    eventTime?: string;
-    locationLat?: number;
-    locationLng?: number;
-  }>>(
-    `*[_type == "announcement" && team->ageGroup == $team] | order(publishedAt desc){
-      _id, message, message_es, author, publishedAt, location, eventTime, locationLat, locationLng
-    }`,
-    { team },
-    { next: { revalidate: 300 } }
-  );
-  return raw.map((r) => ({
+type RawAnnouncement = {
+  _id: string;
+  message: string;
+  message_es?: string;
+  author: string;
+  publishedAt: string;
+  location?: string;
+  eventTime?: string;
+  locationLat?: number;
+  locationLng?: number;
+  expiresAt?: string;
+  publishesAt?: string;
+};
+
+function mapAnnouncement(r: RawAnnouncement): Announcement {
+  return {
     id: r._id,
     message: r.message,
     message_es: r.message_es,
@@ -32,39 +29,36 @@ export async function getAllAnnouncements(team: TeamSlug): Promise<Announcement[
     eventTime: r.eventTime,
     locationLat: r.locationLat,
     locationLng: r.locationLng,
-  }));
+    expiresAt: r.expiresAt,
+    publishesAt: r.publishesAt,
+  };
+}
+
+const ANNOUNCEMENT_FIELDS = `_id, message, message_es, author, publishedAt, location, eventTime, locationLat, locationLng, expiresAt, publishesAt`;
+
+// Admin sees everything; public queries filter by publish window
+export async function getAllAnnouncements(team: TeamSlug): Promise<Announcement[]> {
+  const raw = await sanityClient.fetch<RawAnnouncement[]>(
+    `*[_type == "announcement" && team->ageGroup == $team] | order(coalesce(publishesAt, publishedAt) desc){ ${ANNOUNCEMENT_FIELDS} }`,
+    { team },
+    { next: { revalidate: 60 } }
+  );
+  return raw.map(mapAnnouncement);
 }
 
 export async function getLatestAnnouncement(team: TeamSlug): Promise<Announcement | null> {
-  const raw = await sanityClient.fetch<{
-    _id: string;
-    message: string;
-    message_es?: string;
-    author: string;
-    publishedAt: string;
-    location?: string;
-    eventTime?: string;
-    locationLat?: number;
-    locationLng?: number;
-  } | null>(
-    `*[_type == "announcement" && team->ageGroup == $team] | order(publishedAt desc) [0]{
-      _id, message, message_es, author, publishedAt, location, eventTime, locationLat, locationLng
-    }`,
+  const raw = await sanityClient.fetch<RawAnnouncement | null>(
+    `*[
+      _type == "announcement" &&
+      team->ageGroup == $team &&
+      (!defined(publishesAt) || publishesAt <= now()) &&
+      (!defined(expiresAt) || expiresAt > now())
+    ] | order(publishedAt desc) [0]{ ${ANNOUNCEMENT_FIELDS} }`,
     { team },
-    { next: { revalidate: 300 } }
+    { next: { revalidate: 60 } }
   );
   if (!raw) return null;
-  return {
-    id: raw._id,
-    message: raw.message,
-    message_es: raw.message_es,
-    author: raw.author,
-    publishedAt: raw.publishedAt,
-    location: raw.location,
-    eventTime: raw.eventTime,
-    locationLat: raw.locationLat,
-    locationLng: raw.locationLng,
-  };
+  return mapAnnouncement(raw);
 }
 
 export async function getMatchesByTeam(team: TeamSlug): Promise<Match[]> {

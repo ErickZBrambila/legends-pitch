@@ -20,11 +20,12 @@ export default function Footer() {
             </div>
           </div>
 
-          <nav className="flex gap-5 text-sm">
+          <nav className="flex flex-wrap gap-5 text-sm justify-center">
             <Link href="/schedule" className="hover:text-white transition-colors">{t("schedule")}</Link>
             <Link href="/roster" className="hover:text-white transition-colors">{t("roster")}</Link>
             <Link href="/news" className="hover:text-white transition-colors">{t("news")}</Link>
             <Link href="/gallery" className="hover:text-white transition-colors">{t("gallery")}</Link>
+            <Link href="/announcements" className="hover:text-white transition-colors">{t("announcements")}</Link>
             <Link href="/contact" className="hover:text-white transition-colors">{t("contact")}</Link>
             <Link href="/roadmap" className="hover:text-white transition-colors">{t("roadmap")}</Link>
           </nav>

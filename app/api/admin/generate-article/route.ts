@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
   if (!authed) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { team, matchId, tone = "friendly", author = "Coach", coachLanguage = "en", coachNotes, coverImageAssetId, freeFormContext } = body as {
+  const { team, matchData, tone = "friendly", author = "Coach", coachLanguage = "en", coachNotes, coverImageAssetId, freeFormContext } = body as {
     team: TeamSlug;
-    matchId?: string;
+    matchData?: { id: string; date: string; opponent: string; location?: string; homeAway: string; goalsFor?: number | null; goalsAgainst?: number | null; result?: string | null; coachNotes?: string };
     tone?: Tone;
     author?: string;
     coachLanguage?: "en" | "es";
@@ -64,8 +64,8 @@ export async function POST(req: NextRequest) {
   if (!team) {
     return Response.json({ error: "team is required" }, { status: 400 });
   }
-  if (!matchId && !freeFormContext?.trim()) {
-    return Response.json({ error: "Either matchId or freeFormContext is required" }, { status: 400 });
+  if (!matchData && !freeFormContext?.trim()) {
+    return Response.json({ error: "Either matchData or freeFormContext is required" }, { status: 400 });
   }
 
   const teamInfo = await getTeamRef(team);
@@ -73,39 +73,20 @@ export async function POST(req: NextRequest) {
 
   let articleContext: string;
 
-  if (matchId) {
-    const match = await sanityClient.fetch<{
-      _id: string;
-      date: string;
-      opponent: string;
-      location?: string;
-      homeAway: string;
-      goalsFor?: number;
-      goalsAgainst?: number;
-      result?: string;
-      coachNotes?: string;
-    } | null>(
-      `*[_type == "match" && _id == $matchId][0]{
-        _id, date, opponent, location, homeAway, goalsFor, goalsAgainst, result, coachNotes
-      }`,
-      { matchId }
-    );
-
-    if (!match) return Response.json({ error: "Match not found" }, { status: 404 });
-
+  if (matchData) {
     articleContext = [
       `Team: ${teamInfo.name}`,
-      `Opponent: ${match.opponent}`,
-      `Date: ${new Date(match.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`,
-      `Home/Away: ${match.homeAway}`,
-      match.result
-        ? `Score: ${match.goalsFor ?? 0} – ${match.goalsAgainst ?? 0}`
+      `Opponent: ${matchData.opponent}`,
+      `Date: ${new Date(matchData.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}`,
+      `Home/Away: ${matchData.homeAway}`,
+      matchData.result
+        ? `Score: ${matchData.goalsFor ?? 0} – ${matchData.goalsAgainst ?? 0}`
         : "Result: Upcoming match",
-      match.result
-        ? `Result: ${match.result === "W" ? "Win" : match.result === "L" ? "Loss" : "Draw"}`
+      matchData.result
+        ? `Result: ${matchData.result === "W" ? "Win" : matchData.result === "L" ? "Loss" : "Draw"}`
         : null,
-      match.location ? `Location: ${match.location}` : null,
-      coachNotes?.trim() ? `Coach notes (written in ${coachLanguage === "es" ? "Spanish" : "English"}): ${coachNotes.trim()}` : match.coachNotes ? `Coach notes: ${match.coachNotes}` : null,
+      matchData.location ? `Location: ${matchData.location}` : null,
+      coachNotes?.trim() ? `Coach notes (written in ${coachLanguage === "es" ? "Spanish" : "English"}): ${coachNotes.trim()}` : matchData.coachNotes ? `Coach notes: ${matchData.coachNotes}` : null,
     ].filter(Boolean).join("\n");
   } else {
     articleContext = [
@@ -171,8 +152,8 @@ Keep each language version 150-250 words. Return ONLY the JSON object.`;
     publishedAt,
     author,
     ...(coverImageAssetId ? { coverImage: { _type: "image", asset: { _type: "reference", _ref: coverImageAssetId } } } : {}),
-    ...(matchId ? { sourceMatchId: matchId } : {}),
-    ...(!matchId && freeFormContext?.trim() ? { sourceFreeFormContext: freeFormContext.trim() } : {}),
+    ...(matchData ? { sourceMatchId: matchData.id } : {}),
+    ...(!matchData && freeFormContext?.trim() ? { sourceFreeFormContext: freeFormContext.trim() } : {}),
     status: "draft",
   });
 
@@ -185,8 +166,8 @@ Keep each language version 150-250 words. Return ONLY the JSON object.`;
     excerpt_es: article.excerpt_es,
     body_en: article.body_en,
     body_es: article.body_es,
-    sourceMatchId: matchId ?? null,
-    sourceFreeFormContext: !matchId ? (freeFormContext?.trim() ?? null) : null,
+    sourceMatchId: matchData?.id ?? null,
+    sourceFreeFormContext: !matchData ? (freeFormContext?.trim() ?? null) : null,
     status: "draft",
   });
 }

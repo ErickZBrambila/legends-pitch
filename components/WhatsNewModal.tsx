@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 // Bump this version string when you want to re-show the modal to returning users
-const VERSION = "2026-10-v2";
+const VERSION = "2026-10-v3";
 const STORAGE_KEY = `nlfc_whats_new_${VERSION}`;
 
 const FEATURE_KEYS = ["search", "photos", "push"] as const;

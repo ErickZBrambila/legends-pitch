@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function FamilyLogin({ next }: { next: string }) {
   const [passcode, setPasscode] = useState("");
@@ -76,6 +77,19 @@ export default function FamilyLogin({ next }: { next: string }) {
 
         <p className="text-center text-xs text-gray-500 mt-6">
           Get the passcode from Coach Hugo · Pide el código al Entrenador Hugo
+        </p>
+
+        <p className="text-center text-xs text-gray-500 mt-3">
+          — or —
+        </p>
+        <p className="text-center text-xs text-gray-500 mt-2">
+          <Link href="/parent/login" className="text-[var(--color-accent)] hover:opacity-80 transition-opacity">
+            Sign in with your parent account
+          </Link>
+          {" · "}
+          <Link href="/parent/register" className="text-[var(--color-accent)] hover:opacity-80 transition-opacity">
+            Create an account
+          </Link>
         </p>
       </div>
     </div>

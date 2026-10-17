@@ -10,6 +10,67 @@ async function sha256(value: string, salt: string): Promise<string> {
     .join("");
 }
 
+// Verifies a parent session token (payload.sig — base64url HMAC-SHA256).
+// Uses Web Crypto only — safe for the Edge runtime.
+async function verifyParentToken(token: string): Promise<boolean> {
+  const dot = token.lastIndexOf(".");
+  if (dot === -1) return false;
+  const payload = token.slice(0, dot);
+  const sigB64url = token.slice(dot + 1);
+
+  const secret = process.env.PARENT_SESSION_SECRET ?? "dev-parent-secret-2026-nlfc";
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"],
+  );
+
+  let sigBytes: Uint8Array;
+  try {
+    sigBytes = Uint8Array.from(
+      atob(sigB64url.replace(/-/g, "+").replace(/_/g, "/")),
+      (c) => c.charCodeAt(0),
+    );
+  } catch {
+    return false;
+  }
+
+  const valid = await crypto.subtle.verify("HMAC", key, sigBytes.buffer as ArrayBuffer, new TextEncoder().encode(payload));
+  if (!valid) return false;
+
+  let accountId: string;
+  try {
+    const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    const colon = decoded.lastIndexOf(":");
+    if (colon === -1) return false;
+    const expiry = parseInt(decoded.slice(colon + 1), 10);
+    if (isNaN(expiry) || Date.now() > expiry) return false;
+    accountId = decoded.slice(0, colon);
+  } catch {
+    return false;
+  }
+
+  // Check revocation blocklist via Upstash HTTP — works in Edge runtime.
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (redisUrl && redisToken) {
+    try {
+      const r = await fetch(
+        `${redisUrl}/sismember/parents:revoked/${encodeURIComponent(accountId)}`,
+        { headers: { Authorization: `Bearer ${redisToken}` } },
+      );
+      const json = await r.json() as { result: number };
+      if (json.result === 1) return false;
+    } catch {
+      return false; // deny on fetch error — fail closed
+    }
+  }
+
+  return true;
+}
+
 // ── middleware ─────────────────────────────────────────────────────────────
 
 export async function middleware(req: NextRequest) {
@@ -27,20 +88,30 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  // Family gate — /videos and /gallery require FAMILY_PASSCODE cookie
+  // Family gate — /videos, /gallery, /highlights require EITHER:
+  //   (a) valid family passcode cookie, OR
+  //   (b) valid parent account session token
   const familyProtected = ["/videos", "/gallery", "/highlights"];
   if (familyProtected.some((p) => pathname.startsWith(p))) {
-    const token = req.cookies.get("nlfc_family")?.value;
-    const expected = await sha256(process.env.FAMILY_PASSCODE ?? "", "-nlfc-family-2026");
-    if (token !== expected) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/family";
-      url.searchParams.set("next", pathname);
-      return NextResponse.redirect(url);
+    const familyToken = req.cookies.get("nlfc_family")?.value;
+    const expectedFamily = await sha256(process.env.FAMILY_PASSCODE ?? "", "-nlfc-family-2026");
+    if (familyToken === expectedFamily) {
+      const res = NextResponse.next();
+      res.headers.set("x-pathname", pathname);
+      return res;
     }
-    const res = NextResponse.next();
-    res.headers.set("x-pathname", pathname);
-    return res;
+
+    const parentToken = req.cookies.get("nlfc_parent")?.value;
+    if (parentToken && (await verifyParentToken(parentToken))) {
+      const res = NextResponse.next();
+      res.headers.set("x-pathname", pathname);
+      return res;
+    }
+
+    const url = req.nextUrl.clone();
+    url.pathname = "/family";
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
   }
 
   const res = NextResponse.next();

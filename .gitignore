@@ -47,3 +47,5 @@ next-env.d.ts
 *.avi
 *.mkv
 *.m4v
+.claude/worktrees/
+"app/api/admin/announcements/[id]/route 2.ts"

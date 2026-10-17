@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortableText } from "next-sanity";
@@ -57,6 +58,19 @@ export default async function NewsPostPage({
             {locale === "es" && post.title_es ? post.title_es : post.title}
           </h1>
         </header>
+
+        {post.coverImageUrl && (
+          <div className="mb-6 rounded-xl overflow-hidden">
+            <Image
+              src={post.coverImageUrl}
+              alt={post.title}
+              width={800}
+              height={450}
+              className="w-full object-cover"
+              priority
+            />
+          </div>
+        )}
 
         <div className="prose prose-sm md:prose max-w-none text-gray-700 leading-relaxed">
           {(() => {

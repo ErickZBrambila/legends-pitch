@@ -103,7 +103,7 @@ export interface VideoClip {
   startSeconds: number;
   endSeconds: number;
   label: string;
-  clipType?: "highlight" | "goal" | "celebration";
+  clipType?: "highlight" | "goal" | "rival_goal" | "celebration";
   saveCount: number;
   archived: boolean;
 }

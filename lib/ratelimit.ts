@@ -17,10 +17,11 @@ function makeLimiter(redis: Redis, requests: number, window: `${number} ${"s" | 
 
 // Per-route limits
 const LIMITS = {
-  login:    { requests: 5,  window: "15 m" },  // 5 attempts per 15 min
-  feedback: { requests: 3,  window: "1 h"  },  // 3 submissions per hour
-  download: { requests: 60, window: "1 m"  },  // 60 downloads per minute (parents watching)
-  save:     { requests: 20, window: "1 m"  },  // 20 clip saves per minute
+  login:             { requests: 5,  window: "15 m" },  // 5 attempts per 15 min
+  feedback:          { requests: 3,  window: "1 h"  },  // 3 submissions per hour
+  download:          { requests: 60, window: "1 m"  },  // 60 downloads per minute (parents watching)
+  save:              { requests: 20, window: "1 m"  },  // 20 clip saves per minute
+  "photo-submission": { requests: 5,  window: "1 h"  },  // 5 photo uploads per hour per IP
 } as const;
 
 type LimitKey = keyof typeof LIMITS;

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import RosterView from "@/components/RosterView";
-import { getPlayersByTeam, getTeamLabel } from "@/lib/sanity/queries";
+import { getPlayersByTeam, getTeamLabel, getPendingSubmissionPlayerIds } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
 export const revalidate = 0;
@@ -22,9 +22,10 @@ export default async function RosterPage({
 
   const t = await getTranslations("Roster");
 
-  const [players, label] = await Promise.all([
+  const [players, label, pendingPlayerIds] = await Promise.all([
     getPlayersByTeam(team),
     getTeamLabel(team),
+    getPendingSubmissionPlayerIds(),
   ]);
 
   return (
@@ -40,7 +41,7 @@ export default async function RosterPage({
           {t("noPlayers")}
         </p>
       ) : (
-        <RosterView players={players} />
+        <RosterView players={players} pendingPlayerIds={pendingPlayerIds} />
       )}
     </div>
   );

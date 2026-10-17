@@ -34,6 +34,12 @@ const CONTENT = {
         badge: "New",
       },
       {
+        href: "/admin/photos",
+        title: "Photo Queue",
+        description: "Review player photos submitted by parents from the roster page. Approve to publish, reject to discard.",
+        badge: "New",
+      },
+      {
         href: "/studio",
         external: true,
         title: "Sanity Studio",
@@ -64,6 +70,12 @@ const CONTENT = {
         href: "/admin/votes",
         title: "Votación de Funciones",
         description: "Marca elementos de la lista de deseos como prioridades del cuerpo técnico. Ve los votos de la comunidad junto con tus banderas.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/photos",
+        title: "Cola de Fotos",
+        description: "Revisa las fotos de jugadores enviadas por los padres desde la página de alineación. Aprueba para publicar o rechaza.",
         badge: "Nuevo",
       },
       {

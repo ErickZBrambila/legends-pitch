@@ -30,6 +30,19 @@ export interface ServiceLine {
 export const SESSIONS: WorkSession[] = [
   {
     date: "2026-10-16",
+    title: "Session 15 — Arrival Times, QStash Result Checker & Oct 17 U11 Result",
+    hours: 3.75,
+    commits: 3,
+    claudeCostUSD: 22.35,
+    features: [
+      "Arrival vs kickoff times — schedule now shows 'Arrive by X:XX' prominently before kick-off time so families know when to show up",
+      "U11 Oct 17 game result entered manually in the admin panel",
+      "Smart result-checker cron — polls GotSport every 30 min starting after estimated game end; no idle pings during unrelated hours",
+      "QStash-driven result checker — zero idle Vercel cron invocations; QStash handles all polling scheduling and retries automatically",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Session 14 — Announcement Expiration, Scheduling & Archive",
     hours: 1.0,
     commits: 1,

@@ -1,0 +1,31 @@
+name: Game Day Push Reminder
+
+on:
+  schedule:
+    # Daily at 5:00 PM UTC (12:00 PM CDT / noon) — fires morning-of for any game today
+    - cron: "0 17 * * *"
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send game-day reminder
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            https://legends-pitch.vercel.app/api/cron/game-day-reminder)
+          echo "Response status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Reminder endpoint returned $STATUS — failing workflow"
+            exit 1
+          fi
+
+      - name: Log response body
+        run: |
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            https://legends-pitch.vercel.app/api/cron/game-day-reminder

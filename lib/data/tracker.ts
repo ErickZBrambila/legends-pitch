@@ -30,6 +30,23 @@ export interface ServiceLine {
 export const SESSIONS: WorkSession[] = [
   {
     date: "2026-10-16",
+    title: "Session 14 — Announcement Expiration, Scheduling & Archive",
+    hours: 1.0,
+    commits: 1,
+    claudeCostUSD: 2.86,
+    features: [
+      "Announcement expiration (expiresAt) — auto-hides from main page after set time; admin form defaults to 48h from now, clearable for permanent posts",
+      "Announcement scheduling (publishesAt) — 'Schedule for later' checkbox reveals picker; announcement stays hidden until publish time",
+      "DELETE API at /api/admin/announcements/[id] — coach can delete any announcement; ✕ button per card in admin with confirm dialog",
+      "Status badges in admin list: Active (green) / No expiry / Expired (dimmed) / Scheduled (blue) with publish date shown",
+      "Public /announcements page now splits active vs archived (expired) with a 'Past Announcements' divider — always reachable even with no active banner",
+      "Footer always shows Announcements link; home page shows subtle '📣 View past announcements →' fallback when no active banner",
+      "Sanity query revalidate reduced from 300s → 60s so scheduled posts appear within a minute of publish time",
+      "All new strings fully bilingual (EN/ES) — admin form labels, public page headings, status badges",
+    ],
+  },
+  {
+    date: "2026-10-16",
     title: "Session 13 — Search, Photo Submissions, Game-Day Push, Monitoring & Tutorials",
     hours: 1.5,
     commits: 8,

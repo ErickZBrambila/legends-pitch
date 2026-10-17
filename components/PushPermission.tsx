@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PushTutorialModal from "./PushTutorialModal";
 
 const STORAGE_KEY = "nlfc_push_dismissed";
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
@@ -31,12 +32,20 @@ type State = "idle" | "subscribing" | "granted" | "denied" | "dismissed";
 export default function PushPermission() {
   const [state, setState] = useState<State>("idle");
   const [visible, setVisible] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [needsInstall, setNeedsInstall] = useState(false);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
-    // iOS requires standalone mode for push
-    if (isIos() && !isStandalone()) return;
+    // iOS requires standalone mode for push — show install banner instead
+    if (isIos() && !isStandalone()) {
+      if (!localStorage.getItem(STORAGE_KEY)) {
+        setNeedsInstall(true);
+        setVisible(true);
+      }
+      return;
+    }
 
     const perm = Notification.permission;
 
@@ -106,33 +115,40 @@ export default function PushPermission() {
   if (!visible || state === "dismissed" || state === "granted") return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 md:hidden">
-      <div className="bg-[var(--color-navy)] border-t border-white/10 px-5 py-4 flex items-center gap-3 shadow-2xl">
-        <div className="shrink-0 w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-lg">
-          🔔
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-semibold leading-tight">Stay in the loop</p>
-          <p className="text-white/50 text-xs mt-0.5 leading-tight">
-            Get notified about games, announcements & highlights
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={dismiss}
-            className="text-white/40 hover:text-white/70 text-xs px-2 py-1"
-          >
-            No thanks
-          </button>
-          <button
-            onClick={handleEnable}
-            disabled={state === "subscribing"}
-            className="bg-[var(--color-accent)] text-[var(--color-navy)] text-xs font-bold px-3 py-2 rounded-lg active:opacity-80 disabled:opacity-50"
-          >
-            {state === "subscribing" ? "…" : "Enable"}
-          </button>
+    <>
+      <PushTutorialModal open={showTutorial} onClose={() => setShowTutorial(false)} />
+      <div className="fixed bottom-0 inset-x-0 z-40 md:hidden">
+        <div className="bg-[var(--color-navy)] border-t border-white/10 px-5 py-4 flex items-center gap-3 shadow-2xl">
+          <div className="shrink-0 w-10 h-10 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-lg">
+            🔔
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-semibold leading-tight">
+              {needsInstall ? "Add to Home Screen" : "Stay in the loop"}
+            </p>
+            <p className="text-white/50 text-xs mt-0.5 leading-tight">
+              {needsInstall
+                ? "Install the app to get game-day notifications"
+                : "Get notified about games, announcements & highlights"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={dismiss}
+              className="text-white/40 hover:text-white/70 text-xs px-2 py-1"
+            >
+              No thanks
+            </button>
+            <button
+              onClick={needsInstall ? () => setShowTutorial(true) : handleEnable}
+              disabled={state === "subscribing"}
+              className="bg-[var(--color-accent)] text-[var(--color-navy)] text-xs font-bold px-3 py-2 rounded-lg active:opacity-80 disabled:opacity-50"
+            >
+              {needsInstall ? "How to" : state === "subscribing" ? "…" : "Enable"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

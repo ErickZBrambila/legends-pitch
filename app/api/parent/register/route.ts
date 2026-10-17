@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
   const result = await createAccount({ email, password, displayName, playerName });
 
   if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 409 });
+    const status = result.error === "Service unavailable" ? 503 : 409;
+    return NextResponse.json({ error: result.error }, { status });
   }
 
   const token = generateSessionToken(result.account.id);

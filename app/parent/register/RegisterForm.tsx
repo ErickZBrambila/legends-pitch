@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function RegisterForm() {
-  const router = useRouter();
-
   const [displayName, setDisplayName] = useState("");
   const [playerName, setPlayerName] = useState("");
   const [email, setEmail] = useState("");
@@ -47,7 +44,7 @@ export default function RegisterForm() {
       });
 
       if (res.ok) {
-        router.push("/parent/account?welcome=1");
+        window.location.href = "/parent/account?welcome=1";
         return;
       }
 

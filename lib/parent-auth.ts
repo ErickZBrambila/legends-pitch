@@ -104,10 +104,6 @@ export async function createAccount(opts: {
   const redis = getRedis();
   if (!redis) return { error: "Service unavailable" };
 
-  const emailKey = `parent:email:${opts.email.toLowerCase()}`;
-  const existing = await redis.get(emailKey);
-  if (existing) return { error: "Email already registered" };
-
   const id = randomBytes(16).toString("hex");
   const passwordHash = await hashPassword(opts.password);
   const account: ParentAccount = {
@@ -120,8 +116,11 @@ export async function createAccount(opts: {
   };
   const stored: StoredAccount = { ...account, passwordHash };
 
+  // Atomic email uniqueness gate — SET NX (set-if-not-exists) prevents TOCTOU race.
+  const claimed = await redis.set(`parent:email:${account.email}`, id, { nx: true });
+  if (!claimed) return { error: "Email already registered" };
+
   await redis.set(`parent:account:${id}`, JSON.stringify(stored));
-  await redis.set(emailKey, id);
   await redis.sadd("parents:all", id);
 
   return { account };
@@ -174,6 +173,7 @@ export async function approveAccount(id: string): Promise<void> {
     const stored = JSON.parse(raw) as StoredAccount;
     stored.approved = true;
     await redis.set(`parent:account:${id}`, JSON.stringify(stored));
+    await redis.srem("parents:revoked", id);
   } catch {
     // no-op
   }
@@ -188,6 +188,8 @@ export async function revokeAccount(id: string): Promise<void> {
     const stored = JSON.parse(raw) as StoredAccount;
     stored.approved = false;
     await redis.set(`parent:account:${id}`, JSON.stringify(stored));
+    // Blocklist so the middleware immediately rejects existing session tokens.
+    await redis.sadd("parents:revoked", id);
   } catch {
     // no-op
   }
@@ -203,6 +205,7 @@ export async function deleteAccount(id: string): Promise<void> {
     await redis.del(`parent:account:${id}`);
     await redis.del(`parent:email:${stored.email}`);
     await redis.srem("parents:all", id);
+    await redis.srem("parents:revoked", id);
   } catch {
     // no-op
   }

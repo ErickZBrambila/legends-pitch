@@ -40,15 +40,35 @@ async function verifyParentToken(token: string): Promise<boolean> {
   const valid = await crypto.subtle.verify("HMAC", key, sigBytes.buffer as ArrayBuffer, new TextEncoder().encode(payload));
   if (!valid) return false;
 
+  let accountId: string;
   try {
     const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
     const colon = decoded.lastIndexOf(":");
     if (colon === -1) return false;
     const expiry = parseInt(decoded.slice(colon + 1), 10);
-    return !isNaN(expiry) && Date.now() <= expiry;
+    if (isNaN(expiry) || Date.now() > expiry) return false;
+    accountId = decoded.slice(0, colon);
   } catch {
     return false;
   }
+
+  // Check revocation blocklist via Upstash HTTP — works in Edge runtime.
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (redisUrl && redisToken) {
+    try {
+      const r = await fetch(
+        `${redisUrl}/sismember/parents:revoked/${encodeURIComponent(accountId)}`,
+        { headers: { Authorization: `Bearer ${redisToken}` } },
+      );
+      const json = await r.json() as { result: number };
+      if (json.result === 1) return false;
+    } catch {
+      return false; // deny on fetch error — fail closed
+    }
+  }
+
+  return true;
 }
 
 // ── middleware ─────────────────────────────────────────────────────────────

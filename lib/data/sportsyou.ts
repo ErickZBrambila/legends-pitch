@@ -73,6 +73,7 @@ export function locationNameFromAddress(address: string): string {
 
 export interface SportsYouGame {
   uid: string;
+  arrivalIso: string;      // arrival time UTC ISO (DTSTART as-is)
   iso: string;             // kickoff UTC ISO (DTSTART + 30 min)
   locationName: string;    // short display name, also key into LOCATION_COORDS
   locationAddress: string; // full address string for Maps links
@@ -100,6 +101,7 @@ export async function fetchSportsYouGames(team: string): Promise<SportsYouGame[]
       // SportsYou stores arrival time. Add 30 min to get kickoff.
       const y = +dtstart.slice(0, 4), mo = +dtstart.slice(4, 6) - 1;
       const d = +dtstart.slice(6, 8), h = +dtstart.slice(9, 11), m = +dtstart.slice(11, 13);
+      const arrival = new Date(Date.UTC(y, mo, d, h, m));
       const kickoff = new Date(Date.UTC(y, mo, d, h, m + 30));
 
       const uid = shortUid(ev["UID"] ?? "");
@@ -107,6 +109,7 @@ export async function fetchSportsYouGames(team: string): Promise<SportsYouGame[]
 
       games.push({
         uid,
+        arrivalIso: arrival.toISOString(),
         iso: kickoff.toISOString(),
         locationName: locationNameFromAddress(address),
         locationAddress: address,

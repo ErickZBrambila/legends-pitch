@@ -32,15 +32,21 @@ export async function GET(
   const { matches } = await getGotSportData(team);
 
   const vevents = matches.map((m) => {
-    const start = icalDate(m.date);
+    // If arrival time is known, start the calendar event there so subscribers
+    // see "be there at" time, not kickoff. Kickoff goes in the description.
+    const eventStart = m.arrivalDate ?? m.date;
+    const start = icalDate(eventStart);
     const end = icalDate(new Date(new Date(m.date).getTime() + 90 * 60 * 1000).toISOString());
     const homeAway = m.homeAway === "home" ? "🏠 Home" : "✈️ Away";
     const score = m.result ? ` · ${m.goalsFor}–${m.goalsAgainst} (${m.result})` : "";
+    const kickoffNote = m.arrivalDate
+      ? `Kickoff: ${new Date(m.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" })}\\n`
+      : "";
     const summary = `North Legends FC ${label} vs ${m.opponent}`;
     const fullLocation = m.locationAddress
       ? `${m.location}, ${m.locationAddress}`
       : m.location;
-    const description = `${homeAway}${score}\\n${fullLocation}`;
+    const description = `${kickoffNote}${homeAway}${score}\\n${fullLocation}`;
 
     return [
       "BEGIN:VEVENT",

@@ -77,6 +77,8 @@
     "colLocation": "Location",
     "colHomeAway": "H/A",
     "colKickoff": "Kick-off",
+    "beThereAt": "Be there",
+    "kickoffAt": "Kick-off",
     "colScore": "Score",
     "colResult": "Result",
     "colGP": "GP",

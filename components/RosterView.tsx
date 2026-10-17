@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { Player } from "@/lib/types";
 import RosterField from "./RosterField";
+import PhotoSubmitModal from "./PhotoSubmitModal";
 
 const POSITION_COLORS: Record<string, string> = {
   GK: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -21,9 +23,18 @@ const POSITION_LABEL_KEYS: Record<string, string> = {
 
 const POS_ORDER = ["GK", "DEF", "MID", "FWD"];
 
-export default function RosterView({ players }: { players: Player[] }) {
+export default function RosterView({
+  players,
+  pendingPlayerIds = [],
+}: {
+  players: Player[];
+  pendingPlayerIds?: string[];
+}) {
   const t = useTranslations("Roster");
   const [view, setView] = useState<"field" | "list">("field");
+  const [photoModal, setPhotoModal] = useState<Player | null>(null);
+
+  const pendingSet = new Set(pendingPlayerIds);
 
   const byPosition = POS_ORDER.map((pos) => ({
     pos,
@@ -66,29 +77,66 @@ export default function RosterView({ players }: { players: Player[] }) {
                   {t(POSITION_LABEL_KEYS[pos])}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                  {group.map((player) => (
-                    <div
-                      key={player.id}
-                      className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-all"
-                    >
-                      <div className="w-14 h-14 rounded-full bg-[var(--color-navy)] flex items-center justify-center mb-3">
-                        <span className="text-xl font-black text-[var(--color-accent-light)]">
-                          {player.number}
-                        </span>
-                      </div>
-                      <p className="font-bold text-gray-800 text-sm">{player.name}</p>
-                      <span
-                        className={`mt-1.5 text-xs font-semibold px-2 py-0.5 rounded-full border ${POSITION_COLORS[pos]}`}
+                  {group.map((player) => {
+                    const hasPending = pendingSet.has(player.id);
+                    return (
+                      <div
+                        key={player.id}
+                        className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-all"
                       >
-                        {pos}
-                      </span>
-                    </div>
-                  ))}
+                        {/* Avatar */}
+                        <div className="w-14 h-14 rounded-full overflow-hidden bg-[var(--color-navy)] flex items-center justify-center mb-3 flex-shrink-0">
+                          {player.photoUrl ? (
+                            <Image
+                              src={player.photoUrl}
+                              alt={player.name}
+                              width={56}
+                              height={56}
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <span className="text-xl font-black text-[var(--color-accent-light)]">
+                              {player.number}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="font-bold text-gray-800 text-sm">{player.name}</p>
+                        <span
+                          className={`mt-1.5 text-xs font-semibold px-2 py-0.5 rounded-full border ${POSITION_COLORS[pos]}`}
+                        >
+                          {pos}
+                        </span>
+
+                        {/* Photo submit button */}
+                        {!player.photoUrl && (
+                          <button
+                            onClick={() => setPhotoModal(player)}
+                            className={`mt-2.5 flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors ${
+                              hasPending
+                                ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                                : "bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-700"
+                            }`}
+                          >
+                            <span>📷</span>
+                            <span>{hasPending ? "Pending review" : "Add photo"}</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             );
           })}
         </div>
+      )}
+
+      {photoModal && (
+        <PhotoSubmitModal
+          player={photoModal}
+          onClose={() => setPhotoModal(null)}
+        />
       )}
     </>
   );

@@ -104,7 +104,71 @@ export async function getPlayersByTeam(team: TeamSlug): Promise<Player[]> {
     } | order(number asc)`,
     { team }
   );
-  return raw.map((p) => ({ id: p._id, name: p.name, number: p.number, position: p.position }));
+  return raw.map((p) => ({
+    id: p._id,
+    name: p.name,
+    number: p.number,
+    position: p.position,
+    photoUrl: p.photo ? urlForImage(p.photo) : undefined,
+  }));
+}
+
+export async function getPendingSubmissionPlayerIds(): Promise<string[]> {
+  const raw = await sanityClient.fetch<Array<{ playerId: string }>>(
+    `*[_type == "playerPhotoSubmission" && status == "pending"]{
+      "playerId": player._ref
+    }`,
+    {},
+    { cache: "no-store" }
+  );
+  return raw.map((r) => r.playerId);
+}
+
+export async function getPendingSubmissionByPlayer(playerId: string): Promise<import("@/lib/types").PhotoSubmission | null> {
+  const raw = await sanityClient.fetch<{
+    _id: string;
+    image: { asset: { _ref: string } };
+    submittedAt: string;
+  } | null>(
+    `*[_type == "playerPhotoSubmission" && player._ref == $playerId && status == "pending"][0]{
+      _id, image, submittedAt
+    }`,
+    { playerId },
+    { cache: "no-store" }
+  );
+  if (!raw) return null;
+  return {
+    id: raw._id,
+    playerId,
+    imageUrl: urlForImage(raw.image),
+    status: "pending",
+    submittedAt: raw.submittedAt,
+  };
+}
+
+export async function getAllPendingSubmissions(): Promise<Array<import("@/lib/types").PhotoSubmission & { playerName: string; playerNumber: number }>> {
+  const raw = await sanityClient.fetch<Array<{
+    _id: string;
+    image: { asset: { _ref: string } };
+    submittedAt: string;
+    player: { _id: string; name: string; number: number };
+  }>>(
+    `*[_type == "playerPhotoSubmission" && status == "pending"] | order(submittedAt asc){
+      _id, image, submittedAt,
+      player->{ _id, name, number }
+    }`,
+    {},
+    { cache: "no-store" }
+  );
+  return raw.map((r) => ({
+    id: r._id,
+    playerId: r.player._id,
+    imageUrl: urlForImage(r.image),
+    status: "pending" as const,
+    submittedAt: r.submittedAt,
+    playerName: r.player.name,
+    playerNumber: r.player.number,
+  }));
 }
 
 export async function getPostsByTeam(team: TeamSlug): Promise<NewsPost[]> {

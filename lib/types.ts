@@ -31,6 +31,15 @@ export interface Player {
   name: string;
   number: number;
   position: "GK" | "DEF" | "MID" | "FWD";
+  photoUrl?: string;
+}
+
+export interface PhotoSubmission {
+  id: string;
+  playerId: string;
+  imageUrl: string;
+  status: "pending" | "approved" | "rejected";
+  submittedAt: string;
 }
 
 export interface NewsPost {

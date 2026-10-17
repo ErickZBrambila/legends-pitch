@@ -6,5 +6,6 @@ import announcement from "./announcement";
 import galleryEvent from "./galleryEvent";
 import highlightVideo from "./highlightVideo";
 import practiceSession from "./practiceSession";
+import playerPhotoSubmission from "./playerPhotoSubmission";
 
-export const schemaTypes = [team, match, player, post, announcement, galleryEvent, highlightVideo, practiceSession];
+export const schemaTypes = [team, match, player, post, announcement, galleryEvent, highlightVideo, practiceSession, playerPhotoSubmission];

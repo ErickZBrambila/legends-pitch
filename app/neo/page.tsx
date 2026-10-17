@@ -56,6 +56,11 @@ export default async function TrackerPage() {
             <p className="text-lg font-black text-gray-900">📊 Monitoring</p>
             <p className="text-xs text-gray-400 mt-0.5">Page views, visitors, push subs</p>
           </a>
+          <a href="/neo/parents" className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 hover:bg-gray-50 transition-colors">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-0.5">Families</p>
+            <p className="text-lg font-black text-gray-900">👨‍👩‍👧 Parents</p>
+            <p className="text-xs text-gray-400 mt-0.5">Parent accounts, approve & manage</p>
+          </a>
         </div>
 
         <BannerControl active={activeBanner} />

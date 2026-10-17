@@ -54,6 +54,13 @@ export default async function SchedulePage({
 
   const { standings, matches } = await getGotSportData(team);
 
+  const formatArrivalTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString(locale, {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Chicago",
+    });
+
   const now = new Date();
   const upcoming = matches
     .filter((m) => m.result === null && new Date(m.date) > now)
@@ -129,7 +136,16 @@ export default async function SchedulePage({
                 <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
                   {m.homeAway === "home" ? t("home") : t("away")}
                 </span>
-                <span className="text-xs text-gray-400">{formatTime(m.date, locale)}</span>
+                <div className="flex flex-col items-end gap-0.5">
+                  {m.arrivalDate && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                      {t("beThereAt")} {formatArrivalTime(m.arrivalDate)}
+                    </span>
+                  )}
+                  <span className="text-xs font-semibold text-[var(--color-primary)]">
+                    {t("kickoffAt")} {formatTime(m.date, locale)}
+                  </span>
+                </div>
               </div>
               <p className="font-bold text-gray-800 text-base">{t("versus", { opponent: m.opponent })}</p>
               <p className="text-xs text-gray-400 mt-0.5">{formatDate(m.date, locale)}</p>
@@ -183,7 +199,18 @@ export default async function SchedulePage({
                       {m.homeAway === "home" ? t("home") : t("away")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-500">{formatTime(m.date, locale)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex flex-col items-end gap-1">
+                      {m.arrivalDate && (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
+                          {t("beThereAt")} {formatArrivalTime(m.arrivalDate)}
+                        </span>
+                      )}
+                      <span className="text-xs font-semibold text-[var(--color-primary)] whitespace-nowrap">
+                        {t("kickoffAt")} {formatTime(m.date, locale)}
+                      </span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     {withinForecastWindow(m.date) && LOCATION_COORDS[m.location] && (
                       <GameWeather

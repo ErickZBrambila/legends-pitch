@@ -17,7 +17,8 @@ export type MatchResult = "W" | "L" | "D" | null;
 
 export interface Match {
   id: string;
-  date: string; // ISO string
+  date: string;         // kickoff ISO string
+  arrivalDate?: string; // be-there time ISO (30 min before kickoff, from SportsYou)
   opponent: string;
   location: string;
   locationAddress?: string;

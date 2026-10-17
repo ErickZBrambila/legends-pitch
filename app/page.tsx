@@ -127,6 +127,11 @@ export default async function Home({
                 <span>{nextMatch.homeAway === "home" ? t("home") : t("away")}</span>
               </p>
               <p className="text-red-300 text-xs mt-0.5">{nextMatch.location}</p>
+              {nextMatch.arrivalDate && (
+                <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/40 text-[var(--color-accent-light)] text-xs font-semibold">
+                  🕐 {t("beThereAt")} {formatTime(nextMatch.arrivalDate, locale)}
+                </span>
+              )}
             </div>
             <CountdownTimerClient targetDate={nextMatch.date} />
           </div>

@@ -129,13 +129,19 @@ const U12_STANDINGS: StandingRow[] = [
 // U11 match results keyed by SportsYou short UID (last 8 chars before @).
 // Add a new entry here after each game to populate the results table.
 const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; result: "W" | "L" | "D" }> = {
-  "3bd5311d": { goalsFor: 1,  goalsAgainst: 2, result: "L" }, // Sep 12 vs Elgin United (Hernandez)
-  "9183d02e": { goalsFor: 15, goalsAgainst: 0, result: "W" }, // Sep 19 vs Elgin United (Ramirez)
+  "3bd5311d": { goalsFor: 1,  goalsAgainst: 2, result: "L" }, // Sep 12 vs Elgin United (Ramirez)  — GotSport #340
+  "9183d02e": { goalsFor: 15, goalsAgainst: 0, result: "W" }, // Sep 19 vs Elgin United (Hernandez) — GotSport #342
   "e11c25d1": { goalsFor: 7,  goalsAgainst: 0, result: "W" }, // Sep 26 vs Storm 16B Black
   "bc0eae72": { goalsFor: 4,  goalsAgainst: 2, result: "W" }, // Sep 27 vs T&C Soccer Inter Milan
   "3ed13cc0": { goalsFor: 4,  goalsAgainst: 3, result: "W" }, // Oct 10 vs Elgin United (Ramirez)
   "6e6fb4f1": { goalsFor: 10, goalsAgainst: 1, result: "W" }, // Oct 17 vs Storm 16B Black
   "3c773b63": { goalsFor: 8,  goalsAgainst: 0, result: "W" }, // Oct 18 vs Elgin United (Hernandez)
+};
+
+// SportsYou has Ramirez/Hernandez swapped for the first two games — override with GotSport-verified names.
+const U11_OPPONENT_OVERRIDES: Record<string, string> = {
+  "3bd5311d": "Elgin United (Ramirez)",   // GotSport #340: Ramirez beat us 2-1 on Sep 12
+  "9183d02e": "Elgin United (Hernandez)", // GotSport #342: we beat Hernandez 15-0 on Sep 19
 };
 
 let u12Id = 0;
@@ -198,7 +204,7 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
                 id: `sy-u11-${g.uid}`,
                 date: g.iso,
                 arrivalDate: g.arrivalIso,
-                opponent: g.opponent,
+                opponent: U11_OPPONENT_OVERRIDES[g.uid] ?? g.opponent,
                 location: g.locationName,
                 locationAddress: g.locationAddress,
                 homeAway: g.homeAway,

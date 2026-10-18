@@ -1,16 +1,19 @@
-import { getPlayersByTeam, getMatchesByTeam } from "@/lib/sanity/queries";
+import { getPlayersByTeam } from "@/lib/sanity/queries";
+import { getGotSportData } from "@/lib/data/gotsport";
 import TrackerApp from "./TrackerApp";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Game Tracker · North Legends FC" };
 
 export default async function TrackerPage() {
-  const [u11Players, u11Matches, u12Players, u12Matches] = await Promise.all([
+  const [u11Players, u11Data, u12Players, u12Data] = await Promise.all([
     getPlayersByTeam("u11"),
-    getMatchesByTeam("u11"),
+    getGotSportData("u11"),
     getPlayersByTeam("u12"),
-    getMatchesByTeam("u12"),
+    getGotSportData("u12"),
   ]);
+  const u11Matches = u11Data.matches;
+  const u12Matches = u12Data.matches;
 
   return (
     <TrackerApp

@@ -20,7 +20,7 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
   title: {
-    default: "North Legends FC",
+    default: "⚽ North Legends FC",
     template: "%s | North Legends FC",
   },
   description:

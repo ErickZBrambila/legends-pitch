@@ -21,10 +21,10 @@ interface GotSportData {
 }
 
 const U11_STANDINGS: StandingRow[] = [
-  { rank: 1, team: "JYSA North Legends FC",       gp: 6, w: 5, l: 1, t: 0, gf: 16, ga: 8,  pts: 15, isNorthLegends: true  },
-  { rank: 2, team: "Elgin United (Ramirez)",       gp: 6, w: 4, l: 1, t: 1, gf: 17, ga: 9,  pts: 13, isNorthLegends: false },
+  { rank: 1, team: "Elgin United (Ramirez)",       gp: 7, w: 5, l: 1, t: 1, gf: 20, ga: 10, pts: 16, isNorthLegends: false },
+  { rank: 2, team: "JYSA North Legends FC",        gp: 6, w: 5, l: 1, t: 0, gf: 16, ga: 8,  pts: 15, isNorthLegends: true  },
   { rank: 3, team: "T&C Soccer Inter Milan",       gp: 4, w: 2, l: 1, t: 1, gf: 11, ga: 8,  pts: 7,  isNorthLegends: false },
-  { rank: 4, team: "WBSA United",                  gp: 4, w: 2, l: 2, t: 0, gf: 8,  ga: 9,  pts: 6,  isNorthLegends: false },
+  { rank: 4, team: "WBSA United",                  gp: 5, w: 2, l: 3, t: 0, gf: 9,  ga: 12, pts: 6,  isNorthLegends: false },
   { rank: 5, team: "Elgin United (Hernandez)",     gp: 3, w: 0, l: 3, t: 0, gf: 1,  ga: 9,  pts: 0,  isNorthLegends: false },
   { rank: 6, team: "Storm 16B Black",              gp: 5, w: 0, l: 5, t: 0, gf: 5,  ga: 15, pts: 0,  isNorthLegends: false },
 ];

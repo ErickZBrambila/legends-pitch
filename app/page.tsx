@@ -138,7 +138,7 @@ export default async function Home({
                     href={`https://maps.google.com/?q=${encodeURIComponent(nextMatch.locationAddress)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-red-200 text-xs font-medium hover:bg-white/20 transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium hover:bg-white/20 transition-colors"
                   >
                     📍 {nextMatch.location}
                   </a>

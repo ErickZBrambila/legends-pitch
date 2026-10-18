@@ -23,10 +23,13 @@ export default function ActivityTimeline({
   const buckets = analytics.activityBuckets;
   if (!buckets || buckets.length === 0) return null;
 
+  const secondHalfOnly = analytics.secondHalfOnly ?? false;
   const n = buckets.length;
   const maxDet = Math.max(...buckets.map((b) => b.detections), 1);
   const peakBucket = buckets.reduce((a, b) => (b.detections > a.detections ? b : a), buckets[0]);
-  const halftimeIdx = buckets.findIndex((b) => b.tStart >= 1800);
+  // For 2nd-half-only videos the timestamps start at 0 (relative), so halftime never appears;
+  // treat all buckets as 2nd half in that case.
+  const halftimeIdx = secondHalfOnly ? 0 : buckets.findIndex((b) => b.tStart >= 1800);
   const barW = W / n;
 
   const totalSec = buckets[n - 1]?.tEnd ?? 1;
@@ -51,6 +54,7 @@ export default function ActivityTimeline({
         <div className="w-1 h-5 rounded-full bg-purple-500" />
         <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">Activity Timeline</h2>
         <span className="text-xs text-gray-400 font-medium">
+          {secondHalfOnly && <span className="text-orange-500 font-bold mr-1">2nd Half ·</span>}
           peak at {fmtSec(peakBucket.tStart)}–{fmtSec(peakBucket.tEnd)}
         </span>
       </div>
@@ -91,8 +95,8 @@ export default function ActivityTimeline({
             );
           })}
 
-          {/* Halftime line */}
-          {halftimeIdx > 0 && (
+          {/* Halftime line — only for full-game videos where halftime is mid-timeline */}
+          {!secondHalfOnly && halftimeIdx > 0 && (
             <g>
               <line
                 x1={halftimeIdx * barW}
@@ -153,7 +157,11 @@ export default function ActivityTimeline({
 
         {/* Legend */}
         <div className="flex flex-wrap gap-3 mt-2 text-[10px]">
-          {halftimeIdx > 0 && (
+          {secondHalfOnly ? (
+            <span className="flex items-center gap-1 text-orange-600">
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-orange-400" /> 2nd Half
+            </span>
+          ) : halftimeIdx > 0 && (
             <>
               <span className="flex items-center gap-1 text-indigo-600">
                 <span className="inline-block w-2.5 h-2.5 rounded-sm bg-indigo-400" /> 1st Half
@@ -187,8 +195,8 @@ export default function ActivityTimeline({
             How often the camera was tracking action near each goal — higher % = more attacking play toward that end.
           </p>
 
-          {/* Per-half breakdown */}
-          {analytics.goalPressureLeftH1 !== undefined && (
+          {/* Per-half breakdown — skip H1 when only 2nd half was recorded */}
+          {analytics.goalPressureLeftH1 !== undefined && !secondHalfOnly && (
             <div className="grid grid-cols-2 gap-2 mb-3">
               {[
                 { label: "1st Half", l: analytics.goalPressureLeftH1 ?? 0, r: analytics.goalPressureRightH1 ?? 0, color: "indigo" },

@@ -1,6 +1,7 @@
 import { getPlayersByTeam, getMatchesByTeam } from "@/lib/sanity/queries";
 import TrackerApp from "./TrackerApp";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Game Tracker · North Legends FC" };
 
 export default async function TrackerPage() {

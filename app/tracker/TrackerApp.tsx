@@ -25,6 +25,7 @@ interface GameState {
   homeAway: "home" | "away";
   matchDate: string;
   half: 1 | 2;
+  halfDurationMins: number;
   events: TrackerEvent[];
   gameStartWall: number | null;
   halfStartWall: number | null;
@@ -51,6 +52,14 @@ function formatClock(ms: number) {
   const m = Math.floor(s / 60);
   const ss = s % 60;
   return `${String(m).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+}
+
+function formatMatchDate(dateStr: string) {
+  // Parse date without timezone offset (treat as local date)
+  const [datePart] = dateStr.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const d = new Date(year, month - 1, day);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function countGoals(events: TrackerEvent[]) {
@@ -89,7 +98,8 @@ export default function TrackerApp({ teams }: Props) {
       try {
         const saved = localStorage.getItem(DRAFT_KEY);
         if (saved) {
-          const draft = JSON.parse(saved) as GameState;
+          const draft = JSON.parse(saved) as GameState & { halfDurationMins?: number };
+          if (!draft.halfDurationMins) draft.halfDurationMins = 30;
           // Clock timestamps are stale after a tab restore — reset so the clock
           // starts from 0 for the current half. Events are preserved.
           if (draft.phase === "live") {
@@ -107,6 +117,7 @@ export default function TrackerApp({ teams }: Props) {
       homeAway: "home",
       matchDate: "",
       half: 1,
+      halfDurationMins: 30,
       events: [],
       gameStartWall: null,
       halfStartWall: null,
@@ -118,13 +129,14 @@ export default function TrackerApp({ teams }: Props) {
   const [modal, setModal] = useState<ModalStep | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [discardConfirm, setDiscardConfirm] = useState(false);
 
-  // Clock tick
+  // Clock tick — only when live and clock has been started
   useEffect(() => {
-    if (state.phase !== "live") return;
+    if (state.phase !== "live" || state.halfStartWall === null) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [state.phase]);
+  }, [state.phase, state.halfStartWall]);
 
   // Auto-save draft
   useEffect(() => {
@@ -136,7 +148,8 @@ export default function TrackerApp({ teams }: Props) {
   }, [state]);
 
   const elapsedMs = state.halfStartWall ? now - state.halfStartWall : 0;
-  const currentMinute = Math.floor(elapsedMs / 60000) + (state.half === 2 ? 45 : 0);
+  const currentMinute =
+    Math.floor(elapsedMs / 60000) + (state.half === 2 ? state.halfDurationMins : 0);
 
   const pushEvent = useCallback(
     (partial: Omit<TrackerEvent, "id" | "half" | "minute" | "wallTimestamp">) => {
@@ -160,12 +173,31 @@ export default function TrackerApp({ teams }: Props) {
     setState((s) => ({ ...s, events: s.events.filter((e) => e.id !== id) }));
   }, []);
 
+  const discardGame = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setDiscardConfirm(false);
+    setState({
+      phase: "setup",
+      teamAgeGroup: null,
+      matchId: "",
+      opponent: "",
+      homeAway: "home",
+      matchDate: "",
+      half: 1,
+      halfDurationMins: 30,
+      events: [],
+      gameStartWall: null,
+      halfStartWall: null,
+      gameId: makeId(),
+    });
+  };
+
   // ── Setup screen ─────────────────────────────────────────────────────────
 
   if (state.phase === "setup") {
     const teamData = state.teamAgeGroup ? teams[state.teamAgeGroup] : null;
-    const futureMatches = teamData
-      ? teamData.matches.filter((m) => m.result === null)
+    const upcomingMatches = teamData
+      ? teamData.matches.filter((m) => m.result === null || m.result === undefined)
       : [];
 
     return (
@@ -204,7 +236,7 @@ export default function TrackerApp({ teams }: Props) {
               <select
                 value={state.matchId}
                 onChange={(e) => {
-                  const match = futureMatches.find((m) => m.id === e.target.value);
+                  const match = upcomingMatches.find((m) => m.id === e.target.value);
                   setState((s) => ({
                     ...s,
                     matchId: e.target.value,
@@ -216,9 +248,9 @@ export default function TrackerApp({ teams }: Props) {
                 className="w-full bg-[#161b22] border border-[#30363d] rounded-lg px-3 py-3 text-sm text-[#f0f6fc] focus:outline-none focus:border-[#388bfd]"
               >
                 <option value="">Select a match…</option>
-                {futureMatches.map((m) => (
+                {upcomingMatches.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} vs {m.opponent} ({m.homeAway})
+                    {formatMatchDate(m.date)} — vs {m.opponent} ({m.homeAway})
                   </option>
                 ))}
                 <option value="__custom__">Other / custom…</option>
@@ -236,7 +268,29 @@ export default function TrackerApp({ teams }: Props) {
             </div>
           )}
 
-          {/* Start */}
+          {/* Half duration */}
+          {state.teamAgeGroup && (
+            <div className="w-full space-y-2">
+              <label className="text-xs font-semibold text-[#8b949e] uppercase tracking-wider">Half Duration</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[30, 45].map((mins) => (
+                  <button
+                    key={mins}
+                    onClick={() => setState((s) => ({ ...s, halfDurationMins: mins }))}
+                    className={`py-3 rounded-lg font-bold text-sm transition-colors ${
+                      state.halfDurationMins === mins
+                        ? "bg-[#388bfd]/20 border border-[#388bfd]/60 text-[#388bfd]"
+                        : "bg-[#161b22] text-[#8b949e] hover:bg-[#21262d]"
+                    }`}
+                  >
+                    {mins} min
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Continue — does NOT start the clock */}
           <button
             disabled={!state.teamAgeGroup || !state.opponent}
             onClick={() =>
@@ -244,14 +298,14 @@ export default function TrackerApp({ teams }: Props) {
                 ...s,
                 phase: "live",
                 half: 1,
-                gameStartWall: Date.now(),
-                halfStartWall: Date.now(),
+                gameStartWall: null,
+                halfStartWall: null,
                 gameId: makeId(),
               }))
             }
             className="w-full py-4 bg-[#238636] hover:bg-[#2ea043] disabled:bg-[#21262d] disabled:text-[#484f58] rounded-lg font-bold text-lg transition-colors"
           >
-            Start Game
+            Continue →
           </button>
 
           {/* Resume draft hint */}
@@ -271,11 +325,12 @@ export default function TrackerApp({ teams }: Props) {
     const { home, away } = countGoals(state.events);
     const teamData = teams[state.teamAgeGroup!];
     const players = teamData.players;
+    const clockStarted = state.halfStartWall !== null;
 
-    // Resolve modal
     const closeModal = () => setModal(null);
 
     const handleEventTap = (eventType: TrackerEventType) => {
+      if (!clockStarted) return;
       if (eventType === "rival_goal") {
         setModal({ type: "confirm_rival_goal" });
       } else if (eventType === "goal") {
@@ -304,8 +359,10 @@ export default function TrackerApp({ teams }: Props) {
               <div className={`text-xs font-bold px-2 py-0.5 rounded ${state.half === 1 ? "bg-[#238636]/20 text-[#3fb950]" : "bg-[#388bfd]/20 text-[#388bfd]"}`}>
                 H{state.half}
               </div>
-              <div className="text-2xl font-mono font-bold mt-1">{formatClock(elapsedMs)}</div>
-              <div className="text-xs text-[#8b949e]">{`${currentMinute}'`}</div>
+              <div className={`text-2xl font-mono font-bold mt-1 ${!clockStarted ? "text-[#484f58]" : ""}`}>
+                {formatClock(elapsedMs)}
+              </div>
+              <div className="text-xs text-[#8b949e]">{clockStarted ? `${currentMinute}'` : "–"}</div>
             </div>
             <div className="text-center flex-1">
               <div className="text-xs text-[#8b949e] uppercase tracking-wider truncate">{state.opponent}</div>
@@ -314,9 +371,25 @@ export default function TrackerApp({ teams }: Props) {
           </div>
         </div>
 
-        {/* Event buttons */}
         <div className="flex-1 overflow-y-auto px-3 py-4 max-w-sm mx-auto w-full space-y-3">
-          <div className="grid grid-cols-2 gap-2">
+          {/* Kick Off banner — shown until clock is started */}
+          {!clockStarted && (
+            <button
+              onClick={() =>
+                setState((s) => ({
+                  ...s,
+                  gameStartWall: Date.now(),
+                  halfStartWall: Date.now(),
+                }))
+              }
+              className="w-full py-6 bg-[#238636] hover:bg-[#2ea043] active:scale-95 rounded-xl font-black text-2xl tracking-wide transition-all"
+            >
+              ⚽ Kick Off!
+            </button>
+          )}
+
+          {/* Event buttons — dimmed until clock starts */}
+          <div className={`grid grid-cols-2 gap-2 ${!clockStarted ? "opacity-30 pointer-events-none" : ""}`}>
             <button
               onClick={() => handleEventTap("goal")}
               className="col-span-2 py-5 bg-[#238636] hover:bg-[#2ea043] active:scale-95 rounded-xl font-black text-xl tracking-wide transition-all"
@@ -462,11 +535,11 @@ export default function TrackerApp({ teams }: Props) {
 
         <button
           onClick={() =>
-            setState((s) => ({ ...s, phase: "live", half: 2, halfStartWall: Date.now() }))
+            setState((s) => ({ ...s, phase: "live", half: 2, halfStartWall: null }))
           }
           className="w-full py-4 bg-[#238636] hover:bg-[#2ea043] rounded-xl font-bold text-lg transition-colors"
         >
-          Start Second Half
+          Go to Second Half →
         </button>
       </div>
     );
@@ -593,6 +666,36 @@ export default function TrackerApp({ teams }: Props) {
           >
             ← Back to Game
           </button>
+
+          {/* Discard */}
+          {!discardConfirm ? (
+            <button
+              onClick={() => setDiscardConfirm(true)}
+              className="w-full py-3 text-[#484f58] hover:text-[#f85149] text-sm transition-colors"
+            >
+              Discard game…
+            </button>
+          ) : (
+            <div className="bg-[#da3633]/10 border border-[#da3633]/40 rounded-xl p-4 space-y-3">
+              <p className="text-sm text-center text-[#f85149] font-semibold">
+                Discard all {state.events.length} event{state.events.length !== 1 ? "s" : ""}? This cannot be undone.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setDiscardConfirm(false)}
+                  className="py-2.5 bg-[#161b22] hover:bg-[#21262d] border border-[#30363d] rounded-lg text-sm font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={discardGame}
+                  className="py-2.5 bg-[#da3633] hover:bg-[#f85149] rounded-lg text-sm font-bold text-white transition-colors"
+                >
+                  Yes, Discard
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -622,6 +725,7 @@ export default function TrackerApp({ teams }: Props) {
               homeAway: "home",
               matchDate: "",
               half: 1,
+              halfDurationMins: 30,
               events: [],
               gameStartWall: null,
               halfStartWall: null,

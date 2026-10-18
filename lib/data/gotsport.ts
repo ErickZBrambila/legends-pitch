@@ -57,7 +57,7 @@ const U12_MATCHES: Match[] = [
   { id: `gs-u12-${++u12Id}`, date: "2026-09-19T10:00:00-05:00", opponent: "Elgin United (Castro)",    location: "WCRP North",              homeAway: "home", goalsFor: 13, goalsAgainst: 1,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-09-26T08:30:00-05:00", opponent: "FC Westlake Hooligans",    location: "Riverwalk #3",            homeAway: "away", goalsFor: 5,  goalsAgainst: 2,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-10T10:00:00-05:00", opponent: "Liberty United",           location: "WCRP South",              homeAway: "home", goalsFor: 15, goalsAgainst: 0,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-10-17T15:00:00-05:00", opponent: "LC United",                location: "Shenandoah Field 2",      homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-10-17T15:00:00-05:00", opponent: "LC United",                location: "Shenandoah Field 2",      homeAway: "away", goalsFor: 4,  goalsAgainst: 1,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-24T09:30:00-05:00", opponent: "Leander FC Rattlers",      location: "Serna Athletic Fields",   homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-25T10:00:00-05:00", opponent: "BYSO Inferno",             location: "WCRP South",              homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
   { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",             location: "Bastrop Youth Soccer",    homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },

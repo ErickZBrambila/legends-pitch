@@ -20,6 +20,93 @@ interface GotSportData {
   matches: Match[];
 }
 
+const GOTSPORT_SCHEDULE_URLS: Record<string, string> = {
+  u11: "https://system.gotsport.com/org_event/events/55587/schedules?team=4373770",
+  u12: "https://system.gotsport.com/org_event/events/55587/schedules?team=4373769",
+};
+
+function cellText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, n: string) => String.fromCharCode(Number(n)))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function scrapeStandings(team: string): Promise<StandingRow[]> {
+  const url = GOTSPORT_SCHEDULE_URLS[team];
+  if (!url) return [];
+
+  let html: string;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return [];
+    html = await res.text();
+  } catch {
+    return [];
+  }
+
+  const start = html.indexOf("Bracket A");
+  if (start === -1) return [];
+  const endIdx = html.indexOf("tiebreaker", start);
+  const section = html.slice(start, endIdx > start ? endIdx : start + 12000);
+
+  const rows: StandingRow[] = [];
+  const trPattern = /<tr[\s\S]*?<\/tr>/g;
+  let trMatch: RegExpExecArray | null;
+
+  while ((trMatch = trPattern.exec(section)) !== null) {
+    const cells: string[] = [];
+    const tdPattern = /<td[^>]*>([\s\S]*?)<\/td>/g;
+    let tdMatch: RegExpExecArray | null;
+    while ((tdMatch = tdPattern.exec(trMatch[0])) !== null) {
+      cells.push(cellText(tdMatch[1]));
+    }
+
+    // Need at least rank + team + 8 stat columns
+    if (cells.length < 9) continue;
+
+    let rank: number;
+    let teamName: string;
+    let statOffset: number;
+
+    const firstNum = parseInt(cells[0], 10);
+    if (!isNaN(firstNum) && firstNum >= 1 && firstNum <= 30 && cells.length >= 10) {
+      // 10-cell layout: [rank, team, MP, W, L, D, GF, GA, GD, PTS]
+      rank = firstNum;
+      teamName = cells[1];
+      statOffset = 2;
+    } else {
+      continue; // skip header rows and non-standings rows
+    }
+
+    if (!teamName || /^\d+$/.test(teamName)) continue;
+
+    const gp  = parseInt(cells[statOffset],     10);
+    const w   = parseInt(cells[statOffset + 1], 10);
+    const l   = parseInt(cells[statOffset + 2], 10);
+    const t   = parseInt(cells[statOffset + 3], 10);
+    const gf  = parseInt(cells[statOffset + 4], 10);
+    const ga  = parseInt(cells[statOffset + 5], 10);
+    // cells[statOffset + 6] is GD — skip
+    const pts = parseInt(cells[statOffset + 7], 10);
+
+    if ([gp, w, l, t, gf, ga, pts].some(isNaN)) continue;
+
+    rows.push({
+      rank,
+      team: teamName,
+      gp, w, l, t, gf, ga, pts,
+      isNorthLegends: teamName.includes("North Legends") || teamName.includes("Legends"),
+    });
+  }
+
+  return rows;
+}
+
 const U11_STANDINGS: StandingRow[] = [
   { rank: 1, team: "Elgin United (Ramirez)",       gp: 7, w: 5, l: 1, t: 1, gf: 20, ga: 10, pts: 16, isNorthLegends: false },
   { rank: 2, team: "JYSA North Legends FC",        gp: 6, w: 5, l: 1, t: 0, gf: 16, ga: 8,  pts: 15, isNorthLegends: true  },
@@ -99,26 +186,28 @@ function withAddress(matches: Match[]): Match[] {
 }
 
 export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
-  const standings = team === "u12" ? U12_STANDINGS : U11_STANDINGS;
+  const fallbackStandings = team === "u12" ? U12_STANDINGS : U11_STANDINGS;
 
-  if (team === "u11") {
-    const sportsYouGames = await fetchSportsYouGames("u11");
-    if (sportsYouGames.length > 0) {
-      const matches: Match[] = sportsYouGames.map((g) => ({
-        id: `sy-u11-${g.uid}`,
-        date: g.iso,
-        arrivalDate: g.arrivalIso,
-        opponent: g.opponent,
-        location: g.locationName,
-        locationAddress: g.locationAddress,
-        homeAway: g.homeAway,
-        ...(U11_RESULTS[g.uid] ?? { goalsFor: null, goalsAgainst: null, result: null }),
-      }));
-      return { standings, matches };
-    }
-  }
+  const [liveStandings, matchData] = await Promise.all([
+    scrapeStandings(team),
+    team === "u11"
+      ? fetchSportsYouGames("u11").then((games) =>
+          games.length > 0
+            ? games.map((g): Match => ({
+                id: `sy-u11-${g.uid}`,
+                date: g.iso,
+                arrivalDate: g.arrivalIso,
+                opponent: g.opponent,
+                location: g.locationName,
+                locationAddress: g.locationAddress,
+                homeAway: g.homeAway,
+                ...(U11_RESULTS[g.uid] ?? { goalsFor: null, goalsAgainst: null, result: null }),
+              }))
+            : withAddress([] as Match[])
+        )
+      : Promise.resolve(withAddress(U12_MATCHES)),
+  ]);
 
-  // Fallback: static data for U12 (or U11 if SportsYou fetch fails)
-  const staticMatches = team === "u12" ? U12_MATCHES : [];
-  return { standings, matches: withAddress(staticMatches) };
+  const standings = liveStandings.length > 0 ? liveStandings : fallbackStandings;
+  return { standings, matches: matchData };
 }

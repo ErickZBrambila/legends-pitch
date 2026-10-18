@@ -19,7 +19,7 @@ function appUrl() {
 function getQStash() {
   const token = process.env.QSTASH_TOKEN;
   if (!token) throw new Error("QSTASH_TOKEN not set");
-  return new QStash({ token });
+  return new QStash({ token, baseUrl: process.env.QSTASH_URL });
 }
 
 async function scrapeGotSportResult(

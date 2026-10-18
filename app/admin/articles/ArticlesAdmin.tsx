@@ -571,7 +571,8 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
               <p className="text-gray-400 text-sm py-8 text-center">{c.noMatches}</p>
             ) : (
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
                   <thead className="bg-gray-50 text-gray-400 uppercase text-xs tracking-wider">
                     <tr>
                       <th className="px-4 py-3 text-left">{c.tableCols.date}</th>
@@ -614,6 +615,7 @@ export default function ArticlesAdmin({ team, matches, posts: initialPosts, loca
                       })}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>

@@ -38,7 +38,7 @@ export default async function RootLayout({
   const locale = await getLocale();
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? headersList.get("x-invoke-path") ?? "";
-  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/neo");
+  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/neo") || pathname.startsWith("/tracker");
   return (
     <html lang={locale} className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">

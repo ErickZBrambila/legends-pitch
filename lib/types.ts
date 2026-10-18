@@ -158,3 +158,42 @@ export interface PracticeSession {
   sessionDate: string;
   videos: SessionVideo[];
 }
+
+export type TrackerEventType =
+  | "goal"
+  | "rival_goal"
+  | "shot_on"
+  | "shot_off"
+  | "save"
+  | "yellow_card"
+  | "red_card"
+  | "substitution";
+
+export interface TrackerEvent {
+  id: string;
+  type: TrackerEventType;
+  half: 1 | 2;
+  minute: number;
+  wallTimestamp: string;       // ISO — maps to KickReel video timeline
+  playerId?: string;
+  playerName?: string;
+  assistPlayerId?: string;
+  assistPlayerName?: string;
+  subInPlayerId?: string;
+  subInPlayerName?: string;
+}
+
+export interface TrackerGame {
+  gameId: string;
+  teamAgeGroup: "u11" | "u12";
+  matchId: string;
+  opponent: string;
+  homeAway: "home" | "away";
+  date: string;
+  submittedAt: string;
+  events: TrackerEvent[];
+  finalScore: {
+    home: number;
+    away: number;
+  };
+}

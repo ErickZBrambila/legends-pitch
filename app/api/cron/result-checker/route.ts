@@ -5,6 +5,7 @@ import { getGotSportData } from "@/lib/data/gotsport";
 
 const GOTSPORT_URLS: Record<string, string> = {
   u11: "https://system.gotsport.com/org_event/events/55587/schedules?team=4373770",
+  u12: "https://system.gotsport.com/org_event/events/55587/schedules?team=4373769",
 };
 
 // Maximum time to keep chasing a result after kickoff

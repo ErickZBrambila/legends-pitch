@@ -6,7 +6,7 @@ import Image from "next/image";
 import AdminLangToggle from "@/components/AdminLangToggle";
 import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 
-export const metadata = { title: "Admin · North Legends FC" };
+export const metadata = { title: "⚙ Admin · NLFC" };
 
 const CONTENT = {
   en: {

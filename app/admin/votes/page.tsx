@@ -4,7 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { getAllVotes } from "@/lib/votes";
 import CoachVotes from "./CoachVotes";
 
-export const metadata = { title: "Feature Voting · Admin" };
+export const metadata = { title: "⚙ Votes · Admin" };
 
 export default async function CoachVotesPage() {
   const authed = await getAdminSession();

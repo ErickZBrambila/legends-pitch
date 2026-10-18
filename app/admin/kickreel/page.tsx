@@ -4,7 +4,7 @@ import { getRedis } from "@/lib/redis";
 import type { TrackerGame } from "@/lib/types";
 import KickReelAdmin from "./KickReelAdmin";
 
-export const metadata = { title: "KickReel Stats · Admin" };
+export const metadata = { title: "⚙ KickReel · Admin" };
 
 export default async function AdminKickReelPage() {
   const authed = await getAdminSession();

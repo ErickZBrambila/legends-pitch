@@ -11,7 +11,7 @@ import {
   totalClaudeCost, totalHardwareCost, monthlyRunningCost, annualRunningCost, tco,
 } from "@/lib/data/tracker";
 
-export const metadata = { title: "Project Tracker · North Legends FC Admin" };
+export const metadata = { title: "> [NEO] Project Tracker_" };
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (

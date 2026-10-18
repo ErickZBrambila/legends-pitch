@@ -3,7 +3,7 @@ import { getNeoSession } from "@/lib/neo-auth";
 import { getAnalytics } from "@/lib/analytics";
 import MonitoringDashboard from "./MonitoringDashboard";
 
-export const metadata = { title: "Monitoring · North Legends FC" };
+export const metadata = { title: "> [NEO] Monitoring_" };
 export const revalidate = 60;
 
 export default async function MonitoringPage() {

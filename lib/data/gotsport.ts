@@ -108,12 +108,12 @@ async function scrapeStandings(team: string): Promise<StandingRow[]> {
 }
 
 const U11_STANDINGS: StandingRow[] = [
-  { rank: 1, team: "JYSA North Legends FC",        gp: 8, w: 7, l: 1, t: 0, gf: 34, ga: 9,  pts: 21, isNorthLegends: true  },
+  { rank: 1, team: "JYSA North Legends FC",        gp: 7, w: 6, l: 1, t: 0, gf: 19, ga: 8,  pts: 18, isNorthLegends: true  },
   { rank: 2, team: "Elgin United (Ramirez)",       gp: 7, w: 5, l: 1, t: 1, gf: 20, ga: 10, pts: 16, isNorthLegends: false },
   { rank: 3, team: "T&C Soccer Inter Milan",       gp: 4, w: 2, l: 1, t: 1, gf: 11, ga: 8,  pts: 7,  isNorthLegends: false },
   { rank: 4, team: "WBSA United",                  gp: 5, w: 2, l: 3, t: 0, gf: 9,  ga: 12, pts: 6,  isNorthLegends: false },
-  { rank: 5, team: "Elgin United (Hernandez)",     gp: 4, w: 0, l: 4, t: 0, gf: 1,  ga: 17, pts: 0,  isNorthLegends: false },
-  { rank: 6, team: "Storm 16B Black",              gp: 6, w: 0, l: 6, t: 0, gf: 5,  ga: 25, pts: 0,  isNorthLegends: false },
+  { rank: 5, team: "Elgin United (Hernandez)",     gp: 4, w: 0, l: 4, t: 0, gf: 1,  ga: 12, pts: 0,  isNorthLegends: false },
+  { rank: 6, team: "Storm 16B Black",              gp: 5, w: 0, l: 5, t: 0, gf: 5,  ga: 15, pts: 0,  isNorthLegends: false },
 ];
 
 const U12_STANDINGS: StandingRow[] = [

@@ -15,6 +15,7 @@ interface Props {
   lat: number;
   lng: number;
   gameIso: string;
+  dark?: boolean;
 }
 
 function weatherKey(code: number): { emoji: string; key: string } {
@@ -30,7 +31,7 @@ function weatherKey(code: number): { emoji: string; key: string } {
   return { emoji: "🌡️", key: "unknown" };
 }
 
-export default function GameWeather({ lat, lng, gameIso }: Props) {
+export default function GameWeather({ lat, lng, gameIso, dark = false }: Props) {
   const t = useTranslations("Weather");
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
@@ -48,15 +49,19 @@ export default function GameWeather({ lat, lng, gameIso }: Props) {
   const rainColor = rain >= 70 ? "text-blue-600" : rain >= 40 ? "text-blue-400" : "text-gray-400";
 
   return (
-    <div className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 rounded-lg px-3 py-1.5 text-xs mt-1.5">
+    <div className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs ${
+      dark
+        ? "bg-white/10 border border-white/20"
+        : "bg-sky-50 border border-sky-100 mt-1.5"
+    }`}>
       <span className="text-base leading-none">{emoji}</span>
-      <span className="font-bold text-gray-800">{weather.tempF}°F</span>
-      <span className="text-gray-500">{t(key as Parameters<typeof t>[0])}</span>
+      <span className={`font-bold ${dark ? "text-white" : "text-gray-800"}`}>{weather.tempF}°F</span>
+      <span className={dark ? "text-red-200" : "text-gray-500"}>{t(key as Parameters<typeof t>[0])}</span>
       {rain > 0 && (
-        <span className={`font-semibold ${rainColor}`}>💧{rain}%</span>
+        <span className={`font-semibold ${dark ? "text-blue-300" : rainColor}`}>💧{rain}%</span>
       )}
       {(weather.windMph ?? 0) >= 10 && (
-        <span className="text-gray-400">💨{weather.windMph}mph</span>
+        <span className={dark ? "text-red-300" : "text-gray-400"}>💨{weather.windMph}mph</span>
       )}
     </div>
   );

@@ -10,7 +10,13 @@ import TrackedAnchor from "@/components/TrackedAnchor";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import { getPostsByTeam, getLatestAnnouncement } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
-import { getGotSportData } from "@/lib/data/gotsport";
+import { getGotSportData, LOCATION_COORDS } from "@/lib/data/gotsport";
+import GameWeather from "@/components/GameWeather";
+
+const withinForecastWindow = (iso: string) => {
+  const diff = (new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+  return diff >= -0.5 && diff <= 7;
+};
 
 const formatDate = (iso: string, locale: string) =>
   new Date(iso).toLocaleDateString(locale, {
@@ -126,7 +132,30 @@ export default async function Home({
                 {formatDate(nextMatch.date, locale)} · {formatTime(nextMatch.date, locale)} ·{" "}
                 <span>{nextMatch.homeAway === "home" ? t("home") : t("away")}</span>
               </p>
-              <p className="text-red-300 text-xs mt-0.5">{nextMatch.location}</p>
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                {nextMatch.locationAddress ? (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(nextMatch.locationAddress)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-red-200 text-xs font-medium hover:bg-white/20 transition-colors"
+                  >
+                    📍 {nextMatch.location}
+                  </a>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-red-200 text-xs font-medium">
+                    📍 {nextMatch.location}
+                  </span>
+                )}
+                {withinForecastWindow(nextMatch.date) && LOCATION_COORDS[nextMatch.location] && (
+                  <GameWeather
+                    lat={LOCATION_COORDS[nextMatch.location].lat}
+                    lng={LOCATION_COORDS[nextMatch.location].lng}
+                    gameIso={nextMatch.date}
+                    dark
+                  />
+                )}
+              </div>
               {nextMatch.arrivalDate && (
                 <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/40 text-[var(--color-accent-light)] text-xs font-semibold">
                   🕐 {t("beThereAt")} {formatTime(nextMatch.arrivalDate, locale)}

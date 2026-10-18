@@ -30,13 +30,13 @@ const U11_STANDINGS: StandingRow[] = [
 ];
 
 const U12_STANDINGS: StandingRow[] = [
-  { rank: 1, team: "JYSA North Legends FC",       gp: 5, w: 5, l: 0, t: 0, gf: 16, ga: 6,  pts: 15, isNorthLegends: true  },
-  { rank: 2, team: "FC Westlake North Hooligans", gp: 5, w: 4, l: 1, t: 0, gf: 14, ga: 11, pts: 12, isNorthLegends: false },
+  { rank: 1, team: "JYSA North Legends FC",       gp: 5, w: 5, l: 0, t: 0, gf: 15, ga: 6,  pts: 15, isNorthLegends: true  },
+  { rank: 2, team: "FC Westlake North Hooligans", gp: 6, w: 5, l: 1, t: 0, gf: 17, ga: 11, pts: 15, isNorthLegends: false },
   { rank: 3, team: "Elgin United (Castro)",       gp: 5, w: 2, l: 2, t: 1, gf: 8,  ga: 9,  pts: 7,  isNorthLegends: false },
   { rank: 4, team: "BYSO Inferno",                gp: 3, w: 2, l: 1, t: 0, gf: 9,  ga: 6,  pts: 6,  isNorthLegends: false },
-  { rank: 5, team: "LC United",                   gp: 4, w: 1, l: 3, t: 0, gf: 7,  ga: 13, pts: 3,  isNorthLegends: false },
-  { rank: 6, team: "Leander FC Rattlers",         gp: 4, w: 0, l: 3, t: 1, gf: 8,  ga: 10, pts: 1,  isNorthLegends: false },
-  { rank: 7, team: "Liberty United",              gp: 4, w: 0, l: 4, t: 0, gf: 5,  ga: 12, pts: 0,  isNorthLegends: false },
+  { rank: 5, team: "Leander FC Rattlers",         gp: 5, w: 1, l: 3, t: 1, gf: 11, ga: 13, pts: 4,  isNorthLegends: false },
+  { rank: 6, team: "LC United",                   gp: 5, w: 1, l: 4, t: 0, gf: 10, ga: 15, pts: 3,  isNorthLegends: false },
+  { rank: 7, team: "Liberty United",              gp: 5, w: 0, l: 5, t: 0, gf: 5,  ga: 15, pts: 0,  isNorthLegends: false },
 ];
 
 // U11 match results keyed by SportsYou short UID (last 8 chars before @).

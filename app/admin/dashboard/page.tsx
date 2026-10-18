@@ -40,6 +40,12 @@ const CONTENT = {
         badge: "New",
       },
       {
+        href: "/admin/kickreel",
+        title: "KickReel Stats",
+        description: "Review submitted game tracking sessions. Download JSON, apply score to match, or delete entries.",
+        badge: "New",
+      },
+      {
         href: "/studio",
         external: true,
         title: "Sanity Studio",
@@ -76,6 +82,12 @@ const CONTENT = {
         href: "/admin/photos",
         title: "Cola de Fotos",
         description: "Revisa las fotos de jugadores enviadas por los padres desde la página de alineación. Aprueba para publicar o rechaza.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/kickreel",
+        title: "KickReel Stats",
+        description: "Revisa las sesiones de seguimiento de partidos enviadas. Descarga JSON, aplica el marcador al partido o elimina entradas.",
         badge: "Nuevo",
       },
       {

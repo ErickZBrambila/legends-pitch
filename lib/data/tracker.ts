@@ -29,7 +29,37 @@ export interface ServiceLine {
 
 export const SESSIONS: WorkSession[] = [
   {
-    date: "2026-10-16",
+    date: "2026-10-17",
+    title: "Session 16 — KickReel Admin, Live Stat Tracker, Standings Scraper & Game-Day UX",
+    hours: 17.5,
+    commits: 16,
+    claudeCostUSD: 67.70,
+    features: [
+      // ── North Legends ──────────────────────────────────────────────────────
+      "Live standings scraper — U11 & U12 standings now fetched and parsed from GotSport HTML on each request; falls back to hardcoded arrays if fetch fails; no more manual entry after each round",
+      "Game-day reminder overhaul — Vercel cron moved to 4 AM CDT; schedules QStash push 2h before kickoff and result-checker 90min post-kickoff; morning games can no longer be missed",
+      "QStash region fix — pass baseUrl: QSTASH_URL (US East) to QStash client; EU default was returning 404 and exhausting retries silently",
+      "Player photos on roster field view — photo replaces number-only pill when Sanity has a photo; number shown below photo if available",
+      "North Legends FC favicon — replaced Vercel triangle with club logo (app/icon.png + apple-icon.png); builds with Turbopack again after ICO format dropped",
+      "Distinctive tab titles — home shows live countdown, /neo gets Matrix-themed 'NEO ◼◼◼', /admin gets 'Admin Panel'",
+      "Location pill + weather on home countdown — taps to Google Maps; weather widget (dark variant) appears when within 5-day forecast window",
+      "U12 result-checker fixed — GOTSPORT_URLS was missing the u12 entry; added correct schedule URL",
+      "Tracker date filter — match list now filters by date so past games don't appear as upcoming in the live stat tracker",
+      "Mobile match table scroll — horizontally scrollable on small screens so stat columns don't clip",
+      "U11 & U12 standings synced manually to official GotSport tables after discovering hardcoded data was stale (trigger for building the scraper)",
+      // ── KickReel ───────────────────────────────────────────────────────────
+      "Live game stat tracker — coaches log substitutions, events, and lineup changes live during matches; stored in Redis, viewable per team/match",
+      "KickReel admin page — /admin/kickreel hub for managing tracker sessions, reviewing runs, and triggering pipeline actions",
+      "Analytics panels fix — second-half-only footage no longer breaks heatmap/timeline panels (null check on first-half clip array)",
+      "Article detail cover image — match recap pages now show the video cover image at the top",
+      "Article generation fix — match data passed from client at generate time instead of a redundant Sanity lookup that could return stale data",
+      "Articles admin GotSport integration — match picker in articles admin now pulls live schedule from GotSport instead of requiring Sanity entries",
+      "Videos section in news articles — article pages link out to the matching KickReel session when footage exists",
+      "PWA share button in nav — installed PWA shows native share sheet for the current page URL",
+    ],
+  },
+  {
+    date: "2026-10-17",
     title: "Session 15 — Arrival Times, QStash Result Checker & Oct 17 U11 Result",
     hours: 3.75,
     commits: 3,

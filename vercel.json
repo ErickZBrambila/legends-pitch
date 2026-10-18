@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/cron/game-day-reminder",
-      "schedule": "0 17 * * *"
+      "schedule": "0 9 * * *"
     }
   ]
 }

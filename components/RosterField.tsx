@@ -1,16 +1,37 @@
+import Image from "next/image";
 import type { Player } from "@/lib/types";
 
 function PlayerToken({ player }: { player: Player }) {
   return (
     <div className="flex flex-col items-center gap-1" style={{ width: "clamp(44px, 13%, 64px)" }}>
-      <div
-        className="rounded-full bg-[#1c1c1e] border-2 border-[#d4af37] flex items-center justify-center shadow-lg"
-        style={{ width: "clamp(36px, 10%, 52px)", height: "clamp(36px, 10%, 52px)" }}
-      >
-        <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(11px, 2.5vw, 16px)" }}>
-          {player.number}
-        </span>
-      </div>
+      {player.photoUrl ? (
+        <>
+          <div
+            className="rounded-full border-2 border-[#d4af37] overflow-hidden shadow-lg"
+            style={{ width: "clamp(36px, 10%, 52px)", height: "clamp(36px, 10%, 52px)" }}
+          >
+            <Image
+              src={player.photoUrl}
+              alt={player.name}
+              width={52}
+              height={52}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(9px, 2vw, 13px)" }}>
+            #{player.number}
+          </span>
+        </>
+      ) : (
+        <div
+          className="rounded-full bg-[#1c1c1e] border-2 border-[#d4af37] flex items-center justify-center shadow-lg"
+          style={{ width: "clamp(36px, 10%, 52px)", height: "clamp(36px, 10%, 52px)" }}
+        >
+          <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(11px, 2.5vw, 16px)" }}>
+            {player.number}
+          </span>
+        </div>
+      )}
       <span
         className="text-white font-bold text-center leading-tight drop-shadow"
         style={{ fontSize: "clamp(8px, 1.8vw, 11px)" }}

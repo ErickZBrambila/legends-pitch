@@ -23,6 +23,20 @@ export default defineType({
       options: { list: [{ title: "Draft", value: "draft" }, { title: "Published", value: "published" }] },
       initialValue: "published",
     }),
+    defineField({
+      name: "videos",
+      title: "Videos",
+      type: "array",
+      of: [{
+        type: "object",
+        fields: [
+          defineField({ name: "title", title: "Title", type: "string", validation: (r) => r.required() }),
+          defineField({ name: "url", title: "Video URL", type: "url", validation: (r) => r.required() }),
+          defineField({ name: "description", title: "Description", type: "text", rows: 2 }),
+        ],
+        preview: { select: { title: "title", subtitle: "url" } },
+      }],
+    }),
     defineField({ name: "sourceMatchId", title: "Source Match ID", type: "string", hidden: true }),
     defineField({ name: "sourceFreeFormContext", title: "Source Free-Form Context", type: "text", hidden: true }),
   ],

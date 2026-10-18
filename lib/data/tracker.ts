@@ -31,7 +31,7 @@ export const SESSIONS: WorkSession[] = [
   {
     date: "2026-10-17",
     title: "Session 16 — KickReel Admin, Live Stat Tracker, Standings Scraper & Game-Day UX",
-    hours: 17.5,
+    hours: 9.25,
     commits: 16,
     claudeCostUSD: 67.70,
     features: [

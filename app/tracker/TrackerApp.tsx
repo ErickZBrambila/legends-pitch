@@ -196,8 +196,14 @@ export default function TrackerApp({ teams }: Props) {
 
   if (state.phase === "setup") {
     const teamData = state.teamAgeGroup ? teams[state.teamAgeGroup] : null;
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
     const upcomingMatches = teamData
-      ? teamData.matches.filter((m) => m.result === null || m.result === undefined)
+      ? teamData.matches.filter((m) => {
+          const [datePart] = m.date.split("T");
+          const [y, mo, d] = datePart.split("-").map(Number);
+          return new Date(y, mo - 1, d) >= todayMidnight;
+        })
       : [];
 
     return (

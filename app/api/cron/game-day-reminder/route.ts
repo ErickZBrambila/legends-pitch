@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
   let queued = 0;
 
   const qstashToken = process.env.QSTASH_TOKEN;
-  const qstash = qstashToken ? new QStash({ token: qstashToken }) : null;
+  const qstash = qstashToken ? new QStash({ token: qstashToken, baseUrl: process.env.QSTASH_URL }) : null;
 
   for (const m of upcoming) {
     const time = formatTime(m.date);

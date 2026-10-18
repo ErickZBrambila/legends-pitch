@@ -82,6 +82,29 @@ export default async function NewsPostPage({
             );
           })()}
         </div>
+
+        {post.videos && post.videos.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Videos</h2>
+            <div className="flex flex-col gap-4">
+              {post.videos.map((v, i) => (
+                <a
+                  key={i}
+                  href={v.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 hover:border-[var(--color-primary)] hover:bg-gray-50 transition-colors group"
+                >
+                  <span className="mt-0.5 text-[var(--color-primary)] text-xl">▶</span>
+                  <div>
+                    <p className="font-semibold text-gray-900 group-hover:text-[var(--color-primary)] transition-colors">{v.title}</p>
+                    {v.description && <p className="text-sm text-gray-500 mt-0.5">{v.description}</p>}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </article>
     </div>
   );

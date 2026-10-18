@@ -1,6 +1,6 @@
 import { sanityClient, sanityWriteClient } from "./client";
 import { urlForImage } from "./image";
-import type { Announcement, Match, Player, NewsPost, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
+import type { Announcement, Match, Player, NewsPost, PostVideo, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
 
 export type TeamSlug = "u11" | "u12";
 
@@ -255,9 +255,11 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
     author: string;
     team: { ageGroup: string };
     coverImage?: { asset: { _ref: string } };
+    videos?: Array<{ title: string; url: string; description?: string }>;
   } | null>(
     `*[_type == "post" && slug.current == $slug][0]{
-      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, team->{ ageGroup }, coverImage
+      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, team->{ ageGroup }, coverImage,
+      videos[]{ title, url, description }
     }`,
     { slug }
   );
@@ -274,6 +276,7 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
     publishedAt: p.publishedAt,
     author: p.author ?? "",
     coverImageUrl: p.coverImage ? urlForImage(p.coverImage) : undefined,
+    videos: (p.videos ?? []) as PostVideo[],
   };
 }
 
@@ -406,6 +409,7 @@ type RawAnalytics = {
   fieldZones: number[];
   fieldZonesFirstHalf?: number[];
   fieldZonesSecondHalf?: number[];
+  secondHalfOnly?: boolean;
   activityBuckets: RawActivityBucket[];
   goalPressureLeft: number;
   goalPressureRight: number;
@@ -445,7 +449,7 @@ const SESSION_PROJECTION = `
     markers[]{ _key, timeSeconds, label },
     clips[]{ _key, r2Url, startSeconds, endSeconds, label, clipType, saveCount, archived },
     analytics{
-      fieldZones, fieldZonesFirstHalf, fieldZonesSecondHalf,
+      fieldZones, fieldZonesFirstHalf, fieldZonesSecondHalf, secondHalfOnly,
       goalPressureLeft, goalPressureRight,
       goalPressureLeftH1, goalPressureRightH1, goalPressureLeftH2, goalPressureRightH2,
       totalFrames, dominantZone,
@@ -483,6 +487,7 @@ function mapSession(s: RawSession): PracticeSession {
         fieldZones: v.analytics.fieldZones ?? [],
         fieldZonesFirstHalf: v.analytics.fieldZonesFirstHalf,
         fieldZonesSecondHalf: v.analytics.fieldZonesSecondHalf,
+        secondHalfOnly: v.analytics.secondHalfOnly ?? false,
         activityBuckets: (v.analytics.activityBuckets ?? []).map((b) => ({
           tStart: b.tStart,
           tEnd: b.tEnd,

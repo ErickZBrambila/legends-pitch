@@ -115,13 +115,14 @@ function HeatField({ zones, pressureLeft, pressureRight }: {
 type HalfTab = "full" | "h1" | "h2";
 
 export default function FieldHeatmap({ analytics }: { analytics: VideoAnalytics }) {
-  const hasHalves = !!(analytics.fieldZonesFirstHalf?.length && analytics.fieldZonesSecondHalf?.length);
+  const secondHalfOnly = analytics.secondHalfOnly ?? false;
+  const hasHalves = !secondHalfOnly && !!(analytics.fieldZonesFirstHalf?.length && analytics.fieldZonesSecondHalf?.length);
   const [tab, setTab] = useState<HalfTab>("full");
 
   if (!analytics.fieldZones?.length) return null;
 
   const tabs: { key: HalfTab; label: string }[] = [
-    { key: "full", label: "Full Game" },
+    { key: "full", label: secondHalfOnly ? "2nd Half" : "Full Game" },
     ...(hasHalves ? [
       { key: "h1" as HalfTab, label: "1st Half" },
       { key: "h2" as HalfTab, label: "2nd Half" },

@@ -166,6 +166,7 @@
     "nowPlaying": "{label} · toca ↓ para descargar",
     "playing": "Reproduciendo",
     "goals": "Goles",
+    "conceded": "Goles en Contra",
     "allMoments": "Todos los Momentos",
     "momentsHint": "{count} jugadas destacadas · toca para saltar",
     "gameAnalytics": "Análisis del Partido",

@@ -45,6 +45,12 @@ export interface PhotoSubmission {
   submittedAt: string;
 }
 
+export interface PostVideo {
+  title: string;
+  url: string;
+  description?: string;
+}
+
 export interface NewsPost {
   id: string;
   slug: string;
@@ -58,6 +64,7 @@ export interface NewsPost {
   author: string;
   status?: "draft" | "published";
   coverImageUrl?: string;
+  videos?: PostVideo[];
   sourceMatchId?: string;
   sourceFreeFormContext?: string;
 }
@@ -103,7 +110,7 @@ export interface VideoClip {
   startSeconds: number;
   endSeconds: number;
   label: string;
-  clipType?: "highlight" | "goal" | "celebration";
+  clipType?: "highlight" | "goal" | "rival_goal" | "celebration";
   saveCount: number;
   archived: boolean;
 }
@@ -119,6 +126,7 @@ export interface VideoAnalytics {
   fieldZones: number[];              // 10 values, normalized full-game
   fieldZonesFirstHalf?: number[];    // 1st half only
   fieldZonesSecondHalf?: number[];   // 2nd half only (same orientation as 1st)
+  secondHalfOnly?: boolean;          // true when only 2nd-half footage was recorded
   activityBuckets: ActivityBucket[];
   goalPressureLeft: number;
   goalPressureRight: number;

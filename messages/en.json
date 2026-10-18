@@ -166,6 +166,7 @@
     "nowPlaying": "{label} · tap ↓ to download",
     "playing": "Playing",
     "goals": "Goals",
+    "conceded": "Conceded",
     "allMoments": "All Moments",
     "momentsHint": "{count} highlights · tap to jump",
     "gameAnalytics": "Game Analytics",

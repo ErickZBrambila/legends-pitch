@@ -25,9 +25,6 @@ function PlayerToken({ player, onClick }: { player: Player; onClick?: (p: Player
       className="relative rounded-full bg-[#1c1c1e] border-2 border-[#d4af37] flex items-center justify-center shadow-lg"
       style={{ width: "clamp(36px, 10%, 52px)", height: "clamp(36px, 10%, 52px)" }}
     >
-      <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(11px, 2.5vw, 16px)" }}>
-        {player.number}
-      </span>
       {onClick && (
         <div className="absolute inset-0 rounded-full bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center">
           <span className="opacity-0 hover:opacity-100 text-white" style={{ fontSize: "clamp(8px, 2vw, 12px)" }}>📷</span>
@@ -39,11 +36,9 @@ function PlayerToken({ player, onClick }: { player: Player; onClick?: (p: Player
   const inner = (
     <div className="flex flex-col items-center gap-1" style={{ width: "clamp(44px, 13%, 64px)" }}>
       {avatar}
-      {player.photoUrl && (
-        <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(9px, 2vw, 13px)" }}>
-          #{player.number}
-        </span>
-      )}
+      <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(9px, 2vw, 13px)" }}>
+        #{player.number}
+      </span>
       <span
         className="text-white font-bold text-center leading-tight drop-shadow"
         style={{ fontSize: "clamp(8px, 1.8vw, 11px)" }}

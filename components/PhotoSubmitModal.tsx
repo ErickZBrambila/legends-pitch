@@ -28,6 +28,7 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
   const [submitError, setSubmitError] = useState("");
   const [done, setDone] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [removeApprovedLoading, setRemoveApprovedLoading] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -105,6 +106,16 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
     }
   }
 
+  async function removeApprovedPhoto() {
+    setRemoveApprovedLoading(true);
+    try {
+      const res = await fetch(`/api/player-photo?playerId=${player.id}`, { method: "DELETE" });
+      if (res.ok) setDone(true);
+    } finally {
+      setRemoveApprovedLoading(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -157,12 +168,12 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <span className="text-4xl">{file ? "✅" : "🗑️"}</span>
               <p className="font-semibold text-gray-800">
-                {file ? "Photo submitted!" : "Submission removed"}
+                {file ? "Photo submitted!" : "Photo removed"}
               </p>
               <p className="text-sm text-gray-500">
                 {file
                   ? "Coach Hugo will review it and add it to the roster."
-                  : "Your photo submission has been deleted."}
+                  : "The photo has been removed from the roster."}
               </p>
               <button onClick={onClose} className="mt-1 px-5 py-2 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity">
                 Close
@@ -170,8 +181,40 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
             </div>
           )}
 
-          {/* ── Photo step ── */}
-          {step === "photo" && !done && existingChecked && (
+          {/* ── Approved photo management (player already has a photo, no new file chosen yet) ── */}
+          {step === "photo" && !done && existingChecked && player.photoUrl && !preview && (
+            <div className="flex flex-col gap-4">
+              <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-100">
+                <Image src={player.photoUrl} alt={player.name} fill className="object-cover" />
+              </div>
+              <p className="text-xs text-gray-500 text-center">Current roster photo</p>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="w-full py-2.5 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Replace photo
+              </button>
+              <button
+                type="button"
+                onClick={removeApprovedPhoto}
+                disabled={removeApprovedLoading}
+                className="w-full py-2 text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-40"
+              >
+                {removeApprovedLoading ? "Removing…" : "Remove photo from roster"}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={onFileChange}
+              />
+            </div>
+          )}
+
+          {/* ── Photo step (no approved photo, or a new file has been chosen) ── */}
+          {step === "photo" && !done && existingChecked && (!player.photoUrl || preview) && (
             <form onSubmit={submitPhoto} className="flex flex-col gap-4">
               {existing && !preview && (
                 <div className="flex flex-col gap-2">

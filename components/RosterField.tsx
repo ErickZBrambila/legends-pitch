@@ -1,36 +1,48 @@
 import Image from "next/image";
 import type { Player } from "@/lib/types";
 
-function PlayerToken({ player }: { player: Player }) {
-  return (
-    <div className="flex flex-col items-center gap-1" style={{ width: "clamp(44px, 13%, 64px)" }}>
-      {player.photoUrl ? (
-        <>
-          <div
-            className="rounded-full border-2 border-[#d4af37] overflow-hidden shadow-lg"
-            style={{ width: "clamp(36px, 10%, 52px)", height: "clamp(36px, 10%, 52px)" }}
-          >
-            <Image
-              src={player.photoUrl}
-              alt={player.name}
-              width={52}
-              height={52}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(9px, 2vw, 13px)" }}>
-            #{player.number}
-          </span>
-        </>
-      ) : (
-        <div
-          className="rounded-full bg-[#1c1c1e] border-2 border-[#d4af37] flex items-center justify-center shadow-lg"
-          style={{ width: "clamp(36px, 10%, 52px)", height: "clamp(36px, 10%, 52px)" }}
-        >
-          <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(11px, 2.5vw, 16px)" }}>
-            {player.number}
-          </span>
+function PlayerToken({ player, onClick }: { player: Player; onClick?: (p: Player) => void }) {
+  const avatar = player.photoUrl ? (
+    <div
+      className="relative rounded-full border-2 border-[#d4af37] overflow-hidden shadow-lg"
+      style={{ width: "clamp(36px, 10%, 52px)", height: "clamp(36px, 10%, 52px)" }}
+    >
+      <Image
+        src={player.photoUrl}
+        alt={player.name}
+        width={52}
+        height={52}
+        className="w-full h-full object-cover"
+      />
+      {onClick && (
+        <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center">
+          <span className="opacity-0 hover:opacity-100 text-white text-[10px]">📷</span>
         </div>
+      )}
+    </div>
+  ) : (
+    <div
+      className="relative rounded-full bg-[#1c1c1e] border-2 border-[#d4af37] flex items-center justify-center shadow-lg"
+      style={{ width: "clamp(36px, 10%, 52px)", height: "clamp(36px, 10%, 52px)" }}
+    >
+      <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(11px, 2.5vw, 16px)" }}>
+        {player.number}
+      </span>
+      {onClick && (
+        <div className="absolute inset-0 rounded-full bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center">
+          <span className="opacity-0 hover:opacity-100 text-white" style={{ fontSize: "clamp(8px, 2vw, 12px)" }}>📷</span>
+        </div>
+      )}
+    </div>
+  );
+
+  const inner = (
+    <div className="flex flex-col items-center gap-1" style={{ width: "clamp(44px, 13%, 64px)" }}>
+      {avatar}
+      {player.photoUrl && (
+        <span className="font-black text-[#d4af37]" style={{ fontSize: "clamp(9px, 2vw, 13px)" }}>
+          #{player.number}
+        </span>
       )}
       <span
         className="text-white font-bold text-center leading-tight drop-shadow"
@@ -40,9 +52,30 @@ function PlayerToken({ player }: { player: Player }) {
       </span>
     </div>
   );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={() => onClick(player)}
+        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] rounded-full"
+        aria-label={`${player.photoUrl ? "Change" : "Add"} photo for ${player.name}`}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return inner;
 }
 
-export default function RosterField({ players }: { players: Player[] }) {
+export default function RosterField({
+  players,
+  onPlayerClick,
+}: {
+  players: Player[];
+  onPlayerClick?: (player: Player) => void;
+}) {
   const grouped = {
     FWD: players.filter((p) => p.position === "FWD").sort((a, b) => a.number - b.number),
     MID: players.filter((p) => p.position === "MID").sort((a, b) => a.number - b.number),
@@ -119,7 +152,7 @@ export default function RosterField({ players }: { players: Player[] }) {
             style={{ top, transform: "translateY(-50%)" }}
           >
             {group.map((p) => (
-              <PlayerToken key={p.id} player={p} />
+              <PlayerToken key={p.id} player={p} onClick={onPlayerClick} />
             ))}
           </div>
         ) : null

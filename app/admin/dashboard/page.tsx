@@ -146,7 +146,7 @@ export default async function DashboardPage() {
   if (!authed) redirect("/admin");
   const c = locale === "es" ? CONTENT.es : CONTENT.en;
   const magicToken = generateMagicToken();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://northlegendsfc.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://legends-pitch.vercel.app";
   const magicUrl = `${baseUrl}/api/family/magic?t=${magicToken}`;
 
   return (

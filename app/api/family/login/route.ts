@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import { hashPasscode, FAMILY_COOKIE } from "@/lib/family-auth";
+import { hashPasscode, FAMILY_COOKIE, COOKIE_MAX_AGE } from "@/lib/family-auth";
 import { rateLimit } from "@/lib/ratelimit";
 
 // Constant-time string comparison to avoid leaking length/content via timing.
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
+    maxAge: COOKIE_MAX_AGE,
   });
   return res;
 }

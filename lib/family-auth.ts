@@ -2,10 +2,17 @@ import { createHash } from "crypto";
 import { cookies } from "next/headers";
 
 export const FAMILY_COOKIE = "nlfc_family";
+export const COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 6 months
 
 export function hashPasscode(passcode: string): string {
   return createHash("sha256")
     .update(passcode + "-nlfc-family-2026")
+    .digest("hex");
+}
+
+export function generateMagicToken(): string {
+  return createHash("sha256")
+    .update((process.env.FAMILY_PASSCODE ?? "") + "-nlfc-magic-link-2026")
     .digest("hex");
 }
 

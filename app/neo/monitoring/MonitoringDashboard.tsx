@@ -26,9 +26,15 @@ interface Props {
   data: AnalyticsData;
 }
 
+const TZ = "America/Chicago";
+function localToday() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+}
+
 export default function MonitoringDashboard({ data }: Props) {
   const { daily, topPages, pushSubscribers, totalPageviews } = data;
 
+  const today = localToday();
   const maxPv = Math.max(...daily.map((d) => d.pageviews), 1);
   const todayStats = daily[daily.length - 1];
   const yesterdayStats = daily[daily.length - 2];
@@ -61,8 +67,8 @@ export default function MonitoringDashboard({ data }: Props) {
         />
         <StatCard
           label="Push Subscribers"
-          value={String(pushSubscribers)}
-          sub="iOS / Android PWA"
+          value={String(pushSubscribers.total)}
+          sub={`iOS ${pushSubscribers.ios} · Android ${pushSubscribers.android}${pushSubscribers.other > 0 ? ` · Other ${pushSubscribers.other}` : ""}`}
           accent
         />
       </div>
@@ -73,7 +79,7 @@ export default function MonitoringDashboard({ data }: Props) {
         <div className="flex items-end gap-1 h-32">
           {daily.map((d) => {
             const pct = maxPv > 0 ? (d.pageviews / maxPv) * 100 : 0;
-            const isToday = d.date === new Date().toISOString().slice(0, 10);
+            const isToday = d.date === today;
             return (
               <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group relative">
                 <div
@@ -113,19 +119,23 @@ export default function MonitoringDashboard({ data }: Props) {
             </tr>
           </thead>
           <tbody>
-            {[...daily].reverse().map((d, i) => {
-              const isToday = d.date === new Date().toISOString().slice(0, 10);
-              return (
-                <tr key={d.date} className={`${i < daily.length - 1 ? "border-b border-gray-50" : ""} ${isToday ? "bg-amber-50" : ""}`}>
-                  <td className="px-5 py-2.5 font-mono text-xs text-gray-500">
-                    {d.date}
-                    {isToday && <span className="ml-2 text-[10px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">today</span>}
-                  </td>
-                  <td className="px-5 py-2.5 text-right font-bold text-gray-900">{d.pageviews.toLocaleString()}</td>
-                  <td className="px-5 py-2.5 text-right text-gray-500">{d.uniques.toLocaleString()}</td>
-                </tr>
-              );
-            })}
+            {[...daily]
+              .reverse()
+              .slice(0, 10)
+              .filter((d) => d.pageviews > 0)
+              .map((d, i, arr) => {
+                const isToday = d.date === today;
+                return (
+                  <tr key={d.date} className={`${i < arr.length - 1 ? "border-b border-gray-50" : ""} ${isToday ? "bg-amber-50" : ""}`}>
+                    <td className="px-5 py-2.5 font-mono text-xs text-gray-500">
+                      {d.date}
+                      {isToday && <span className="ml-2 text-[10px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">today</span>}
+                    </td>
+                    <td className="px-5 py-2.5 text-right font-bold text-gray-900">{d.pageviews.toLocaleString()}</td>
+                    <td className="px-5 py-2.5 text-right text-gray-500">{d.uniques.toLocaleString()}</td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>

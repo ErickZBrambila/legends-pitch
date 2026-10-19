@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { generateMagicToken } from "@/lib/family-auth";
 import Link from "next/link";
 import Image from "next/image";
 import AdminLangToggle from "@/components/AdminLangToggle";
 import AdminBreadcrumb from "@/components/AdminBreadcrumb";
+import FamilyLinkCopy from "@/components/FamilyLinkCopy";
 
 export const metadata = { title: "⚙ Admin · NLFC" };
 
@@ -143,6 +145,9 @@ export default async function DashboardPage() {
   const [authed, locale] = await Promise.all([getAdminSession(), getLocale()]);
   if (!authed) redirect("/admin");
   const c = locale === "es" ? CONTENT.es : CONTENT.en;
+  const magicToken = generateMagicToken();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://northlegendsfc.com";
+  const magicUrl = `${baseUrl}/api/family/magic?t=${magicToken}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -170,6 +175,7 @@ export default async function DashboardPage() {
           {c.cards.map((card) => (
             <HubCard key={card.href} {...card} />
           ))}
+          <FamilyLinkCopy url={magicUrl} />
         </div>
       </div>
     </div>

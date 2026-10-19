@@ -29,6 +29,19 @@ export interface ServiceLine {
 
 export const SESSIONS: WorkSession[] = [
   {
+    date: "2026-10-18",
+    title: "Session 17 — Frictionless Family Access",
+    hours: 1.25,
+    commits: 2,
+    claudeCostUSD: 7.50,
+    features: [
+      "Magic link auto-login — /api/family/magic?t=<token> logs parents in with one tap from the group chat; no PIN entry required; token derived from FAMILY_PASSCODE so it auto-rotates on passcode change",
+      "4-digit PIN pad — replaces text passcode input with 4 separate boxes; auto-advance on each digit, backspace navigates back, paste supported, numeric keyboard on mobile",
+      "6-month cookie — extended from 30 days so families who type the PIN once won't see the gate again all season",
+      "Admin Family Access Link card — magic URL shown at the bottom of the admin dashboard with a one-click copy button for Coach to share in the group chat",
+    ],
+  },
+  {
     date: "2026-10-17",
     title: "Session 16 — KickReel Admin, Live Stat Tracker, Standings Scraper & Game-Day UX",
     hours: 9.25,

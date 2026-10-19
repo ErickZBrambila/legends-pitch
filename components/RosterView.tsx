@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import type { Player } from "@/lib/types";
 import RosterField from "./RosterField";
 import PhotoSubmitModal from "./PhotoSubmitModal";
+import PlayerPhotoLightbox from "./PlayerPhotoLightbox";
 
 const POSITION_COLORS: Record<string, string> = {
   GK: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -33,6 +34,15 @@ export default function RosterView({
   const t = useTranslations("Roster");
   const [view, setView] = useState<"field" | "list">("field");
   const [photoModal, setPhotoModal] = useState<Player | null>(null);
+  const [lightboxPlayer, setLightboxPlayer] = useState<Player | null>(null);
+
+  function handleFieldClick(player: Player) {
+    if (player.photoUrl) {
+      setLightboxPlayer(player);
+    } else {
+      setPhotoModal(player);
+    }
+  }
 
   const pendingSet = new Set(pendingPlayerIds);
 
@@ -62,12 +72,12 @@ export default function RosterView({
 
       {view === "field" ? (
         <div className="flex flex-col items-center">
-          <RosterField players={players} onPlayerClick={setPhotoModal} />
+          <RosterField players={players} onPlayerClick={handleFieldClick} />
           <p className="text-xs text-gray-400 mt-4 text-center">
             {t("playersSeason", { count: players.length })}
           </p>
           <p className="text-xs text-gray-400 mt-1 text-center">
-            📷 Tap a player to add or change their photo
+            📷 Tap a player to view or add their photo
           </p>
         </div>
       ) : (
@@ -135,6 +145,14 @@ export default function RosterView({
             );
           })}
         </div>
+      )}
+
+      {lightboxPlayer && (
+        <PlayerPhotoLightbox
+          player={lightboxPlayer}
+          onClose={() => setLightboxPlayer(null)}
+          onChangePhoto={(p) => { setLightboxPlayer(null); setPhotoModal(p); }}
+        />
       )}
 
       {photoModal && (

@@ -30,11 +30,25 @@ export interface ServiceLine {
 export const SESSIONS: WorkSession[] = [
   {
     date: "2026-10-18",
-    title: "Session 17 — Frictionless Family Access",
+    title: "Session 17 — Player Photo Upload Polish, Monitoring Fixes & Frictionless Family Access",
     hours: 9.0,
-    commits: 2,
+    commits: 11,
     claudeCostUSD: 25.00,
     features: [
+      // ── Game day ───────────────────────────────────────────────────────────
+      "U11 Oct 18 result logged — W 8-0 vs Elgin United Hernandez; standings updated for both U11 and U12",
+      "Tracker dropdown fix — opponent names corrected (Ramirez/Hernandez swap); U11/U12 fallback standings synced to Oct 18 GotSport snapshot",
+      // ── Player photo upload ────────────────────────────────────────────────
+      "Photo crop/reposition step — after selecting a photo, parents drag to reposition and pinch/scroll to zoom before uploading; uses CSS object-position stored as x/y %",
+      "Upload hint below field view — subtle prompt nudges parents to tap a player token to submit a photo",
+      "Photo token standardization — all player tokens on field view rendered at the same height regardless of photo vs. number-only state",
+      "Portrait oval photo tokens — player photos displayed in portrait oval shape on roster field view instead of circular crop; matches the tall format of player cards",
+      "Click-to-enlarge lightbox — tapping a player photo on the roster opens a full-screen lightbox with smooth fade-in; closes on tap or ESC",
+      // ── Monitoring dashboard ───────────────────────────────────────────────
+      "Monitoring dashboard timezone fix — all timestamps and daily buckets now display in America/Chicago (CDT); was rendering in UTC causing off-by-one day issues",
+      "Push breakdown panel — subscriber count split by platform (iOS / Android / Desktop) in the monitoring dashboard",
+      "Daily table cleanup — monitoring dashboard daily stats table trimmed to last 14 days; older rows auto-purged",
+      // ── Family access ──────────────────────────────────────────────────────
       "Magic link auto-login — /api/family/magic?t=<token> logs parents in with one tap from the group chat; no PIN entry required; token derived from FAMILY_PASSCODE so it auto-rotates on passcode change",
       "4-digit PIN pad — replaces text passcode input with 4 separate boxes; auto-advance on each digit, backspace navigates back, paste supported, numeric keyboard on mobile",
       "6-month cookie — extended from 30 days so families who type the PIN once won't see the gate again all season",

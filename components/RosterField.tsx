@@ -6,7 +6,7 @@ function PlayerToken({ player, onClick }: { player: Player; onClick?: (p: Player
     // Portrait oval — 20% bigger than original circle, 3:4 width-to-height ratio
     <div
       className="relative rounded-full border-2 border-[#d4af37] overflow-hidden shadow-lg"
-      style={{ width: "clamp(43px, 12%, 62px)", height: "clamp(57px, 16%, 83px)" }}
+      style={{ width: "clamp(43px, 12%, 62px)", aspectRatio: "3/4" }}
     >
       <Image
         src={player.photoUrl}

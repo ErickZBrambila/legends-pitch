@@ -66,6 +66,9 @@ export default function RosterView({
           <p className="text-xs text-gray-400 mt-4 text-center">
             {t("playersSeason", { count: players.length })}
           </p>
+          <p className="text-xs text-gray-400 mt-1 text-center">
+            📷 Tap a player to add or change their photo
+          </p>
         </div>
       ) : (
         <div>

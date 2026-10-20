@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import type { Player } from "@/lib/types";
 
-type Step = "password" | "photo";
+type Step = "pin" | "photo";
+
+const PIN_DIGITS = 4;
 
 interface Submission { id: string; submittedAt: string }
 
@@ -46,10 +48,11 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
 }
 
 export default function PhotoSubmitModal({ player, onClose }: Props) {
-  const [step, setStep] = useState<Step>("password");
-  const [passcode, setPasscode] = useState("");
-  const [passError, setPassError] = useState("");
-  const [passLoading, setPassLoading] = useState(false);
+  const [step, setStep] = useState<Step>("pin");
+  const [digits, setDigits] = useState<string[]>(Array(PIN_DIGITS).fill(""));
+  const [pinError, setPinError] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
+  const pinInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [existing, setExisting] = useState<Submission | null>(null);
   const [existingChecked, setExistingChecked] = useState(false);
@@ -77,24 +80,84 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  async function verifyPassword(e: React.FormEvent) {
+  // Skip PIN step if user already has a valid family session
+  useEffect(() => {
+    fetch("/api/family/session").then(async (res) => {
+      if (res.ok) {
+        const check = await fetch(`/api/photo-submission?playerId=${player.id}`);
+        const data = await check.json();
+        setExisting(data.submission ?? null);
+        setExistingChecked(true);
+        setStep("photo");
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function pinFocusAt(index: number) {
+    pinInputs.current[Math.max(0, Math.min(PIN_DIGITS - 1, index))]?.focus();
+  }
+
+  function handlePinChange(index: number, value: string) {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[index] = digit;
+    setDigits(next);
+    setPinError("");
+    if (digit) pinFocusAt(index + 1);
+  }
+
+  function handlePinKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace") {
+      if (digits[index]) {
+        const next = [...digits];
+        next[index] = "";
+        setDigits(next);
+      } else {
+        pinFocusAt(index - 1);
+      }
+    } else if (e.key === "ArrowLeft") {
+      pinFocusAt(index - 1);
+    } else if (e.key === "ArrowRight") {
+      pinFocusAt(index + 1);
+    }
+  }
+
+  function handlePinPaste(e: React.ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
-    setPassLoading(true);
-    setPassError("");
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, PIN_DIGITS);
+    if (!pasted) return;
+    const next = [...digits];
+    for (let i = 0; i < PIN_DIGITS; i++) next[i] = pasted[i] ?? "";
+    setDigits(next);
+    pinFocusAt(Math.min(pasted.length, PIN_DIGITS - 1));
+  }
+
+  async function verifyPin(e: React.FormEvent) {
+    e.preventDefault();
+    const pin = digits.join("");
+    if (pin.length !== PIN_DIGITS) return;
+    setPinLoading(true);
+    setPinError("");
     try {
       const res = await fetch("/api/family/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passcode }),
+        body: JSON.stringify({ passcode: pin }),
       });
-      if (!res.ok) { setPassError("Incorrect password · Contraseña incorrecta"); return; }
+      if (!res.ok) {
+        setPinError("Incorrect PIN · PIN incorrecto");
+        setDigits(Array(PIN_DIGITS).fill(""));
+        pinFocusAt(0);
+        return;
+      }
       const check = await fetch(`/api/photo-submission?playerId=${player.id}`);
       const data = await check.json();
       setExisting(data.submission ?? null);
       setExistingChecked(true);
       setStep("photo");
     } finally {
-      setPassLoading(false);
+      setPinLoading(false);
     }
   }
 
@@ -187,7 +250,7 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <p className="font-bold text-gray-900 text-sm">
-              {step === "password" ? "Team Password" : cropSrc ? "Crop Photo" : `Photo for ${player.name}`}
+              {step === "pin" ? "Team PIN · PIN del Equipo" : cropSrc ? "Crop Photo" : `Photo for ${player.name}`}
             </p>
             <p className="text-xs text-gray-400">#{player.number} · {player.position}</p>
           </div>
@@ -254,27 +317,45 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
         {/* Everything below is hidden while cropper is open */}
         {!cropSrc && (
           <div className="px-5 py-5">
-            {/* ── Password step ── */}
-            {step === "password" && (
-              <form onSubmit={verifyPassword} className="flex flex-col gap-3">
-                <p className="text-sm text-gray-500">Enter the team password to continue · Ingresa la contraseña del equipo</p>
-                <input
-                  type="password"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Team password"
-                  autoFocus
-                  required
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-                />
-                {passError && <p className="text-xs text-red-500">{passError}</p>}
+            {/* ── PIN step ── */}
+            {step === "pin" && (
+              <form onSubmit={verifyPin} className="flex flex-col gap-4">
+                <p className="text-sm text-gray-500 text-center">Enter the 4-digit team PIN · Ingresa el PIN del equipo</p>
+                <div className="flex justify-center gap-3">
+                  {digits.map((d, i) => (
+                    <input
+                      key={i}
+                      ref={(el) => { pinInputs.current[i] = el; }}
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={d}
+                      autoFocus={i === 0}
+                      onChange={(e) => handlePinChange(i, e.target.value)}
+                      onKeyDown={(e) => handlePinKeyDown(i, e)}
+                      onPaste={handlePinPaste}
+                      onFocus={(e) => e.target.select()}
+                      className={`w-14 h-16 text-center text-2xl font-black rounded-xl border-2 bg-gray-50 text-gray-900
+                        focus:outline-none transition-colors caret-transparent
+                        ${d ? "border-[var(--color-accent)]" : "border-gray-200"}
+                        ${pinError ? "border-red-400" : ""}
+                        focus:border-[var(--color-accent)]`}
+                    />
+                  ))}
+                </div>
+                {pinError && (
+                  <p className="text-xs text-red-500 flex items-center justify-center gap-1">
+                    <span>⚠</span> {pinError}
+                  </p>
+                )}
                 <button
                   type="submit"
-                  disabled={passLoading || !passcode}
+                  disabled={pinLoading || digits.join("").length !== PIN_DIGITS}
                   className="w-full py-2.5 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
                 >
-                  {passLoading ? "Checking…" : "Continue · Continuar"}
+                  {pinLoading ? "Checking…" : "Continue · Continuar"}
                 </button>
+                <p className="text-xs text-gray-400 text-center">Get the PIN from Coach Hugo · Pide el PIN al Entrenador Hugo</p>
               </form>
             )}
 

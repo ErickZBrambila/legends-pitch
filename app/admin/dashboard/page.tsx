@@ -36,6 +36,12 @@ const CONTENT = {
         badge: "New",
       },
       {
+        href: "/admin/media",
+        title: "Photos & Videos",
+        description: "Upload game and practice photos into albums, or add YouTube highlight videos — no Sanity needed.",
+        badge: "New",
+      },
+      {
         href: "/admin/photos",
         title: "Photo Queue",
         description: "Review player photos submitted by parents from the roster page. Approve to publish, reject to discard.",
@@ -78,6 +84,12 @@ const CONTENT = {
         href: "/admin/votes",
         title: "Votación de Funciones",
         description: "Marca elementos de la lista de deseos como prioridades del cuerpo técnico. Ve los votos de la comunidad junto con tus banderas.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/media",
+        title: "Fotos y Videos",
+        description: "Sube fotos de partidos y prácticas en álbumes, o agrega videos de YouTube — sin necesidad de Sanity.",
         badge: "Nuevo",
       },
       {

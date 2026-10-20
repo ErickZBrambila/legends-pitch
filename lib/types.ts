@@ -85,7 +85,8 @@ export interface GalleryImage {
 
 export interface HighlightVideo {
   id: string;
-  youtubeId: string;
+  youtubeId?: string;
+  r2Url?: string;
   title: string;
   event: string;
 }

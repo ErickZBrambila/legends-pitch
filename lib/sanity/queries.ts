@@ -298,7 +298,8 @@ export async function getGalleryEventsByTeam(team: TeamSlug): Promise<GalleryEve
       _id, title, title_es, date,
       images[]{ _key, image, alt }
     } | order(date desc)`,
-    { team }
+    { team },
+    { next: { revalidate: 0 } }
   );
   return raw.map((e) => ({
     id: e._id,
@@ -361,17 +362,19 @@ export async function getHighlightVideosByTeam(team: TeamSlug): Promise<Highligh
     Array<{
       _id: string;
       title: string;
-      youtubeId: string;
+      youtubeId?: string;
+      r2Url?: string;
       event: string;
       order: number | null;
     }>
   >(
     `*[_type == "highlightVideo" && team->ageGroup == $team]{
-      _id, title, youtubeId, event, order
+      _id, title, youtubeId, r2Url, event, order
     } | order(order asc, _createdAt asc)`,
-    { team }
+    { team },
+    { next: { revalidate: 0 } }
   );
-  return raw.map((v) => ({ id: v._id, title: v.title, youtubeId: v.youtubeId, event: v.event }));
+  return raw.map((v) => ({ id: v._id, title: v.title, youtubeId: v.youtubeId, r2Url: v.r2Url, event: v.event }));
 }
 
 export async function getSeasonStatsByTeam(team: TeamSlug): Promise<SeasonStats> {

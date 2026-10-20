@@ -29,6 +29,27 @@ export interface ServiceLine {
 
 export const SESSIONS: WorkSession[] = [
   {
+    date: "2026-10-19",
+    title: "Session 18 — Admin Media Manager (Photos & Videos)",
+    hours: 1.5,
+    commits: 1,
+    claudeCostUSD: 8.94,
+    features: [
+      "New /admin/media page — coaches can manage photos and videos without touching Sanity Studio",
+      "Photos tab — multi-file drop zone uploads to Sanity assets and groups them into galleryEvent albums; albums appear live on /gallery",
+      "Videos tab — YouTube URL or direct MP4/MOV/WebM upload (up to 500 MB) to Cloudflare R2; appears on /videos Collections section",
+      "R2 video upload API — POST /api/admin/upload-video streams files to kickreel-videos bucket under highlights/ prefix",
+      "Gallery API — POST/DELETE /api/admin/gallery creates and removes galleryEvent documents in Sanity",
+      "Highlights API — POST/DELETE /api/admin/highlights creates highlightVideo with either youtubeId or r2Url",
+      "highlightVideo Sanity schema updated — youtubeId now optional, r2Url field added",
+      "VideoCollectionFolder updated — R2 videos render with inline <video> player + download button; YouTube keeps thumbnail-link behavior; folder badge shows Video / YouTube badges",
+      "U11/U12 team switcher — prominent toggle in page header; switching reloads server data for that team (force-dynamic + revalidate:0)",
+      "Team state bug fixed — key={team} on MediaAdmin forces full remount on team switch so useState doesn't bleed across teams",
+      "R2 credentials added to .env.local — copied from kickreel project (same bucket)",
+      "Uploaded 4 U12 highlight videos via API directly to R2 + created Sanity docs under Highlights event",
+    ],
+  },
+  {
     date: "2026-10-18",
     title: "Session 17 — Player Photo Upload Polish, Monitoring Fixes & Frictionless Family Access",
     hours: 9.0,

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { getGalleryEventsByTeam, getHighlightVideosByTeam } from "@/lib/sanity/queries";
+import { getGalleryEventsByTeam, getHighlightVideosByTeam, getMatchesByTeam } from "@/lib/sanity/queries";
 import MediaAdmin from "./MediaAdmin";
 
 export const dynamic = "force-dynamic";
@@ -18,9 +18,10 @@ export default async function AdminMediaPage({
   const { team: teamParam } = await searchParams;
   const team = teamParam === "u12" ? "u12" : ("u11" as const);
 
-  const [albums, videos, locale] = await Promise.all([
+  const [albums, videos, matches, locale] = await Promise.all([
     getGalleryEventsByTeam(team),
     getHighlightVideosByTeam(team),
+    getMatchesByTeam(team),
     getLocale(),
   ]);
 
@@ -31,6 +32,7 @@ export default async function AdminMediaPage({
       locale={locale}
       initialAlbums={albums}
       initialVideos={videos}
+      matches={matches}
     />
   );
 }

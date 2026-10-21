@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import CalendarSubscribe from "@/components/CalendarSubscribe";
 import GameWeather from "@/components/GameWeather";
+import TeamPreferenceRedirect from "@/components/TeamPreferenceRedirect";
 import { getGotSportData, LOCATION_COORDS } from "@/lib/data/gotsport";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
@@ -48,6 +49,7 @@ export default async function SchedulePage({
 }) {
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
+  const hasExplicitTeam = teamParam === "u11" || teamParam === "u12";
 
   const t = await getTranslations("Schedule");
   const locale = await getLocale();
@@ -71,6 +73,7 @@ export default async function SchedulePage({
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
+      {!hasExplicitTeam && <TeamPreferenceRedirect currentTeam={team} />}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-3xl font-black text-gray-900">{t("heading")}</h1>
         <TeamTabs activeTeam={team} />

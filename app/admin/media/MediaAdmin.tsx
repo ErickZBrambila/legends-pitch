@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AdminBreadcrumb from "@/components/AdminBreadcrumb";
 import AdminLangToggle from "@/components/AdminLangToggle";
-import type { GalleryEvent, HighlightVideo } from "@/lib/types";
+import type { GalleryEvent, HighlightVideo, Match } from "@/lib/types";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
 type Tab = "photos" | "videos";
@@ -23,9 +23,10 @@ interface Props {
   locale: string;
   initialAlbums: GalleryEvent[];
   initialVideos: HighlightVideo[];
+  matches: Match[];
 }
 
-export default function MediaAdmin({ team, locale, initialAlbums, initialVideos }: Props) {
+export default function MediaAdmin({ team, locale, initialAlbums, initialVideos, matches }: Props) {
   const [tab, setTab] = useState<Tab>("photos");
   const [albums, setAlbums] = useState(initialAlbums);
   const [videos, setVideos] = useState(initialVideos);
@@ -101,7 +102,7 @@ export default function MediaAdmin({ team, locale, initialAlbums, initialVideos 
         </div>
 
         {tab === "photos" && (
-          <PhotosTab team={team} locale={locale} albums={albums} setAlbums={setAlbums} />
+          <PhotosTab team={team} locale={locale} albums={albums} setAlbums={setAlbums} matches={matches} />
         )}
         {tab === "videos" && (
           <VideosTab team={team} locale={locale} videos={videos} setVideos={setVideos} />
@@ -111,38 +112,21 @@ export default function MediaAdmin({ team, locale, initialAlbums, initialVideos 
   );
 }
 
-// ── Photos Tab ────────────────────────────────────────────────────────────────
+// ── Shared upload helpers ─────────────────────────────────────────────────────
 
-function PhotosTab({
-  team,
-  locale,
-  albums,
-  setAlbums,
-}: {
-  team: TeamSlug;
-  locale: string;
-  albums: GalleryEvent[];
-  setAlbums: React.Dispatch<React.SetStateAction<GalleryEvent[]>>;
-}) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [albumTitle, setAlbumTitle] = useState("");
-  const [albumDate, setAlbumDate] = useState(new Date().toISOString().slice(0, 10));
+async function uploadImageFile(file: File): Promise<{ assetId: string; url: string } | null> {
+  const form = new FormData();
+  form.append("image", file);
+  const res = await fetch("/api/admin/upload-image", { method: "POST", body: form });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+function usePhotoQueue() {
   const [pending, setPending] = useState<PendingPhoto[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const isEN = locale !== "es";
-
-  async function uploadFile(file: File): Promise<{ assetId: string; url: string } | null> {
-    const form = new FormData();
-    form.append("image", file);
-    const res = await fetch("/api/admin/upload-image", { method: "POST", body: form });
-    if (!res.ok) return null;
-    return res.json();
-  }
-
-  function addFiles(files: FileList | null) {
-    if (!files) return;
+  function addFiles(files: FileList | null, onError: (msg: string) => void) {
+    if (!files || files.length === 0) return;
     const newItems: PendingPhoto[] = Array.from(files).map((f) => ({
       file: f,
       localUrl: URL.createObjectURL(f),
@@ -153,28 +137,188 @@ function PhotosTab({
     setPending((prev) => [...prev, ...newItems]);
 
     newItems.forEach(async (item) => {
-      const result = await uploadFile(item.file);
+      const result = await uploadImageFile(item.file);
       setPending((prev) =>
         prev.map((p) =>
           p.localUrl === item.localUrl
             ? result
               ? { ...p, assetId: result.assetId, uploading: false }
-              : { ...p, uploading: false, error: isEN ? "Upload failed" : "Error al subir" }
+              : { ...p, uploading: false, error: "Upload failed" }
             : p
         )
       );
+      if (!result) onError("One or more photos failed to upload.");
     });
   }
 
-  function removePhoto(localUrl: string) {
+  function remove(localUrl: string) {
     setPending((prev) => prev.filter((p) => p.localUrl !== localUrl));
   }
 
+  function clear() {
+    setPending([]);
+  }
+
+  const uploading = pending.some((p) => p.uploading);
+  const ready = pending.filter((p) => p.assetId && !p.uploading);
+
+  return { pending, addFiles, remove, clear, uploading, ready };
+}
+
+// ── Drop zone (reusable) ──────────────────────────────────────────────────────
+
+function PhotoDropZone({
+  onFiles,
+  isEN,
+  compact = false,
+}: {
+  onFiles: (files: FileList | null) => void;
+  isEN: boolean;
+  compact?: boolean;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+
+  return (
+    <>
+      <div
+        onClick={() => ref.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files); }}
+        className={`w-full border-2 border-dashed border-gray-200 rounded-xl text-center cursor-pointer hover:border-[var(--color-accent)] hover:bg-amber-50/30 transition-colors ${compact ? "p-3" : "p-5"}`}
+      >
+        <p className={`text-gray-400 ${compact ? "text-xs" : "text-sm"}`}>
+          {isEN ? "Drop photos here or " : "Arrastra fotos aquí o "}
+          <span className="text-[var(--color-accent)] font-semibold">
+            {isEN ? "select multiple" : "selecciona"}
+          </span>
+        </p>
+        {!compact && (
+          <p className="text-xs text-gray-300 mt-1">JPEG, PNG, WebP · max 10 MB each · select multiple at once</p>
+        )}
+      </div>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        className="hidden"
+        onChange={(e) => onFiles(e.target.files)}
+      />
+    </>
+  );
+}
+
+// ── Pending photo grid (reusable) ─────────────────────────────────────────────
+
+function PendingGrid({
+  pending,
+  onRemove,
+}: {
+  pending: PendingPhoto[];
+  onRemove: (url: string) => void;
+}) {
+  if (pending.length === 0) return null;
+  return (
+    <div className="grid grid-cols-4 gap-2">
+      {pending.map((p) => (
+        <div key={p.localUrl} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={p.localUrl} alt="" className="w-full h-full object-cover" />
+          {p.uploading && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+          {p.error && (
+            <div className="absolute inset-0 bg-red-500/60 flex items-center justify-center">
+              <span className="text-white text-[10px] font-bold text-center px-1">{p.error}</span>
+            </div>
+          )}
+          {!p.uploading && (
+            <button
+              type="button"
+              onClick={() => onRemove(p.localUrl)}
+              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] font-bold flex items-center justify-center hover:bg-black/80"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Photos Tab ────────────────────────────────────────────────────────────────
+
+type AlbumNameMode = "game" | "custom";
+
+function PhotosTab({
+  team,
+  locale,
+  albums,
+  setAlbums,
+  matches,
+}: {
+  team: TeamSlug;
+  locale: string;
+  albums: GalleryEvent[];
+  setAlbums: React.Dispatch<React.SetStateAction<GalleryEvent[]>>;
+  matches: Match[];
+}) {
+  const isEN = locale !== "es";
+
+  // Album name mode
+  const [nameMode, setNameMode] = useState<AlbumNameMode>("game");
+  const [selectedMatchId, setSelectedMatchId] = useState<string>("");
+  const [customTitle, setCustomTitle] = useState("");
+  const [albumDate, setAlbumDate] = useState(new Date().toISOString().slice(0, 10));
+
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const queue = usePhotoQueue();
+
+  // Sorted: most recent first
+  const sortedMatches = [...matches].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  const selectedMatch = matches.find((m) => m.id === selectedMatchId) ?? null;
+
+  function handleMatchSelect(id: string) {
+    setSelectedMatchId(id);
+    const m = matches.find((m) => m.id === id);
+    if (m) setAlbumDate(m.date.slice(0, 10));
+  }
+
+  function resolvedTitle(): string {
+    if (nameMode === "game" && selectedMatch) {
+      return isEN
+        ? `vs. ${selectedMatch.opponent}`
+        : `vs. ${selectedMatch.opponent}`;
+    }
+    return customTitle.trim();
+  }
+
+  function resolvedDate(): string {
+    if (nameMode === "game" && selectedMatch) return selectedMatch.date.slice(0, 10);
+    return albumDate;
+  }
+
+  const unplayedWarning =
+    nameMode === "game" && selectedMatch && selectedMatch.result === null;
+
+  const canSubmit =
+    resolvedTitle() &&
+    queue.ready.length > 0 &&
+    !saving &&
+    !queue.uploading &&
+    (nameMode === "custom" || selectedMatchId !== "");
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!albumTitle.trim() || pending.length === 0) return;
-    const ready = pending.filter((p) => p.assetId && !p.uploading);
-    if (ready.length === 0) return;
+    if (!canSubmit) return;
 
     setSaving(true);
     setSaveError(null);
@@ -184,9 +328,9 @@ function PhotosTab({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         team,
-        title: albumTitle.trim(),
-        date: albumDate,
-        images: ready.map((p) => ({ assetId: p.assetId!, alt: "" })),
+        title: resolvedTitle(),
+        date: resolvedDate(),
+        images: queue.ready.map((p) => ({ assetId: p.assetId!, alt: "" })),
       }),
     });
 
@@ -201,14 +345,15 @@ function PhotosTab({
     setAlbums((prev) => [
       {
         id,
-        title: albumTitle.trim(),
-        date: albumDate,
-        images: ready.map((p, i) => ({ id: `tmp-${i}`, url: p.localUrl, alt: "" })),
+        title: resolvedTitle(),
+        date: resolvedDate(),
+        images: queue.ready.map((p, i) => ({ id: `tmp-${i}`, url: p.localUrl, alt: "" })),
       },
       ...prev,
     ]);
-    setAlbumTitle("");
-    setPending([]);
+    setCustomTitle("");
+    setSelectedMatchId("");
+    queue.clear();
     setSaving(false);
   }
 
@@ -218,13 +363,9 @@ function PhotosTab({
     if (res.ok) setAlbums((prev) => prev.filter((a) => a.id !== id));
   }
 
-  const uploading = pending.some((p) => p.uploading);
-  const readyCount = pending.filter((p) => p.assetId && !p.uploading).length;
-  const canSubmit = albumTitle.trim() && readyCount > 0 && !saving;
-
   return (
     <div className="flex flex-col gap-6">
-      {/* Create form */}
+      {/* Create new album form */}
       <form
         onSubmit={handleCreate}
         className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4"
@@ -233,99 +374,108 @@ function PhotosTab({
           {isEN ? "New Album" : "Nuevo Álbum"}
         </h2>
 
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              {isEN ? "Album Title" : "Título del Álbum"}
-            </label>
-            <input
-              type="text"
-              value={albumTitle}
-              onChange={(e) => setAlbumTitle(e.target.value)}
-              placeholder={isEN ? "e.g. Game vs. Austin FC" : "ej. Partido vs Austin FC"}
-              required
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-            />
+        {/* Name mode toggle */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            {isEN ? "Album Name" : "Nombre del Álbum"}
+          </label>
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-3">
+            {(["game", "custom"] as AlbumNameMode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setNameMode(m)}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                  nameMode === m
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+              >
+                {m === "game"
+                  ? isEN ? "Link to Game" : "Vincular a Partido"
+                  : isEN ? "Custom Name" : "Nombre Libre"}
+              </button>
+            ))}
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              {isEN ? "Date" : "Fecha"}
-            </label>
-            <input
-              type="date"
-              value={albumDate}
-              onChange={(e) => setAlbumDate(e.target.value)}
-              required
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-            />
-          </div>
+
+          {nameMode === "game" ? (
+            <div className="flex flex-col gap-2">
+              <select
+                value={selectedMatchId}
+                onChange={(e) => handleMatchSelect(e.target.value)}
+                required
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] bg-white"
+              >
+                <option value="">{isEN ? "— Select a match —" : "— Selecciona un partido —"}</option>
+                {sortedMatches.map((m) => {
+                  const d = new Date(m.date.slice(0, 10) + "T12:00:00").toLocaleDateString(
+                    isEN ? "en-US" : "es-MX",
+                    { month: "short", day: "numeric" }
+                  );
+                  const played = m.result !== null;
+                  const score = played ? ` (${m.goalsFor}–${m.goalsAgainst})` : "";
+                  return (
+                    <option key={m.id} value={m.id}>
+                      {played ? "" : "⚠ "}{d} vs. {m.opponent}{score}
+                    </option>
+                  );
+                })}
+              </select>
+              {unplayedWarning && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  {isEN
+                    ? "This game hasn't been played yet — you can still create the album."
+                    : "Este partido aún no se ha jugado — igual puedes crear el álbum."}
+                </p>
+              )}
+              {selectedMatch && (
+                <p className="text-xs text-gray-400">
+                  {isEN ? "Album title will be: " : "Título del álbum: "}
+                  <span className="font-semibold text-gray-700">vs. {selectedMatch.opponent}</span>
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                placeholder={isEN ? "e.g. Training Session" : "ej. Sesión de Entrenamiento"}
+                required
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+              />
+              <input
+                type="date"
+                value={albumDate}
+                onChange={(e) => setAlbumDate(e.target.value)}
+                required
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+              />
+            </div>
+          )}
         </div>
 
         {/* Drop zone */}
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
             {isEN ? "Photos" : "Fotos"}
-          </label>
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
-            className="w-full border-2 border-dashed border-gray-200 rounded-xl p-5 text-center cursor-pointer hover:border-[var(--color-accent)] hover:bg-amber-50/30 transition-colors"
-          >
-            <p className="text-sm text-gray-400">
-              {isEN ? "Drop photos here or " : "Arrastra fotos aquí o "}
-              <span className="text-[var(--color-accent)] font-semibold">
-                {isEN ? "browse" : "selecciona"}
+            {queue.pending.length > 0 && (
+              <span className="ml-2 text-[var(--color-accent)] normal-case font-normal">
+                {queue.ready.length}/{queue.pending.length} {isEN ? "ready" : "listas"}
               </span>
-            </p>
-            <p className="text-xs text-gray-300 mt-1">JPEG, PNG, WebP · max 10 MB each</p>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            className="hidden"
-            onChange={(e) => addFiles(e.target.files)}
-          />
+            )}
+          </label>
+          <PhotoDropZone onFiles={(f) => queue.addFiles(f, setSaveError)} isEN={isEN} />
         </div>
 
-        {/* Pending previews */}
-        {pending.length > 0 && (
-          <div className="grid grid-cols-4 gap-2">
-            {pending.map((p) => (
-              <div key={p.localUrl} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.localUrl} alt="" className="w-full h-full object-cover" />
-                {p.uploading && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold">
-                      {isEN ? "Uploading…" : "Subiendo…"}
-                    </span>
-                  </div>
-                )}
-                {p.error && (
-                  <div className="absolute inset-0 bg-red-500/60 flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold text-center px-1">{p.error}</span>
-                  </div>
-                )}
-                {!p.uploading && (
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(p.localUrl)}
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] font-bold flex items-center justify-center hover:bg-black/80"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <PendingGrid pending={queue.pending} onRemove={queue.remove} />
 
-        {uploading && (
+        {queue.uploading && (
           <p className="text-xs text-gray-400">
-            {isEN ? `Uploading ${pending.filter((p) => p.uploading).length} photo(s)…` : `Subiendo ${pending.filter((p) => p.uploading).length} foto(s)…`}
+            {isEN
+              ? `Uploading ${queue.pending.filter((p) => p.uploading).length} photo(s)…`
+              : `Subiendo ${queue.pending.filter((p) => p.uploading).length} foto(s)…`}
           </p>
         )}
 
@@ -339,8 +489,8 @@ function PhotosTab({
           {saving
             ? isEN ? "Creating…" : "Creando…"
             : isEN
-            ? `Create Album${readyCount > 0 ? ` (${readyCount} photo${readyCount !== 1 ? "s" : ""})` : ""}`
-            : `Crear Álbum${readyCount > 0 ? ` (${readyCount} foto${readyCount !== 1 ? "s" : ""})` : ""}`}
+            ? `Create Album${queue.ready.length > 0 ? ` (${queue.ready.length} photo${queue.ready.length !== 1 ? "s" : ""})` : ""}`
+            : `Crear Álbum${queue.ready.length > 0 ? ` (${queue.ready.length} foto${queue.ready.length !== 1 ? "s" : ""})` : ""}`}
         </button>
       </form>
 
@@ -352,40 +502,26 @@ function PhotosTab({
           </h2>
           <div className="flex flex-col gap-3">
             {albums.map((album) => (
-              <div key={album.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-                {/* Thumbnail strip */}
-                <div className="flex gap-1 flex-shrink-0">
-                  {album.images.slice(0, 3).map((img) => (
-                    <div key={img.id} className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                  {album.images.length === 0 && (
-                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-lg">📷</div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-800 text-sm truncate">{album.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(album.date + "T12:00:00").toLocaleDateString(locale === "es" ? "es-MX" : "en-US", {
-                      month: "short", day: "numeric", year: "numeric",
-                    })} · {album.images.length} {isEN ? "photo" : "foto"}{album.images.length !== 1 ? "s" : ""}
-                  </p>
-                </div>
-                <button
-                  onClick={() => deleteAlbum(album.id)}
-                  className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors flex-shrink-0"
-                >
-                  {isEN ? "Delete" : "Eliminar"}
-                </button>
-              </div>
+              <AlbumCard
+                key={album.id}
+                album={album}
+                isEN={isEN}
+                locale={locale}
+                onDelete={deleteAlbum}
+                onPhotosAdded={(newImages) =>
+                  setAlbums((prev) =>
+                    prev.map((a) =>
+                      a.id === album.id ? { ...a, images: [...a.images, ...newImages] } : a
+                    )
+                  )
+                }
+              />
             ))}
           </div>
         </div>
       )}
 
-      {albums.length === 0 && pending.length === 0 && (
+      {albums.length === 0 && queue.pending.length === 0 && (
         <div className="text-center py-16 text-gray-300">
           <p className="text-4xl mb-2">📷</p>
           <p className="text-sm font-medium text-gray-400">
@@ -394,6 +530,120 @@ function PhotosTab({
           <p className="text-xs mt-1 text-gray-300">
             {isEN ? "Create one above to add photos to the gallery." : "Crea uno arriba para agregar fotos a la galería."}
           </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Album card with inline "Add Photos" expander ──────────────────────────────
+
+function AlbumCard({
+  album,
+  isEN,
+  locale,
+  onDelete,
+  onPhotosAdded,
+}: {
+  album: GalleryEvent;
+  isEN: boolean;
+  locale: string;
+  onDelete: (id: string) => void;
+  onPhotosAdded: (imgs: Array<{ id: string; url: string; alt: string }>) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const queue = usePhotoQueue();
+
+  async function handleAddPhotos() {
+    if (queue.ready.length === 0 || saving) return;
+    setSaving(true);
+    setErr(null);
+
+    const res = await fetch(`/api/admin/gallery/${album.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ images: queue.ready.map((p) => ({ assetId: p.assetId!, alt: "" })) }),
+    });
+
+    if (!res.ok) {
+      const d = await res.json();
+      setErr(d.error ?? (isEN ? "Failed to add photos" : "Error al agregar fotos"));
+      setSaving(false);
+      return;
+    }
+
+    onPhotosAdded(queue.ready.map((p, i) => ({ id: `new-${Date.now()}-${i}`, url: p.localUrl, alt: "" })));
+    queue.clear();
+    setExpanded(false);
+    setSaving(false);
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Main row */}
+      <div className="p-4 flex items-center gap-4">
+        <div className="flex gap-1 flex-shrink-0">
+          {album.images.slice(0, 3).map((img) => (
+            <div key={img.id} className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img.url} alt={img.alt} className="w-full h-full object-cover" />
+            </div>
+          ))}
+          {album.images.length === 0 && (
+            <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-lg">📷</div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-gray-800 text-sm truncate">{album.title}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {new Date(album.date + "T12:00:00").toLocaleDateString(locale === "es" ? "es-MX" : "en-US", {
+              month: "short", day: "numeric", year: "numeric",
+            })} · {album.images.length} {isEN ? "photo" : "foto"}{album.images.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => { setExpanded((v) => !v); setErr(null); }}
+            className="text-xs text-[var(--color-primary)] hover:text-[var(--color-accent)] px-2 py-1 rounded hover:bg-gray-50 transition-colors font-semibold"
+          >
+            {expanded ? (isEN ? "Cancel" : "Cancelar") : (isEN ? "+ Add Photos" : "+ Agregar Fotos")}
+          </button>
+          <button
+            onClick={() => onDelete(album.id)}
+            className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+          >
+            {isEN ? "Delete" : "Eliminar"}
+          </button>
+        </div>
+      </div>
+
+      {/* Inline add-photos expander */}
+      {expanded && (
+        <div className="border-t border-gray-100 p-4 flex flex-col gap-3 bg-gray-50/50">
+          <PhotoDropZone onFiles={(f) => queue.addFiles(f, setErr)} isEN={isEN} compact />
+          <PendingGrid pending={queue.pending} onRemove={queue.remove} />
+          {queue.uploading && (
+            <p className="text-xs text-gray-400">
+              {isEN
+                ? `Uploading ${queue.pending.filter((p) => p.uploading).length} photo(s)…`
+                : `Subiendo ${queue.pending.filter((p) => p.uploading).length} foto(s)…`}
+            </p>
+          )}
+          {err && <p className="text-xs text-red-600">{err}</p>}
+          <button
+            type="button"
+            disabled={queue.ready.length === 0 || saving || queue.uploading}
+            onClick={handleAddPhotos}
+            className="self-start px-4 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-xs font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {saving
+              ? isEN ? "Saving…" : "Guardando…"
+              : isEN
+              ? `Add ${queue.ready.length > 0 ? `${queue.ready.length} ` : ""}Photo${queue.ready.length !== 1 ? "s" : ""}`
+              : `Agregar ${queue.ready.length > 0 ? `${queue.ready.length} ` : ""}Foto${queue.ready.length !== 1 ? "s" : ""}`}
+          </button>
         </div>
       )}
     </div>

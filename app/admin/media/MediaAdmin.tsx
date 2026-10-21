@@ -654,6 +654,19 @@ function AlbumCard({
 
 type VideoSource = "youtube" | "upload";
 
+interface PendingVideo {
+  localId: string;
+  file: File;
+  title: string;
+  uploadProgress: "uploading" | "done" | "error";
+  r2Url: string | null;
+  error: string | null;
+}
+
+function fileToTitle(file: File): string {
+  return file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+}
+
 function VideosTab({
   team,
   locale,
@@ -668,76 +681,130 @@ function VideosTab({
   const isEN = locale !== "es";
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<VideoSource>("youtube");
+
+  // YouTube state
   const [youtubeUrl, setYoutubeUrl] = useState("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<"idle" | "uploading" | "done">("idle");
-  const [uploadedR2Url, setUploadedR2Url] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [event, setEvent] = useState("");
+  const [youtubeTitle, setYoutubeTitle] = useState("");
+  const [youtubeEvent, setYoutubeEvent] = useState("");
+  const [youtubeSaving, setYoutubeSaving] = useState(false);
+  const [youtubeError, setYoutubeError] = useState<string | null>(null);
+
+  // Upload queue state
+  const [pendingVideos, setPendingVideos] = useState<PendingVideo[]>([]);
+  const [sharedEvent, setSharedEvent] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  function resetForm() {
-    setYoutubeUrl("");
-    setVideoFile(null);
-    setUploadedR2Url(null);
-    setUploadProgress("idle");
-    setTitle("");
-    setEvent("");
-  }
-
-  async function handleVideoFile(file: File) {
-    setVideoFile(file);
-    setUploadProgress("uploading");
-    setUploadedR2Url(null);
-    setSaveError(null);
-
+  async function uploadVideoFile(item: PendingVideo) {
     const form = new FormData();
-    form.append("video", file);
+    form.append("video", item.file);
     const res = await fetch("/api/admin/upload-video", { method: "POST", body: form });
     if (!res.ok) {
       const d = await res.json();
-      setSaveError(d.error ?? (isEN ? "Upload failed" : "Error al subir"));
-      setUploadProgress("idle");
-      setVideoFile(null);
+      setPendingVideos((prev) =>
+        prev.map((p) =>
+          p.localId === item.localId
+            ? { ...p, uploadProgress: "error", error: d.error ?? (isEN ? "Upload failed" : "Error al subir") }
+            : p
+        )
+      );
       return;
     }
     const { url } = await res.json();
-    setUploadedR2Url(url);
-    setUploadProgress("done");
+    setPendingVideos((prev) =>
+      prev.map((p) =>
+        p.localId === item.localId ? { ...p, uploadProgress: "done", r2Url: url } : p
+      )
+    );
   }
 
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
-    if (!title.trim() || !event.trim()) return;
-    if (source === "youtube" && !youtubeUrl.trim()) return;
-    if (source === "upload" && !uploadedR2Url) return;
+  function addVideoFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const newItems: PendingVideo[] = Array.from(files).map((f) => ({
+      localId: `${Date.now()}-${Math.random()}`,
+      file: f,
+      title: fileToTitle(f),
+      uploadProgress: "uploading",
+      r2Url: null,
+      error: null,
+    }));
+    setPendingVideos((prev) => [...prev, ...newItems]);
+    newItems.forEach(uploadVideoFile);
+  }
 
+  function removePendingVideo(localId: string) {
+    setPendingVideos((prev) => prev.filter((p) => p.localId !== localId));
+  }
+
+  function updatePendingTitle(localId: string, title: string) {
+    setPendingVideos((prev) =>
+      prev.map((p) => (p.localId === localId ? { ...p, title } : p))
+    );
+  }
+
+  const anyUploading = pendingVideos.some((p) => p.uploadProgress === "uploading");
+  const readyVideos = pendingVideos.filter((p) => p.uploadProgress === "done" && p.r2Url);
+  const canAddAll =
+    readyVideos.length > 0 &&
+    readyVideos.every((p) => p.title.trim()) &&
+    sharedEvent.trim() &&
+    !saving &&
+    !anyUploading;
+
+  async function handleAddAll(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canAddAll) return;
     setSaving(true);
     setSaveError(null);
+
+    const results: HighlightVideo[] = [];
+    for (const p of readyVideos) {
+      const res = await fetch("/api/admin/highlights", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team, title: p.title.trim(), event: sharedEvent.trim(), r2Url: p.r2Url }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setSaveError(d.error ?? (isEN ? "Failed to save one or more videos" : "Error al guardar uno o más videos"));
+        setSaving(false);
+        return;
+      }
+      const { id, r2Url } = await res.json();
+      results.push({ id, youtubeId: undefined, r2Url, title: p.title.trim(), event: sharedEvent.trim() });
+    }
+
+    setVideos((prev) => [...results.reverse(), ...prev]);
+    setPendingVideos([]);
+    setSharedEvent("");
+    setSaving(false);
+  }
+
+  async function handleAddYoutube(e: React.FormEvent) {
+    e.preventDefault();
+    if (!youtubeTitle.trim() || !youtubeEvent.trim() || !youtubeUrl.trim()) return;
+    setYoutubeSaving(true);
+    setYoutubeError(null);
 
     const res = await fetch("/api/admin/highlights", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        team,
-        title: title.trim(),
-        event: event.trim(),
-        ...(source === "youtube" ? { youtubeUrl: youtubeUrl.trim() } : { r2Url: uploadedR2Url }),
-      }),
+      body: JSON.stringify({ team, title: youtubeTitle.trim(), event: youtubeEvent.trim(), youtubeUrl: youtubeUrl.trim() }),
     });
 
     if (!res.ok) {
       const d = await res.json();
-      setSaveError(d.error ?? (isEN ? "Failed to add video" : "Error al agregar el video"));
-      setSaving(false);
+      setYoutubeError(d.error ?? (isEN ? "Failed to add video" : "Error al agregar el video"));
+      setYoutubeSaving(false);
       return;
     }
 
-    const { id, youtubeId, r2Url } = await res.json();
-    setVideos((prev) => [{ id, youtubeId, r2Url, title: title.trim(), event: event.trim() }, ...prev]);
-    resetForm();
-    setSaving(false);
+    const { id, youtubeId } = await res.json();
+    setVideos((prev) => [{ id, youtubeId, r2Url: undefined, title: youtubeTitle.trim(), event: youtubeEvent.trim() }, ...prev]);
+    setYoutubeUrl("");
+    setYoutubeTitle("");
+    setYoutubeEvent("");
+    setYoutubeSaving(false);
   }
 
   async function deleteVideo(id: string) {
@@ -749,10 +816,7 @@ function VideosTab({
   return (
     <div className="flex flex-col gap-6">
       {/* Add form */}
-      <form
-        onSubmit={handleAdd}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4"
-      >
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4">
         <h2 className="text-base font-black text-gray-800">
           {isEN ? "Add Highlight Video" : "Agregar Video Destacado"}
         </h2>
@@ -763,126 +827,177 @@ function VideosTab({
             <button
               key={s}
               type="button"
-              onClick={() => { setSource(s); setSaveError(null); }}
+              onClick={() => { setSource(s); setSaveError(null); setYoutubeError(null); }}
               className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
                 source === s
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-800"
               }`}
             >
-              {s === "youtube" ? "YouTube" : isEN ? "Upload File" : "Subir Archivo"}
+              {s === "youtube" ? "YouTube" : isEN ? "Upload Files" : "Subir Archivos"}
             </button>
           ))}
         </div>
 
-        {/* YouTube input */}
+        {/* YouTube form */}
         {source === "youtube" && (
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              YouTube URL
-            </label>
-            <input
-              type="text"
-              value={youtubeUrl}
-              onChange={(e) => setYoutubeUrl(e.target.value)}
-              placeholder="https://youtu.be/... or https://youtube.com/watch?v=..."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-            />
-          </div>
+          <form onSubmit={handleAddYoutube} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                YouTube URL
+              </label>
+              <input
+                type="text"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                placeholder="https://youtu.be/... or https://youtube.com/watch?v=..."
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                {isEN ? "Video Title" : "Título del Video"}
+              </label>
+              <input
+                type="text"
+                value={youtubeTitle}
+                onChange={(e) => setYoutubeTitle(e.target.value)}
+                placeholder={isEN ? "e.g. Goal Highlights – Game 5" : "ej. Goles Destacados – Partido 5"}
+                required
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                {isEN ? "Event / Album" : "Evento / Álbum"}
+              </label>
+              <input
+                type="text"
+                value={youtubeEvent}
+                onChange={(e) => setYoutubeEvent(e.target.value)}
+                placeholder={isEN ? "e.g. Spring 2026 Season" : "ej. Temporada Primavera 2026"}
+                required
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+              />
+            </div>
+            {youtubeError && <p className="text-xs text-red-600">{youtubeError}</p>}
+            <button
+              type="submit"
+              disabled={youtubeSaving}
+              className="self-start px-5 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {youtubeSaving ? isEN ? "Adding…" : "Agregando…" : isEN ? "Add Video" : "Agregar Video"}
+            </button>
+          </form>
         )}
 
-        {/* File upload */}
+        {/* Upload queue form */}
         {source === "upload" && (
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              {isEN ? "Video File" : "Archivo de Video"}
-            </label>
-            {uploadedR2Url ? (
-              <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <span className="text-green-600 text-lg">✓</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-green-800 truncate">{videoFile?.name}</p>
-                  <p className="text-[10px] text-green-600">{isEN ? "Uploaded to R2" : "Subido a R2"}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setVideoFile(null); setUploadedR2Url(null); setUploadProgress("idle"); }}
-                  className="text-xs text-gray-400 hover:text-gray-600"
-                >
-                  {isEN ? "Remove" : "Quitar"}
-                </button>
-              </div>
-            ) : uploadProgress === "uploading" ? (
-              <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs text-blue-700 font-semibold truncate">
-                  {isEN ? `Uploading ${videoFile?.name}…` : `Subiendo ${videoFile?.name}…`}
-                </p>
-              </div>
-            ) : (
+          <form onSubmit={handleAddAll} className="flex flex-col gap-4">
+            {/* Drop zone */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                {isEN ? "Video Files" : "Archivos de Video"}
+                {pendingVideos.length > 0 && (
+                  <span className="ml-2 text-[var(--color-accent)] normal-case font-normal">
+                    {readyVideos.length}/{pendingVideos.length} {isEN ? "ready" : "listos"}
+                  </span>
+                )}
+              </label>
               <div
                 onClick={() => videoInputRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleVideoFile(f); }}
+                onDrop={(e) => { e.preventDefault(); addVideoFiles(e.dataTransfer.files); }}
                 className="w-full border-2 border-dashed border-gray-200 rounded-xl p-5 text-center cursor-pointer hover:border-[var(--color-accent)] hover:bg-amber-50/30 transition-colors"
               >
                 <p className="text-sm text-gray-400">
-                  {isEN ? "Drop video here or " : "Arrastra un video aquí o "}
+                  {isEN ? "Drop videos here or " : "Arrastra videos aquí o "}
                   <span className="text-[var(--color-accent)] font-semibold">
-                    {isEN ? "browse" : "selecciona"}
+                    {isEN ? "select multiple" : "selecciona"}
                   </span>
                 </p>
-                <p className="text-xs text-gray-300 mt-1">MP4, MOV, WebM · max 500 MB</p>
+                <p className="text-xs text-gray-300 mt-1">MP4, MOV, WebM · max 500 MB each · select multiple at once</p>
+              </div>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/mp4,video/quicktime,video/webm,video/x-m4v"
+                multiple
+                className="hidden"
+                onChange={(e) => { addVideoFiles(e.target.files); e.target.value = ""; }}
+              />
+            </div>
+
+            {/* Pending video list */}
+            {pendingVideos.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {pendingVideos.map((p) => (
+                  <div key={p.localId} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="w-8 h-8 rounded-md bg-gray-900 flex items-center justify-center flex-shrink-0">
+                      {p.uploadProgress === "uploading" ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : p.uploadProgress === "done" ? (
+                        <span className="text-green-400 text-xs">✓</span>
+                      ) : (
+                        <span className="text-red-400 text-xs">✕</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={p.title}
+                        onChange={(e) => updatePendingTitle(p.localId, e.target.value)}
+                        placeholder={isEN ? "Video title" : "Título del video"}
+                        className="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-[var(--color-accent)] bg-white"
+                      />
+                      {p.error && <p className="text-[10px] text-red-600 mt-0.5">{p.error}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePendingVideo(p.localId)}
+                      className="text-gray-300 hover:text-red-500 text-sm flex-shrink-0 transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/mp4,video/quicktime,video/webm,video/x-m4v"
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleVideoFile(f); }}
-            />
-          </div>
+
+            {/* Shared event field — only show when there are pending videos */}
+            {pendingVideos.length > 0 && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  {isEN ? "Event / Album (shared)" : "Evento / Álbum (compartido)"}
+                </label>
+                <input
+                  type="text"
+                  value={sharedEvent}
+                  onChange={(e) => setSharedEvent(e.target.value)}
+                  placeholder={isEN ? "e.g. Spring 2026 Season" : "ej. Temporada Primavera 2026"}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                />
+              </div>
+            )}
+
+            {saveError && <p className="text-xs text-red-600">{saveError}</p>}
+
+            {pendingVideos.length > 0 && (
+              <button
+                type="submit"
+                disabled={!canAddAll}
+                className="self-start px-5 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {saving
+                  ? isEN ? "Saving…" : "Guardando…"
+                  : isEN
+                  ? `Add ${readyVideos.length} Video${readyVideos.length !== 1 ? "s" : ""}`
+                  : `Agregar ${readyVideos.length} Video${readyVideos.length !== 1 ? "s" : ""}`}
+              </button>
+            )}
+          </form>
         )}
-
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-            {isEN ? "Video Title" : "Título del Video"}
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder={isEN ? "e.g. Goal Highlights – Game 5" : "ej. Goles Destacados – Partido 5"}
-            required
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-            {isEN ? "Event / Album" : "Evento / Álbum"}
-          </label>
-          <input
-            type="text"
-            value={event}
-            onChange={(e) => setEvent(e.target.value)}
-            placeholder={isEN ? "e.g. Spring 2026 Season" : "ej. Temporada Primavera 2026"}
-            required
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-          />
-        </div>
-
-        {saveError && <p className="text-xs text-red-600">{saveError}</p>}
-
-        <button
-          type="submit"
-          disabled={saving || uploadProgress === "uploading"}
-          className="self-start px-5 py-2 bg-[var(--color-accent)] text-[#1c1c1e] text-sm font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {saving ? isEN ? "Adding…" : "Agregando…" : isEN ? "Add Video" : "Agregar Video"}
-        </button>
-      </form>
+      </div>
 
       {/* Existing videos */}
       {videos.length > 0 && (

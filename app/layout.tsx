@@ -25,9 +25,6 @@ export const metadata: Metadata = {
   },
   description:
     "Official website of the North Legends FC youth soccer team — schedules, roster, news, and more.",
-  icons: {
-    apple: "/apple-icon.png",
-  },
 };
 
 export default async function RootLayout({

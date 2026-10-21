@@ -16,16 +16,20 @@ The authoritative source for standings, game results, and referee assignments.
 
 Update standings and results in `lib/data/gotsport.ts` after each game.
 
-### SportsYou (U11 live calendar)
-iCal feed polled hourly — drives the U11 schedule page automatically.
+### SportsYou (live calendars — U11 & U12)
+iCal feeds polled hourly — drive the schedule pages automatically.
+The U12 feed contains both U11 + U12 events; the code filters by SUMMARY prefix.
 
 | Resource | URL |
 |---|---|
 | U11 webcal feed | `webcal://calendar.sportsyou.com/access/us-c7ad2fa6-0942-4ade-a1e8-04b62f6d5c00/372731d1-045d-40b6-801e-960b35deccc6` |
 | U11 Google Calendar subscribe | `https://calendar.sportsyou.com/access/us-c7ad2fa6-0942-4ade-a1e8-04b62f6d5c00/372731d1-045d-40b6-801e-960b35deccc6` |
+| U12 webcal feed (contains both teams) | `webcal://calendar.sportsyou.com/access/us-2336f555-2f21-4fa2-94e1-ea7eb3039efc/60c8081a-9869-4990-922c-82d2eb63d68b` |
+| U12 Google Calendar subscribe | `https://calendar.sportsyou.com/access/us-2336f555-2f21-4fa2-94e1-ea7eb3039efc/60c8081a-9869-4990-922c-82d2eb63d68b` |
 
 Code: `lib/data/sportsyou.ts` — parses iCal, maps short UIDs to opponent names.
 Opponent name mapping lives in `OPPONENT_NAMES` — add new entries when unknown opponents appear.
+Results mapping for U12 lives in `U12_RESULTS` in `lib/data/gotsport.ts`.
 
 ---
 

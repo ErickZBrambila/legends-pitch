@@ -105,7 +105,7 @@ export default function MediaAdmin({ team, locale, initialAlbums, initialVideos,
           <PhotosTab team={team} locale={locale} albums={albums} setAlbums={setAlbums} matches={matches} />
         )}
         {tab === "videos" && (
-          <VideosTab team={team} locale={locale} videos={videos} setVideos={setVideos} />
+          <VideosTab team={team} locale={locale} videos={videos} setVideos={setVideos} matches={matches} />
         )}
       </div>
     </div>
@@ -653,6 +653,7 @@ function AlbumCard({
 // ── Videos Tab ────────────────────────────────────────────────────────────────
 
 type VideoSource = "youtube" | "upload";
+type VideoEventMode = "game" | "custom";
 
 interface PendingVideo {
   localId: string;
@@ -672,11 +673,13 @@ function VideosTab({
   locale,
   videos,
   setVideos,
+  matches,
 }: {
   team: TeamSlug;
   locale: string;
   videos: HighlightVideo[];
   setVideos: React.Dispatch<React.SetStateAction<HighlightVideo[]>>;
+  matches: Match[];
 }) {
   const isEN = locale !== "es";
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -691,9 +694,22 @@ function VideosTab({
 
   // Upload queue state
   const [pendingVideos, setPendingVideos] = useState<PendingVideo[]>([]);
-  const [sharedEvent, setSharedEvent] = useState("");
+  // "Link to Game" vs free-text event
+  const [eventMode, setEventMode] = useState<VideoEventMode>("game");
+  const [selectedMatchId, setSelectedMatchId] = useState<string>("");
+  const [customEvent, setCustomEvent] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const sortedMatches = [...matches].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  const selectedMatch = matches.find((m) => m.id === selectedMatchId) ?? null;
+
+  function resolvedEvent(): string {
+    if (eventMode === "game" && selectedMatch) return `vs. ${selectedMatch.opponent}`;
+    return customEvent.trim();
+  }
 
   async function uploadVideoFile(item: PendingVideo) {
     const form = new FormData();
@@ -747,7 +763,8 @@ function VideosTab({
   const canAddAll =
     readyVideos.length > 0 &&
     readyVideos.every((p) => p.title.trim()) &&
-    sharedEvent.trim() &&
+    resolvedEvent() !== "" &&
+    (eventMode === "custom" || selectedMatchId !== "") &&
     !saving &&
     !anyUploading;
 
@@ -758,11 +775,12 @@ function VideosTab({
     setSaveError(null);
 
     const results: HighlightVideo[] = [];
+    const eventLabel = resolvedEvent();
     for (const p of readyVideos) {
       const res = await fetch("/api/admin/highlights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team, title: p.title.trim(), event: sharedEvent.trim(), r2Url: p.r2Url }),
+        body: JSON.stringify({ team, title: p.title.trim(), event: eventLabel, r2Url: p.r2Url }),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -771,12 +789,13 @@ function VideosTab({
         return;
       }
       const { id, r2Url } = await res.json();
-      results.push({ id, youtubeId: undefined, r2Url, title: p.title.trim(), event: sharedEvent.trim() });
+      results.push({ id, youtubeId: undefined, r2Url, title: p.title.trim(), event: eventLabel });
     }
 
     setVideos((prev) => [...results.reverse(), ...prev]);
     setPendingVideos([]);
-    setSharedEvent("");
+    setCustomEvent("");
+    setSelectedMatchId("");
     setSaving(false);
   }
 
@@ -894,6 +913,70 @@ function VideosTab({
         {/* Upload queue form */}
         {source === "upload" && (
           <form onSubmit={handleAddAll} className="flex flex-col gap-4">
+            {/* Event / Game picker — always visible */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                {isEN ? "Event / Album" : "Evento / Álbum"}
+              </label>
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-3">
+                {(["game", "custom"] as VideoEventMode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setEventMode(m)}
+                    className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      eventMode === m
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    {m === "game"
+                      ? isEN ? "Link to Game" : "Vincular a Partido"
+                      : isEN ? "Custom Name" : "Nombre Libre"}
+                  </button>
+                ))}
+              </div>
+
+              {eventMode === "game" ? (
+                <div className="flex flex-col gap-2">
+                  <select
+                    value={selectedMatchId}
+                    onChange={(e) => setSelectedMatchId(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)] bg-white"
+                  >
+                    <option value="">{isEN ? "— Select a match —" : "— Selecciona un partido —"}</option>
+                    {sortedMatches.map((m) => {
+                      const d = new Date(m.date.slice(0, 10) + "T12:00:00").toLocaleDateString(
+                        isEN ? "en-US" : "es-MX",
+                        { month: "short", day: "numeric" }
+                      );
+                      const played = m.result !== null;
+                      const score = played ? ` (${m.goalsFor}–${m.goalsAgainst})` : "";
+                      return (
+                        <option key={m.id} value={m.id}>
+                          {played ? "" : "⚠ "}{d} vs. {m.opponent}{score}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {selectedMatch && (
+                    <p className="text-xs text-gray-400">
+                      {isEN ? "Event label: " : "Etiqueta de evento: "}
+                      <span className="font-semibold text-gray-700">vs. {selectedMatch.opponent}</span>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={customEvent}
+                  onChange={(e) => setCustomEvent(e.target.value)}
+                  placeholder={isEN ? "e.g. Spring 2026 Season" : "ej. Temporada Primavera 2026"}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
+                />
+              )}
+            </div>
+
             {/* Drop zone */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
@@ -961,22 +1044,6 @@ function VideosTab({
                     </button>
                   </div>
                 ))}
-              </div>
-            )}
-
-            {/* Shared event field — only show when there are pending videos */}
-            {pendingVideos.length > 0 && (
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  {isEN ? "Event / Album (shared)" : "Evento / Álbum (compartido)"}
-                </label>
-                <input
-                  type="text"
-                  value={sharedEvent}
-                  onChange={(e) => setSharedEvent(e.target.value)}
-                  placeholder={isEN ? "e.g. Spring 2026 Season" : "ej. Temporada Primavera 2026"}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--color-accent)]"
-                />
               </div>
             )}
 

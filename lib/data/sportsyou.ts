@@ -1,10 +1,12 @@
 const SPORTSYOU_URLS: Partial<Record<string, string>> = {
   u11: "https://calendar.sportsyou.com/access/us-c7ad2fa6-0942-4ade-a1e8-04b62f6d5c00/372731d1-045d-40b6-801e-960b35deccc6",
+  u12: "https://calendar.sportsyou.com/access/us-2336f555-2f21-4fa2-94e1-ea7eb3039efc/60c8081a-9869-4990-922c-82d2eb63d68b",
 };
 
 // Last 8 chars of SportsYou UID → clean opponent name for this season.
 // Add new entries here when new opponents appear on the calendar.
 const OPPONENT_NAMES: Record<string, string> = {
+  // U11
   "730d67bb": "Centex Storm",
   "4112c752": "Centex SC",
   "d203df12": "T&C Soccer Inter Milan",
@@ -19,6 +21,19 @@ const OPPONENT_NAMES: Record<string, string> = {
   "3c773b63": "Elgin United (Hernandez)",
   "62f317dc": "T&C Soccer Inter Milan",
   "5cd7f150": "WBSA United",
+  // U12
+  "0114a6b0": "Centex Storm",
+  "2eb98ca5": "Centex SC Black",
+  "e867a778": "Liberty Hill White",
+  "713fafe5": "Belton Coyotes FC",
+  "87eef744": "Leander FC Rattlers",
+  "0350dff9": "Elgin United (Castro)",
+  "1eb066e3": "FC Westlake Hooligans",
+  "fc775168": "Liberty United",
+  "6747a6ad": "LC United",
+  "a2e2a1fd": "Leander FC Rattlers",
+  "05b2c84f": "BYSO Inferno",
+  "2ac82eff": "BYSO Inferno",
 };
 
 function parseIcal(text: string): Record<string, string>[] {
@@ -68,6 +83,7 @@ export function locationNameFromAddress(address: string): string {
   if (/Shoreline Dr/i.test(address)) return "Wells Branch Soccer";
   if (/Bagdad Rd|Serna/i.test(address)) return "Serna Athletic Fields";
   if (/Bastrop/i.test(address)) return "Bastrop Youth Soccer";
+  if (/Riverwalk Dr/i.test(address)) return "Riverwalk #3";
   return address.split(",")[0].trim();
 }
 
@@ -91,9 +107,13 @@ export async function fetchSportsYouGames(team: string): Promise<SportsYouGame[]
     const events = parseIcal(text);
     const games: SportsYouGame[] = [];
 
+  // U12 calendar contains both U11 + U12 events — filter by team prefix
+  const teamPrefix = team === "u12" ? "U12" : "U11";
+
     for (const ev of events) {
       const summary = ev["SUMMARY"] ?? "";
       if (/practice/i.test(summary)) continue;
+      if (!summary.toUpperCase().startsWith(teamPrefix)) continue;
 
       const dtstart = ev["DTSTART"] ?? "";
       if (!dtstart.endsWith("Z") || dtstart.length !== 16) continue;
@@ -113,7 +133,7 @@ export async function fetchSportsYouGames(team: string): Promise<SportsYouGame[]
         iso: kickoff.toISOString(),
         locationName: locationNameFromAddress(address),
         locationAddress: address,
-        homeAway: /Leander|Borho/i.test(address) ? "home" : "away",
+        homeAway: /Borho Dr/i.test(address) ? "home" : "away",
         opponent: OPPONENT_NAMES[uid] ?? fallbackOpponent(summary),
       });
     }

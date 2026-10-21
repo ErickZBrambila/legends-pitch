@@ -144,6 +144,14 @@ const U11_OPPONENT_OVERRIDES: Record<string, string> = {
   "9183d02e": "Elgin United (Hernandez)", // GotSport #342: we beat Hernandez 15-0 on Sep 19
 };
 
+const U12_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; result: "W" | "L" | "D" }> = {
+  "87eef744": { goalsFor: 7,  goalsAgainst: 2, result: "W" }, // Sep 12 vs Leander FC Rattlers
+  "0350dff9": { goalsFor: 13, goalsAgainst: 1, result: "W" }, // Sep 19 vs Elgin United (Castro)
+  "1eb066e3": { goalsFor: 5,  goalsAgainst: 2, result: "W" }, // Sep 26 vs FC Westlake Hooligans
+  "fc775168": { goalsFor: 15, goalsAgainst: 0, result: "W" }, // Oct 10 vs Liberty United
+  "6747a6ad": { goalsFor: 4,  goalsAgainst: 1, result: "W" }, // Oct 17 vs LC United
+};
+
 let u12Id = 0;
 
 const U12_MATCHES: Match[] = [
@@ -212,7 +220,20 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
               }))
             : withAddress([] as Match[])
         )
-      : Promise.resolve(withAddress(U12_MATCHES)),
+      : fetchSportsYouGames("u12").then((games) =>
+          games.length > 0
+            ? games.map((g): Match => ({
+                id: `sy-u12-${g.uid}`,
+                date: g.iso,
+                arrivalDate: g.arrivalIso,
+                opponent: g.opponent,
+                location: g.locationName,
+                locationAddress: g.locationAddress,
+                homeAway: g.homeAway,
+                ...(U12_RESULTS[g.uid] ?? { goalsFor: null, goalsAgainst: null, result: null }),
+              }))
+            : withAddress(U12_MATCHES)
+        ),
   ]);
 
   const standings = liveStandings.length > 0 ? liveStandings : fallbackStandings;

@@ -13,6 +13,14 @@ async function sha256(value: string, salt: string): Promise<string> {
 // ── middleware ─────────────────────────────────────────────────────────────
 
 export async function middleware(req: NextRequest) {
+  const host = req.headers.get("host") ?? "";
+  if (host === "legends-pitch.vercel.app") {
+    const url = new URL(req.url);
+    url.host = "www.northlegendsfc.com";
+    url.protocol = "https:";
+    return NextResponse.redirect(url, 308);
+  }
+
   const { pathname } = req.nextUrl;
 
   // Admin gate — all /admin/* sub-pages require ADMIN_PASSWORD cookie

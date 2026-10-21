@@ -9,6 +9,7 @@ import NavTip from "@/components/NavTip";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import PushPermission from "@/components/PushPermission";
 import LanguagePickerModal from "@/components/LanguagePickerModal";
+import TeamPreferenceRedirect from "@/components/TeamPreferenceRedirect";
 import SiteBannerClient from "@/components/SiteBannerClient";
 import PageViewTracker from "@/components/PageViewTracker";
 import WhatsNewModal from "@/components/WhatsNewModal";
@@ -41,6 +42,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>
           {!isAdminRoute && <LanguagePickerModal />}
+          {!isAdminRoute && <TeamPreferenceRedirect />}
           {!isAdminRoute && <SiteBannerClient />}
           {!isAdminRoute && <Nav />}
           {!isAdminRoute && <NavTip />}

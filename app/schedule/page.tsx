@@ -136,18 +136,17 @@ export default async function SchedulePage({
                 <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
                   {m.homeAway === "home" ? t("home") : t("away")}
                 </span>
-                <div className="flex flex-col items-end gap-0.5">
-                  {m.arrivalDate && (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                      {t("beThereAt")} {formatArrivalTime(m.arrivalDate)}
-                    </span>
-                  )}
-                  <span className="text-xs font-semibold text-[var(--color-primary)]">
-                    {t("kickoffAt")} {formatTime(m.date, locale)}
-                  </span>
-                </div>
+                <span className="text-xs font-semibold text-[var(--color-primary)]">
+                  {t("kickoffAt")} {formatTime(m.date, locale)}
+                </span>
               </div>
               <p className="font-bold text-gray-800 text-base">{t("versus", { opponent: m.opponent })}</p>
+              {m.arrivalDate && (
+                <div className="mt-2 flex items-center gap-1.5 bg-amber-500 text-white rounded-lg px-3 py-1.5">
+                  <span className="text-base leading-none">⏰</span>
+                  <span className="text-sm font-bold">{t("beThereAt")} {formatArrivalTime(m.arrivalDate)}</span>
+                </div>
+              )}
               <p className="text-xs text-gray-400 mt-0.5">{formatDate(m.date, locale)}</p>
               {m.locationAddress ? (
                 <a href={mapsUrl(m.locationAddress)} target="_blank" rel="noopener noreferrer"
@@ -202,8 +201,8 @@ export default async function SchedulePage({
                   <td className="px-4 py-3 text-right">
                     <div className="flex flex-col items-end gap-1">
                       {m.arrivalDate && (
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 whitespace-nowrap">
-                          {t("beThereAt")} {formatArrivalTime(m.arrivalDate)}
+                        <span className="text-sm font-bold px-2.5 py-1 rounded-full bg-amber-500 text-white whitespace-nowrap">
+                          ⏰ {t("beThereAt")} {formatArrivalTime(m.arrivalDate)}
                         </span>
                       )}
                       <span className="text-xs font-semibold text-[var(--color-primary)] whitespace-nowrap">

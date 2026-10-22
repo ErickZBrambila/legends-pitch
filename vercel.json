@@ -1,8 +1,5 @@
 {
   "framework": "nextjs",
-  "github": {
-    "deploymentEnabled": false
-  },
   "crons": [
     {
       "path": "/api/cron/game-day-reminder",

@@ -35,6 +35,7 @@ export interface Player {
   number: number;
   position: "GK" | "DEF" | "MID" | "FWD";
   photoUrl?: string;
+  bio?: string;
 }
 
 export interface PhotoSubmission {

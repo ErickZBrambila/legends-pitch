@@ -25,7 +25,7 @@ export default function PlayerPhotoLightbox({ player, onClose, onChangePhoto }: 
       <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
 
       <div
-        className="relative flex flex-col items-center gap-5"
+        className="relative flex flex-col items-center gap-5 max-w-xs w-full"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
@@ -37,15 +37,21 @@ export default function PlayerPhotoLightbox({ player, onClose, onChangePhoto }: 
           ✕
         </button>
 
-        {/* Photo */}
+        {/* Photo or placeholder */}
         <div className="relative w-56 h-72 sm:w-64 sm:h-80 rounded-2xl overflow-hidden shadow-2xl border-2 border-[#d4af37]">
-          <Image
-            src={player.photoUrl!}
-            alt={player.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 224px, 256px"
-          />
+          {player.photoUrl ? (
+            <Image
+              src={player.photoUrl}
+              alt={player.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 224px, 256px"
+            />
+          ) : (
+            <div className="w-full h-full bg-[var(--color-navy)] flex items-center justify-center">
+              <span className="text-6xl font-black text-[#d4af37]">{player.number}</span>
+            </div>
+          )}
         </div>
 
         {/* Name + number */}
@@ -56,13 +62,22 @@ export default function PlayerPhotoLightbox({ player, onClose, onChangePhoto }: 
           </p>
         </div>
 
-        {/* Change photo */}
-        <button
-          onClick={() => { onClose(); onChangePhoto(player); }}
-          className="text-xs text-white/50 hover:text-white/80 transition-colors border border-white/20 hover:border-white/40 px-4 py-1.5 rounded-full"
-        >
-          Change photo
-        </button>
+        {/* Bio */}
+        {player.bio && (
+          <div className="w-full bg-white/10 rounded-xl px-4 py-3 text-center">
+            <p className="text-white/90 text-sm leading-relaxed">{player.bio}</p>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex flex-col items-center gap-2 w-full">
+          <button
+            onClick={() => { onClose(); onChangePhoto(player); }}
+            className="text-xs text-white/50 hover:text-white/80 transition-colors border border-white/20 hover:border-white/40 px-4 py-1.5 rounded-full"
+          >
+            {player.photoUrl ? "Change photo · Edit bio" : "Add photo · Edit bio"}
+          </button>
+        </div>
       </div>
     </div>
   );

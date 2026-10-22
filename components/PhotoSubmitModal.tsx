@@ -9,6 +9,7 @@ import type { Player } from "@/lib/types";
 type Step = "pin" | "photo";
 
 const PIN_DIGITS = 4;
+const BIO_MAX = 500;
 
 interface Submission { id: string; submittedAt: string }
 
@@ -71,6 +72,11 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
   const [done, setDone] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [removeApprovedLoading, setRemoveApprovedLoading] = useState(false);
+
+  const [bio, setBio] = useState(player.bio ?? "");
+  const [bioSaving, setBioSaving] = useState(false);
+  const [bioSaved, setBioSaved] = useState(false);
+  const [bioError, setBioError] = useState("");
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -193,6 +199,29 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
   function cancelCrop() {
     if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
+  }
+
+  async function saveBio(e: React.FormEvent) {
+    e.preventDefault();
+    setBioSaving(true);
+    setBioError("");
+    setBioSaved(false);
+    try {
+      const res = await fetch("/api/player-bio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId: player.id, bio }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setBioError(d.error ?? "Something went wrong");
+        return;
+      }
+      setBioSaved(true);
+      setTimeout(() => setBioSaved(false), 3000);
+    } finally {
+      setBioSaving(false);
+    }
   }
 
   async function submitPhoto(e: React.FormEvent) {
@@ -469,6 +498,39 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
                     {deleteLoading ? "Removing…" : "Remove my submission"}
                   </button>
                 )}
+              </form>
+            )}
+
+            {/* ── Bio section (visible whenever photo step is active and not done) ── */}
+            {step === "photo" && !done && existingChecked && !cropSrc && (
+              <form onSubmit={saveBio} className="flex flex-col gap-3 mt-5 pt-5 border-t border-gray-100">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    About {player.name} · Sobre {player.name}
+                  </label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Favorite position, hobbies, fun facts… · Posición favorita, pasatiempos, datos curiosos…
+                  </p>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => {
+                      setBio(e.target.value.slice(0, BIO_MAX));
+                      setBioSaved(false);
+                    }}
+                    rows={4}
+                    placeholder="He loves playing forward and his favorite player is Mbappe…"
+                    className="w-full text-sm text-gray-800 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+                  />
+                  <p className="text-right text-xs text-gray-300 mt-0.5">{bio.length}/{BIO_MAX}</p>
+                </div>
+                {bioError && <p className="text-xs text-red-500">{bioError}</p>}
+                <button
+                  type="submit"
+                  disabled={bioSaving}
+                  className="w-full py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+                >
+                  {bioSaving ? "Saving…" : bioSaved ? "Bio saved! ✓" : "Save bio · Guardar bio"}
+                </button>
               </form>
             )}
           </div>

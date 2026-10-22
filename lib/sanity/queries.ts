@@ -91,10 +91,11 @@ export async function getPlayersByTeam(team: TeamSlug): Promise<Player[]> {
       number: number;
       position: "GK" | "DEF" | "MID" | "FWD";
       photo?: { asset: { _ref: string } };
+      bio?: string;
     }>
   >(
     `*[_type == "player" && team->ageGroup == $team]{
-      _id, name, number, position, photo
+      _id, name, number, position, photo, bio
     } | order(number asc)`,
     { team }
   );
@@ -104,6 +105,7 @@ export async function getPlayersByTeam(team: TeamSlug): Promise<Player[]> {
     number: p.number,
     position: p.position,
     photoUrl: p.photo ? urlForImage(p.photo) : undefined,
+    bio: p.bio ?? undefined,
   }));
 }
 

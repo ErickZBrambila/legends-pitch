@@ -3,8 +3,10 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
 
-// Cloudflare R2 public bucket that serves session videos / clips.
-const R2_HOST = "pub-ec6efd6486724c999de33694e15dd4dc.r2.dev";
+// Cloudflare R2 — CDN custom domain (Cloudflare-proxied, cached at edge).
+// Legacy r2.dev host kept in CSP during transition while Sanity docs are migrated.
+const R2_HOST = "media.northlegendsfc.com";
+const R2_HOST_LEGACY = "pub-ec6efd6486724c999de33694e15dd4dc.r2.dev";
 
 // ── Content Security Policy ──────────────────────────────────────────────────
 // NOTE: 'unsafe-inline' and 'unsafe-eval' are required by the embedded Sanity
@@ -18,8 +20,8 @@ const csp = [
   `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
   `font-src 'self' https://fonts.gstatic.com data:`,
   `img-src 'self' data: blob: https://cdn.sanity.io https://images.unsplash.com https://drive.google.com https://lh3.googleusercontent.com https://primary.jwwb.nl https://img.youtube.com https://i.ytimg.com`,
-  `media-src 'self' blob: https://${R2_HOST}`,
-  `connect-src 'self' https://*.sanity.io https://*.api.sanity.io https://*.apicdn.sanity.io https://api.open-meteo.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://${R2_HOST}`,
+  `media-src 'self' blob: https://${R2_HOST} https://${R2_HOST_LEGACY}`,
+  `connect-src 'self' https://*.sanity.io https://*.api.sanity.io https://*.apicdn.sanity.io https://api.open-meteo.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://${R2_HOST} https://${R2_HOST_LEGACY}`,
   `frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://youtube.com`,
   `worker-src 'self' blob:`,
   `object-src 'none'`,

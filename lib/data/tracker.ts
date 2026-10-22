@@ -29,6 +29,34 @@ export interface ServiceLine {
 
 export const SESSIONS: WorkSession[] = [
   {
+    date: "2026-10-21",
+    title: "Session 20 — Player Bio, Arrival Time Prominence & PWA Manifests",
+    hours: 3.2,
+    commits: 4,
+    claudeCostUSD: 9.60,
+    features: [
+      "Per-section PWA manifests for /admin, /neo, and /tracker — each section now has its own manifest with correct start_url and scope so it installs as a separate PWA (#115)",
+      "Player bio — parents can add and edit a free-text biography from the roster page; stored in Sanity, displayed on player cards (#117)",
+      "\"Be there by\" arrival time redesigned on /schedule — full-width amber banner on mobile, solid amber badge on desktop, both with ⏰ icon; applies to both U11 and U12 (#118)",
+      "\"Be there by\" made more prominent on home page Next Match card — bumped to bold text-base frosted-glass pill so it reads clearly against the red hero background (#119)",
+      "Resolved merge conflict in lib/ratelimit.ts caused by player-bio PR landing on main via separate PR; rebased and force-pushed to clean up branch history",
+    ],
+  },
+  {
+    date: "2026-10-20",
+    title: "Session 19 — Multi-Video Upload, Favicon Fixes & First-Visit Onboarding",
+    hours: 2.2,
+    commits: 6,
+    claudeCostUSD: 12.79,
+    features: [
+      "Photo upload improvements — game picker lets parents tag which game a photo is from; multi-file UX with per-file progress; photos can be added to an existing album (#109)",
+      "Favicon pipeline fixed — converted broken JPEG favicon to valid PNG; restored correct favicon after accidental removal (#110, #111)",
+      "Multi-video upload — coaches can now upload multiple videos at once in the admin media manager; Vercel redirect rules added for legacy URLs (#112)",
+      "Album picker + game link restored on /videos — regression from multi-video work fixed; album picker reappears; game link shows on video cards (#113)",
+      "First-visit language + team picker — new users see a language selector and team picker on their first visit; choice persists via cookie and applies across all pages; team preference pre-selects U11 or U12 content (#114)",
+    ],
+  },
+  {
     date: "2026-10-19",
     title: "Session 18 — Admin Media Manager (Photos & Videos)",
     hours: 1.5,

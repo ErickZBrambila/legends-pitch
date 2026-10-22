@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getNeoSession } from "@/lib/neo-auth";
-import PushSender from "@/components/PushSender";
 import BannerControl from "@/components/BannerControl";
 import VotingDashboard from "@/components/VotingDashboard";
 import { getBanner } from "@/lib/banner";
@@ -64,8 +63,6 @@ export default async function TrackerPage() {
         </div>
 
         <BannerControl active={activeBanner} />
-
-        <PushSender />
 
         <VotingDashboard initialVotes={votes} />
 

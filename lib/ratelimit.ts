@@ -23,6 +23,7 @@ const LIMITS = {
   save:              { requests: 20, window: "1 m"  },  // 20 clip saves per minute
   "photo-submission": { requests: 5,  window: "1 h"  },  // 5 photo uploads per hour per IP
   "player-bio":       { requests: 10, window: "1 h"  },  // 10 bio saves per hour per IP
+  register:           { requests: 5,  window: "1 h"  },  // 5 registration attempts per hour per IP
 } as const;
 
 type LimitKey = keyof typeof LIMITS;

@@ -12,6 +12,7 @@ export type AdminAccount = {
   displayName: string;
   role: AdminRole;
   approved: boolean;
+  revoked: boolean;
   createdAt: string;
 };
 
@@ -123,7 +124,7 @@ export async function getAdminSession(): Promise<AdminAccount | null> {
     if (!stored || !stored.approved) return null;
 
     const { passwordHash: _, ...account } = stored;
-    return account;
+    return { ...account, revoked: false };
   } catch {
     return null;
   }
@@ -152,7 +153,8 @@ export async function createAdminAccount(
     email: normalizedEmail,
     displayName,
     role,
-    approved: true,
+    approved: false,
+    revoked: false,
     createdAt: new Date().toISOString(),
   };
 
@@ -184,7 +186,7 @@ export async function verifyAdminPassword(
   if (!verifyPasswordHash(password, stored.passwordHash)) return null;
 
   const { passwordHash: _, ...account } = stored;
-  return account;
+  return { ...account, revoked: false };
 }
 
 export async function getAllAdminAccounts(): Promise<AdminAccount[]> {
@@ -194,14 +196,22 @@ export async function getAllAdminAccounts(): Promise<AdminAccount[]> {
   const ids = await redis.smembers(redisKey("all"));
   if (!ids.length) return [];
 
-  const accounts = await Promise.all(
-    ids.map((id) => redis.get<StoredAccount>(redisKey("account", id)))
-  );
+  const [rawAccounts, revokedIds] = await Promise.all([
+    Promise.all(ids.map((id) => redis.get<StoredAccount>(redisKey("account", id)))),
+    redis.smembers(redisKey("revoked")),
+  ]);
 
-  return accounts
+  const revokedSet = new Set(revokedIds);
+
+  return rawAccounts
     .filter((a): a is StoredAccount => !!a)
-    .map(({ passwordHash: _, ...a }) => a)
-    .sort((a, b) => (!a.approved ? -1 : !b.approved ? 1 : 0));
+    .map(({ passwordHash: _, ...a }) => ({ ...a, revoked: revokedSet.has(a.id) }))
+    .sort((a, b) => {
+      // Pending (unapproved, not revoked) first, then active, then revoked
+      const statusA = !a.approved && !a.revoked ? 0 : a.approved ? 1 : 2;
+      const statusB = !b.approved && !b.revoked ? 0 : b.approved ? 1 : 2;
+      return statusA - statusB;
+    });
 }
 
 export async function revokeAdminAccount(id: string): Promise<void> {
@@ -257,6 +267,18 @@ export async function resetAdminPassword(id: string, newPassword: string): Promi
   const updated: StoredAccount = { ...stored, passwordHash: hashPassword(newPassword) };
   await redis.set(redisKey("account", id), JSON.stringify(updated));
   return true;
+}
+
+
+export async function setAdminRole(id: string, role: AdminRole): Promise<void> {
+  const redis = makeRedis();
+  if (!redis) return;
+
+  const stored = await redis.get<StoredAccount>(redisKey("account", id));
+  if (!stored) return;
+
+  const updated = { ...stored, role };
+  await redis.set(redisKey("account", id), JSON.stringify(updated));
 }
 
 export async function hasAnyAdminAccount(): Promise<boolean> {

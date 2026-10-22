@@ -87,7 +87,10 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
+        <p className="text-center text-xs text-gray-500 mt-4">
+          Don&apos;t have an account?{" "}<Link href="/admin/register" className="text-gray-400 hover:text-gray-200 transition-colors">Request access</Link>
+        </p>
+        <p className="text-center text-xs text-gray-600 mt-2">
           North Legends FC · Coaches only
         </p>
       </div>

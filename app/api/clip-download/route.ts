@@ -1,7 +1,11 @@
 import { NextRequest } from "next/server";
 import { rateLimit } from "@/lib/ratelimit";
 
-const ALLOWED_HOST = "pub-ec6efd6486724c999de33694e15dd4dc.r2.dev";
+// CDN custom domain (primary) + legacy r2.dev (transition) both allowed.
+const ALLOWED_HOSTS = new Set([
+  "media.northlegendsfc.com",
+  "pub-ec6efd6486724c999de33694e15dd4dc.r2.dev",
+]);
 
 export async function GET(req: NextRequest) {
   const limited = await rateLimit(req, "download");
@@ -26,7 +30,7 @@ export async function GET(req: NextRequest) {
   // check or leak into the upstream request.
   if (
     parsed.protocol !== "https:" ||
-    parsed.hostname !== ALLOWED_HOST ||
+    !ALLOWED_HOSTS.has(parsed.hostname) ||
     parsed.username !== "" ||
     parsed.password !== ""
   ) {
@@ -35,7 +39,7 @@ export async function GET(req: NextRequest) {
 
   // Rebuild the request URL from the validated components so nothing beyond the
   // allowlisted origin + path/query can be smuggled through.
-  const safeUrl = `https://${ALLOWED_HOST}${parsed.pathname}${parsed.search}`;
+  const safeUrl = `https://${parsed.hostname}${parsed.pathname}${parsed.search}`;
 
   let upstream: Response;
   try {

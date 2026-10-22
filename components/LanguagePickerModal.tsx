@@ -44,7 +44,7 @@ export default function LanguagePickerModal() {
     document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=31536000;samesite=lax`;
     setVisible(false);
     startTransition(() => {
-      router.push(`/schedule?team=${team}`);
+      router.push(`/?team=${team}`);
       router.refresh();
     });
   };

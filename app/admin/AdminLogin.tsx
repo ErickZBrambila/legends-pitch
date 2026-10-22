@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function AdminLogin() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,13 +17,13 @@ export default function AdminLogin() {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (res.ok) {
-      router.push("/admin/dashboard");
+      window.location.href = "/admin/dashboard";
     } else {
-      setError("Incorrect password. Try again.");
+      setError("Incorrect email or password.");
       setPassword("");
     }
     setLoading(false);
@@ -43,29 +42,46 @@ export default function AdminLogin() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-zinc-900 rounded-2xl p-6 shadow-2xl border border-white/5">
-          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
-            Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter coach password"
-            required
-            className="w-full bg-zinc-800 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors text-sm"
-          />
+        <form onSubmit={handleSubmit} className="bg-zinc-900 rounded-2xl p-6 shadow-2xl border border-white/5 flex flex-col gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="coach@northlegendsfc.com"
+              required
+              autoFocus
+              className="w-full bg-zinc-800 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full bg-zinc-800 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[var(--color-accent)] transition-colors text-sm"
+            />
+          </div>
 
           {error && (
-            <p className="mt-3 text-sm text-red-400 flex items-center gap-1.5">
+            <p className="text-sm text-red-400 flex items-center gap-1.5">
               <span>⚠</span> {error}
             </p>
           )}
 
           <button
             type="submit"
-            disabled={loading || !password}
-            className="mt-4 w-full py-3 bg-[var(--color-accent)] text-[#1c1c1e] font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || !email || !password}
+            className="w-full py-3 bg-[var(--color-accent)] text-[#1c1c1e] font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Signing in…" : "Sign In"}
           </button>

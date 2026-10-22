@@ -54,6 +54,12 @@ const CONTENT = {
         badge: "New",
       },
       {
+        href: "/admin/push",
+        title: "Push Notifications",
+        description: "Send a push notification to all subscribed families. Your name is logged with every send.",
+        badge: "New",
+      },
+      {
         href: "/studio",
         external: true,
         title: "Sanity Studio",
@@ -102,6 +108,12 @@ const CONTENT = {
         href: "/admin/kickreel",
         title: "KickReel Stats",
         description: "Revisa las sesiones de seguimiento de partidos enviadas. Descarga JSON, aplica el marcador al partido o elimina entradas.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/push",
+        title: "Notificaciones Push",
+        description: "Envía una notificación push a todas las familias suscritas. Tu nombre queda registrado en cada envío.",
         badge: "Nuevo",
       },
       {

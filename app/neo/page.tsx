@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getNeoSession } from "@/lib/neo-auth";
-import PushSender from "@/components/PushSender";
 import BannerControl from "@/components/BannerControl";
 import VotingDashboard from "@/components/VotingDashboard";
 import { getBanner } from "@/lib/banner";
@@ -56,11 +55,14 @@ export default async function TrackerPage() {
             <p className="text-lg font-black text-gray-900">📊 Monitoring</p>
             <p className="text-xs text-gray-400 mt-0.5">Page views, visitors, push subs</p>
           </a>
+          <a href="/neo/admin-users" className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 hover:bg-gray-50 transition-colors">
+            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-0.5">Auth</p>
+            <p className="text-lg font-black text-gray-900">👤 Admin Users</p>
+            <p className="text-xs text-gray-400 mt-0.5">Accounts, roles, password resets</p>
+          </a>
         </div>
 
         <BannerControl active={activeBanner} />
-
-        <PushSender />
 
         <VotingDashboard initialVotes={votes} />
 

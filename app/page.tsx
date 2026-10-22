@@ -157,9 +157,9 @@ export default async function Home({
                 )}
               </div>
               {nextMatch.arrivalDate && (
-                <span className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 rounded-full bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/40 text-[var(--color-accent-light)] text-xs font-semibold">
-                  🕐 {t("beThereAt")} {formatTime(nextMatch.arrivalDate, locale)}
-                </span>
+                <div className="inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-xl bg-white/20 border border-white/40 text-white text-base font-bold backdrop-blur-sm">
+                  ⏰ {t("beThereAt")} {formatTime(nextMatch.arrivalDate, locale)}
+                </div>
               )}
             </div>
             <CountdownTimerClient targetDate={nextMatch.date} />

@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
       displayName: "Admin",
       role: "admin",
       approved: true,
+      revoked: false,
       createdAt: new Date().toISOString(),
     };
     const token = createAdminSession(bootstrapAccount);

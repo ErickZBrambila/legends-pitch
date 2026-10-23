@@ -36,19 +36,9 @@ function cellText(html: string): string {
     .trim();
 }
 
-async function scrapeStandings(team: string): Promise<StandingRow[]> {
-  const url = GOTSPORT_SCHEDULE_URLS[team];
-  if (!url) return [];
+// --- Standings parser ---
 
-  let html: string;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return [];
-    html = await res.text();
-  } catch {
-    return [];
-  }
-
+function parseStandings(html: string): StandingRow[] {
   const start = html.indexOf("Bracket A");
   if (start === -1) return [];
   const endIdx = html.indexOf("tiebreaker", start);
@@ -66,38 +56,27 @@ async function scrapeStandings(team: string): Promise<StandingRow[]> {
       cells.push(cellText(tdMatch[1]));
     }
 
-    // Need at least rank + team + 8 stat columns
     if (cells.length < 9) continue;
 
-    let rank: number;
-    let teamName: string;
-    let statOffset: number;
-
     const firstNum = parseInt(cells[0], 10);
-    if (!isNaN(firstNum) && firstNum >= 1 && firstNum <= 30 && cells.length >= 10) {
-      // 10-cell layout: [rank, team, MP, W, L, D, GF, GA, GD, PTS]
-      rank = firstNum;
-      teamName = cells[1];
-      statOffset = 2;
-    } else {
-      continue; // skip header rows and non-standings rows
-    }
+    if (isNaN(firstNum) || firstNum < 1 || firstNum > 30 || cells.length < 10) continue;
 
+    const teamName = cells[1];
     if (!teamName || /^\d+$/.test(teamName)) continue;
 
-    const gp  = parseInt(cells[statOffset],     10);
-    const w   = parseInt(cells[statOffset + 1], 10);
-    const l   = parseInt(cells[statOffset + 2], 10);
-    const t   = parseInt(cells[statOffset + 3], 10);
-    const gf  = parseInt(cells[statOffset + 4], 10);
-    const ga  = parseInt(cells[statOffset + 5], 10);
-    // cells[statOffset + 6] is GD — skip
-    const pts = parseInt(cells[statOffset + 7], 10);
+    const o = 2; // statOffset
+    const gp  = parseInt(cells[o],     10);
+    const w   = parseInt(cells[o + 1], 10);
+    const l   = parseInt(cells[o + 2], 10);
+    const t   = parseInt(cells[o + 3], 10);
+    const gf  = parseInt(cells[o + 4], 10);
+    const ga  = parseInt(cells[o + 5], 10);
+    const pts = parseInt(cells[o + 7], 10); // o+6 is GD
 
     if ([gp, w, l, t, gf, ga, pts].some(isNaN)) continue;
 
     rows.push({
-      rank,
+      rank: firstNum,
       team: teamName,
       gp, w, l, t, gf, ga, pts,
       isNorthLegends: teamName.includes("North Legends") || teamName.includes("Legends"),
@@ -106,6 +85,149 @@ async function scrapeStandings(team: string): Promise<StandingRow[]> {
 
   return rows;
 }
+
+// --- Schedule parser ---
+
+// Maps GotSport full team names → canonical display names used in the app
+const GOTSPORT_OPPONENT_MAP: Record<string, string> = {
+  "Elgin United- Ramirez 2016 B":       "Elgin United (Ramirez)",
+  "Elgin United-Ramirez 2016 B":        "Elgin United (Ramirez)",
+  "Elgin United-Hernandez 2016 B":      "Elgin United (Hernandez)",
+  "T&C Soccer BU11 Inter Milan":        "T&C Soccer Inter Milan",
+  "WBSA UNITED PHINOMENON":             "WBSA United",
+  "Storm 16B Black":                    "Storm 16B Black",
+  "Leander FC 2014/15 B Rattlers Gray": "Leander FC Rattlers",
+  "Elgin United-Castro 2015 B":         "Elgin United (Castro)",
+  "FC Westlake North Hooligans BU12":   "FC Westlake Hooligans",
+  "BYSO 14-15 Inferno":                 "BYSO Inferno",
+  "LC United 14B":                      "LC United",
+  "Liberty United 14/15B Black":        "Liberty United",
+};
+
+function canonicalOpponent(raw: string): string {
+  const t = raw.trim();
+  if (GOTSPORT_OPPONENT_MAP[t]) return GOTSPORT_OPPONENT_MAP[t];
+  for (const [key, val] of Object.entries(GOTSPORT_OPPONENT_MAP)) {
+    if (t.includes(key) || key.includes(t)) return val;
+  }
+  return t;
+}
+
+const MONTHS_IDX: Record<string, string> = {
+  Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
+  Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+};
+
+// Parses GotSport cell text like "Oct 24, 2026 11:30AM CDT CDT" → ISO string
+function parseCentralToISO(cell: string): string {
+  const dm = cell.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})/);
+  const tm = cell.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*(CDT|CST)/i);
+  if (!dm || !tm) return "";
+
+  const [, mon, dayStr, year] = dm;
+  const [, hStr, min, ampm, tz] = tm;
+
+  let h = parseInt(hStr);
+  if (ampm.toUpperCase() === "PM" && h !== 12) h += 12;
+  if (ampm.toUpperCase() === "AM" && h === 12) h = 0;
+
+  const mo = MONTHS_IDX[mon];
+  const day = dayStr.padStart(2, "0");
+  const hh = h.toString().padStart(2, "0");
+  const offset = tz.toUpperCase() === "CDT" ? "-05:00" : "-06:00";
+
+  return `${year}-${mo}-${day}T${hh}:${min}:00${offset}`;
+}
+
+function gotsportLocationName(raw: string): string {
+  const u = raw.toUpperCase();
+  if (u.includes("WCRP") || u.includes("BORHO")) {
+    return u.includes("SOUTH") ? "WCRP South" : "WCRP North";
+  }
+  if (u.includes("SHENANDOAH") || u.includes("N AVENUE C")) return "Shenandoah Field 2";
+  if (u.includes("KOROMPAI") || u.includes("RESEARCH LOOP") || u.includes("CROSSROADS")) return "Crossroads Park";
+  if (u.includes("HERITAGE") || u.includes("1502 PARK")) return "Heritage Park";
+  if (u.includes("MEADOWHEATH")) return "Town & Country Field 23W";
+  if (u.includes("SHORELINE") || u.includes("WELLS BRANCH")) return "Wells Branch Soccer";
+  if (u.includes("BAGDAD") || u.includes("SERNA")) return "Serna Athletic Fields";
+  if (u.includes("BASTROP")) return "Bastrop Youth Soccer";
+  if (u.includes("RIVERWALK")) return "Riverwalk #3";
+  if (u.includes("JARRELL")) return "Jarrell Elementary School";
+  return raw.replace(/\s*-\s*.+$/, "").trim();
+}
+
+function parseSchedule(html: string, team: string): Match[] {
+  const LEGENDS_RE = /JYSA.*Legends/i;
+  const matches: Match[] = [];
+
+  const trPattern = /<tr[\s\S]*?<\/tr>/g;
+  let trMatch: RegExpExecArray | null;
+
+  while ((trMatch = trPattern.exec(html)) !== null) {
+    const cells: string[] = [];
+    const tdPattern = /<td[^>]*>([\s\S]*?)<\/td>/g;
+    let tdMatch: RegExpExecArray | null;
+    while ((tdMatch = tdPattern.exec(trMatch[0])) !== null) {
+      cells.push(cellText(tdMatch[1]));
+    }
+
+    if (cells.length < 6) continue;
+
+    // Cell 0 must be a bare match number
+    if (!/^\d+$/.test(cells[0].trim())) continue;
+
+    const kickoffIso = parseCentralToISO(cells[1]);
+    if (!kickoffIso) continue;
+
+    const homeTeam = cells[2];
+    const scoreStr = cells[3].trim();
+    const awayTeam = cells[4];
+    const locationRaw = cells[5];
+
+    const isHome = LEGENDS_RE.test(homeTeam);
+    const isAway = LEGENDS_RE.test(awayTeam);
+    if (!isHome && !isAway) continue;
+
+    const homeAway = isHome ? ("home" as const) : ("away" as const);
+    const opponentRaw = isHome ? awayTeam : homeTeam;
+
+    // Default arrival = kickoff − 30 min (SportsYou may override below)
+    const kickoffMs = new Date(kickoffIso).getTime();
+    const arrivalIso = new Date(kickoffMs - 30 * 60 * 1000).toISOString();
+
+    let goalsFor: number | null = null;
+    let goalsAgainst: number | null = null;
+    let result: "W" | "L" | "D" | null = null;
+
+    const scoreParsed = scoreStr.match(/(\d+)\s*-\s*(\d+)/);
+    if (scoreParsed) {
+      const a = parseInt(scoreParsed[1]);
+      const b = parseInt(scoreParsed[2]);
+      goalsFor = isHome ? a : b;
+      goalsAgainst = isHome ? b : a;
+      result = goalsFor > goalsAgainst ? "W" : goalsFor < goalsAgainst ? "L" : "D";
+    }
+
+    const location = gotsportLocationName(locationRaw);
+
+    matches.push({
+      id: `gs-${team}-${cells[0].trim()}`,
+      date: kickoffIso,
+      arrivalDate: arrivalIso,
+      opponent: canonicalOpponent(opponentRaw),
+      location,
+      locationAddress: LOCATION_ADDRESSES[location],
+      homeAway,
+      goalsFor,
+      goalsAgainst,
+      result,
+    });
+  }
+
+  return matches.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// --- Fallback static data ---
 
 const U11_STANDINGS: StandingRow[] = [
   { rank: 1, team: "JYSA North Legends FC",        gp: 7, w: 6, l: 1, t: 0, gf: 19, ga: 8,  pts: 18, isNorthLegends: true  },
@@ -126,11 +248,10 @@ const U12_STANDINGS: StandingRow[] = [
   { rank: 7, team: "Liberty United",              gp: 5, w: 0, l: 5, t: 0, gf: 5,  ga: 15, pts: 0,  isNorthLegends: false },
 ];
 
-// U11 match results keyed by SportsYou short UID (last 8 chars before @).
-// Add a new entry here after each game to populate the results table.
+// Fallback results keyed by SportsYou UID — used only when GotSport scraping fails
 const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; result: "W" | "L" | "D" }> = {
-  "3bd5311d": { goalsFor: 1,  goalsAgainst: 2, result: "L" }, // Sep 12 vs Elgin United (Ramirez)  — GotSport #340
-  "9183d02e": { goalsFor: 15, goalsAgainst: 0, result: "W" }, // Sep 19 vs Elgin United (Hernandez) — GotSport #342
+  "3bd5311d": { goalsFor: 1,  goalsAgainst: 2, result: "L" }, // Sep 12 vs Elgin United (Ramirez)
+  "9183d02e": { goalsFor: 15, goalsAgainst: 0, result: "W" }, // Sep 19 vs Elgin United (Hernandez)
   "e11c25d1": { goalsFor: 7,  goalsAgainst: 0, result: "W" }, // Sep 26 vs Storm 16B Black
   "bc0eae72": { goalsFor: 4,  goalsAgainst: 2, result: "W" }, // Sep 27 vs T&C Soccer Inter Milan
   "3ed13cc0": { goalsFor: 4,  goalsAgainst: 3, result: "W" }, // Oct 10 vs Elgin United (Ramirez)
@@ -140,8 +261,8 @@ const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
 
 // SportsYou has Ramirez/Hernandez swapped for the first two games — override with GotSport-verified names.
 const U11_OPPONENT_OVERRIDES: Record<string, string> = {
-  "3bd5311d": "Elgin United (Ramirez)",   // GotSport #340: Ramirez beat us 2-1 on Sep 12
-  "9183d02e": "Elgin United (Hernandez)", // GotSport #342: we beat Hernandez 15-0 on Sep 19
+  "3bd5311d": "Elgin United (Ramirez)",
+  "9183d02e": "Elgin United (Hernandez)",
 };
 
 const U12_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; result: "W" | "L" | "D" }> = {
@@ -155,23 +276,23 @@ const U12_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
 let u12Id = 0;
 
 const U12_MATCHES: Match[] = [
-  { id: `gs-u12-${++u12Id}`, date: "2026-09-12T11:30:00-05:00", opponent: "Leander FC Rattlers",      location: "WCRP South",              homeAway: "home", goalsFor: 7,  goalsAgainst: 2,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-09-19T10:00:00-05:00", opponent: "Elgin United (Castro)",    location: "WCRP North",              homeAway: "home", goalsFor: 13, goalsAgainst: 1,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-09-26T08:30:00-05:00", opponent: "FC Westlake Hooligans",    location: "Riverwalk #3",            homeAway: "away", goalsFor: 5,  goalsAgainst: 2,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-10-10T10:00:00-05:00", opponent: "Liberty United",           location: "WCRP South",              homeAway: "home", goalsFor: 15, goalsAgainst: 0,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-10-17T15:00:00-05:00", opponent: "LC United",                location: "Shenandoah Field 2",      homeAway: "away", goalsFor: 4,  goalsAgainst: 1,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-10-24T09:30:00-05:00", opponent: "Leander FC Rattlers",      location: "Serna Athletic Fields",   homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
-  { id: `gs-u12-${++u12Id}`, date: "2026-10-25T10:00:00-05:00", opponent: "BYSO Inferno",             location: "WCRP South",              homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
-  { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",             location: "Bastrop Youth Soccer",    homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-09-12T11:30:00-05:00", opponent: "Leander FC Rattlers",   location: "WCRP South",           homeAway: "home", goalsFor: 7,  goalsAgainst: 2,  result: "W" },
+  { id: `gs-u12-${++u12Id}`, date: "2026-09-19T10:00:00-05:00", opponent: "Elgin United (Castro)", location: "WCRP North",           homeAway: "home", goalsFor: 13, goalsAgainst: 1,  result: "W" },
+  { id: `gs-u12-${++u12Id}`, date: "2026-09-26T08:30:00-05:00", opponent: "FC Westlake Hooligans", location: "Riverwalk #3",         homeAway: "away", goalsFor: 5,  goalsAgainst: 2,  result: "W" },
+  { id: `gs-u12-${++u12Id}`, date: "2026-10-10T10:00:00-05:00", opponent: "Liberty United",        location: "WCRP South",           homeAway: "home", goalsFor: 15, goalsAgainst: 0,  result: "W" },
+  { id: `gs-u12-${++u12Id}`, date: "2026-10-17T15:00:00-05:00", opponent: "LC United",             location: "Shenandoah Field 2",   homeAway: "away", goalsFor: 4,  goalsAgainst: 1,  result: "W" },
+  { id: `gs-u12-${++u12Id}`, date: "2026-10-24T09:30:00-05:00", opponent: "Leander FC Rattlers",   location: "Serna Athletic Fields",homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-10-25T10:00:00-05:00", opponent: "BYSO Inferno",          location: "WCRP South",           homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",          location: "Bastrop Youth Soccer", homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
 ];
 
 export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
-  "WCRP":                     { lat: 30.5407, lng: -97.8742 }, // alias used by SportsYou data
+  "WCRP":                     { lat: 30.5407, lng: -97.8742 },
   "WCRP North":               { lat: 30.5407, lng: -97.8742 },
   "WCRP South":               { lat: 30.5407, lng: -97.8742 },
   "Shenandoah Field 2":       { lat: 30.3490, lng: -97.3690 },
   "Crossroads Park":          { lat: 31.0982, lng: -97.3428 },
-  "Heritage Park":            { lat: 31.0956, lng: -97.4665 }, // Heritage Park Belton
+  "Heritage Park":            { lat: 31.0956, lng: -97.4665 },
   "Town & Country Field 23W": { lat: 30.4414, lng: -97.7553 },
   "Wells Branch Soccer":      { lat: 30.4380, lng: -97.6760 },
   "Serna Athletic Fields":    { lat: 30.5775, lng: -97.8530 },
@@ -181,15 +302,15 @@ export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
 };
 
 const LOCATION_ADDRESSES: Record<string, string> = {
-  "WCRP North":              "3005 Co Rd 175, Leander, TX 78641",
-  "WCRP South":              "3005 Co Rd 175, Leander, TX 78641",
-  "Shenandoah Field 2":      "1490 N Avenue C, Elgin, TX 78621",
-  "Crossroads Park":         "1020 Research Pkwy, Temple, TX 76502",
-  "Town & Country Field 23W":"9100 Meadowheath Dr, Austin, TX 78729",
-  "Wells Branch Soccer":     "3908 Shoreline Dr, Austin, TX 78728",
-  "Serna Athletic Fields":   "601 S Bagdad Rd, Leander, TX 78641",
-  "Bastrop Youth Soccer":    "1603 Pine St, Bastrop, TX 78602",
-  "Riverwalk #3":            "1 Riverwalk Dr, Hutto, TX 78634",
+  "WCRP North":               "3005 Co Rd 175, Leander, TX 78641",
+  "WCRP South":               "3005 Co Rd 175, Leander, TX 78641",
+  "Shenandoah Field 2":       "1490 N Avenue C, Elgin, TX 78621",
+  "Crossroads Park":          "1020 Research Pkwy, Temple, TX 76502",
+  "Town & Country Field 23W": "9100 Meadowheath Dr, Austin, TX 78729",
+  "Wells Branch Soccer":      "3908 Shoreline Dr, Austin, TX 78728",
+  "Serna Athletic Fields":    "601 S Bagdad Rd, Leander, TX 78641",
+  "Bastrop Youth Soccer":     "1603 Pine St, Bastrop, TX 78602",
+  "Riverwalk #3":             "1 Riverwalk Dr, Hutto, TX 78634",
   "Jarrell Elementary School":"1615 CR 313, Jarrell, TX 76537",
 };
 
@@ -200,42 +321,55 @@ function withAddress(matches: Match[]): Match[] {
   }));
 }
 
+// --- Main export ---
+
 export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
   const fallbackStandings = team === "u12" ? U12_STANDINGS : U11_STANDINGS;
+  const url = GOTSPORT_SCHEDULE_URLS[team];
 
-  const [liveStandings, matchData] = await Promise.all([
-    scrapeStandings(team),
-    team === "u11"
-      ? fetchSportsYouGames("u11").then((games) =>
-          games.length > 0
-            ? games.map((g): Match => ({
-                id: `sy-u11-${g.uid}`,
-                date: g.iso,
-                arrivalDate: g.arrivalIso,
-                opponent: U11_OPPONENT_OVERRIDES[g.uid] ?? g.opponent,
-                location: g.locationName,
-                locationAddress: g.locationAddress,
-                homeAway: g.homeAway,
-                ...(U11_RESULTS[g.uid] ?? { goalsFor: null, goalsAgainst: null, result: null }),
-              }))
-            : withAddress([] as Match[])
-        )
-      : fetchSportsYouGames("u12").then((games) =>
-          games.length > 0
-            ? games.map((g): Match => ({
-                id: `sy-u12-${g.uid}`,
-                date: g.iso,
-                arrivalDate: g.arrivalIso,
-                opponent: g.opponent,
-                location: g.locationName,
-                locationAddress: g.locationAddress,
-                homeAway: g.homeAway,
-                ...(U12_RESULTS[g.uid] ?? { goalsFor: null, goalsAgainst: null, result: null }),
-              }))
-            : withAddress(U12_MATCHES)
-        ),
+  // Fetch GotSport page and SportsYou calendar in parallel (single GotSport request covers both standings + schedule)
+  const [html, sportsyouGames] = await Promise.all([
+    url
+      ? fetch(url, { cache: "no-store" })
+          .then((r) => (r.ok ? r.text() : ""))
+          .catch(() => "")
+      : Promise.resolve(""),
+    fetchSportsYouGames(team),
   ]);
 
+  const liveStandings = html ? parseStandings(html) : [];
+  const gotsportMatches = html ? parseSchedule(html, team) : [];
+
+  let matches: Match[];
+
+  if (gotsportMatches.length > 0) {
+    // GotSport is the source of truth. Enrich with SportsYou arrival times where available.
+    matches = gotsportMatches.map((m) => {
+      const kickoffMs = new Date(m.date).getTime();
+      const sy = sportsyouGames.find(
+        (g) => Math.abs(new Date(g.iso).getTime() - kickoffMs) < 2 * 60 * 60 * 1000,
+      );
+      return sy ? { ...m, arrivalDate: sy.arrivalIso } : m;
+    });
+  } else if (sportsyouGames.length > 0) {
+    // GotSport scraping failed — fall back to SportsYou
+    const resultsMap = team === "u11" ? U11_RESULTS : U12_RESULTS;
+    const overrides = team === "u11" ? U11_OPPONENT_OVERRIDES : ({} as Record<string, string>);
+    matches = sportsyouGames.map((g) => ({
+      id: `sy-${team}-${g.uid}`,
+      date: g.iso,
+      arrivalDate: g.arrivalIso,
+      opponent: overrides[g.uid] ?? g.opponent,
+      location: g.locationName,
+      locationAddress: g.locationAddress,
+      homeAway: g.homeAway,
+      ...(resultsMap[g.uid] ?? { goalsFor: null, goalsAgainst: null, result: null }),
+    }));
+  } else {
+    // Both failed — last resort hardcoded list (u12 only)
+    matches = team === "u12" ? withAddress(U12_MATCHES) : [];
+  }
+
   const standings = liveStandings.length > 0 ? liveStandings : fallbackStandings;
-  return { standings, matches: matchData };
+  return { standings, matches };
 }

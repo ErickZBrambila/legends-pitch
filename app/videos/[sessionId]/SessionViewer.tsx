@@ -448,6 +448,27 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">{t("gameAnalytics")}</h2>
           </div>
           <FieldHeatmap analytics={activeVideo.analytics} />
+          {(activeVideo.analytics.shotsOnTarget ?? 0) > 0 && (
+            <div className="rounded-xl border border-gray-100 bg-gray-50 px-5 py-4">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-wide mb-3">Shot Stats</p>
+              <div className="flex gap-6">
+                <div className="text-center">
+                  <p className="text-2xl font-black text-gray-900">{activeVideo.analytics.shotsOnTarget}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Shots on Target</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-black text-emerald-600">{activeVideo.analytics.saves}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Saves</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-black text-amber-500">
+                    {(activeVideo.analytics.shotEvents ?? []).filter(e => e.resultedInGoal).length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">Goals</p>
+                </div>
+              </div>
+            </div>
+          )}
           <ActivityTimeline analytics={activeVideo.analytics} clips={activeVideo.clips} markers={activeVideo.markers} />
         </section>
       )}

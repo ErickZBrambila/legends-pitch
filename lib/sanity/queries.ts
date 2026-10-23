@@ -424,6 +424,9 @@ type RawAnalytics = {
   goalPressureRightH2?: number;
   totalFrames: number;
   dominantZone: number;
+  shotsOnTarget?: number;
+  saves?: number;
+  shotEvents?: Array<{ timeSeconds: number; label: string; side: string; resultedInGoal: boolean }>;
 };
 
 type RawSessionVideo = {
@@ -458,6 +461,8 @@ const SESSION_PROJECTION = `
       goalPressureLeft, goalPressureRight,
       goalPressureLeftH1, goalPressureRightH1, goalPressureLeftH2, goalPressureRightH2,
       totalFrames, dominantZone,
+      shotsOnTarget, saves,
+      shotEvents[]{ timeSeconds, label, side, resultedInGoal },
       activityBuckets[]{ _key, tStart, tEnd, detections, frames }
     }
   }
@@ -507,6 +512,9 @@ function mapSession(s: RawSession): PracticeSession {
         goalPressureRightH2: v.analytics.goalPressureRightH2,
         totalFrames: v.analytics.totalFrames ?? 0,
         dominantZone: v.analytics.dominantZone ?? 0,
+        shotsOnTarget: v.analytics.shotsOnTarget,
+        saves: v.analytics.saves,
+        shotEvents: v.analytics.shotEvents,
       } : null,
     })),
   };
@@ -514,7 +522,7 @@ function mapSession(s: RawSession): PracticeSession {
 
 export async function getSessionsByTeam(team: TeamSlug): Promise<PracticeSession[]> {
   const raw = await sanityClient.fetch<RawSession[]>(
-    `*[_type == "practiceSession" && team->ageGroup == $team]{ ${SESSION_PROJECTION} } | order(sessionDate desc)`,
+    `*[_type in ["practiceSession", "gameSession"] && team->ageGroup == $team]{ ${SESSION_PROJECTION} } | order(sessionDate desc)`,
     { team }
   );
   return (raw ?? []).map(mapSession);
@@ -522,7 +530,7 @@ export async function getSessionsByTeam(team: TeamSlug): Promise<PracticeSession
 
 export async function getSessionById(id: string): Promise<PracticeSession | null> {
   const raw = await sanityClient.fetch<RawSession | null>(
-    `*[_type == "practiceSession" && _id == $id][0]{ ${SESSION_PROJECTION} }`,
+    `*[_type in ["practiceSession", "gameSession"] && _id == $id][0]{ ${SESSION_PROJECTION} }`,
     { id }
   );
   return raw ? mapSession(raw) : null;

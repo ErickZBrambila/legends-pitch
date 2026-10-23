@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import { verifyAdminPassword, createAdminSession, hasAnyAdminAccount, ADMIN_COOKIE, type AdminAccount } from "@/lib/admin-accounts";
+import { verifyAdminPassword, createAdminSession, ADMIN_COOKIE, type AdminAccount } from "@/lib/admin-accounts";
 import { rateLimit } from "@/lib/ratelimit";
 
 function safeEqual(a: string, b: string): boolean {
@@ -53,10 +53,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fallback: ADMIN_PASSWORD env var — only when no accounts exist yet (bootstrap mode)
-  const bootstrapMode = !(await hasAnyAdminAccount());
+  // Master key: ADMIN_PASSWORD env var always works as an emergency override
   const adminPassword = process.env.ADMIN_PASSWORD ?? "";
-  if (bootstrapMode && adminPassword && safeEqual(password, adminPassword)) {
+  if (adminPassword && safeEqual(password, adminPassword)) {
     // Synthetic bootstrap account — full admin, not stored in Redis
     const bootstrapAccount: AdminAccount = {
       id: "bootstrap",

@@ -112,6 +112,19 @@ export async function getAdminSession(): Promise<AdminAccount | null> {
   const parsed = verifyAdminSessionToken(token);
   if (!parsed) return null;
 
+  // Bootstrap account (master password login) — not stored in Redis
+  if (parsed.id === "bootstrap") {
+    return {
+      id: "bootstrap",
+      email: "admin",
+      displayName: "Admin",
+      role: "admin" as AdminRole,
+      approved: true,
+      revoked: false,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
   const redis = makeRedis();
   if (!redis) return null;
 

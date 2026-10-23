@@ -15,6 +15,7 @@ const EVENT_EMOJI: Record<TrackerEventType, string> = {
   shot_on: "🎯",
   shot_off: "❌",
   save: "🧤",
+  corner: "🚩",
   yellow_card: "🟨",
   red_card: "🟥",
   substitution: "🔄",

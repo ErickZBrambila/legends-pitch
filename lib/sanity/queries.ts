@@ -1,6 +1,6 @@
 import { sanityClient, sanityWriteClient } from "./client";
 import { urlForImage } from "./image";
-import type { Announcement, Match, Player, NewsPost, PostVideo, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
+import type { Announcement, Match, Player, NewsPost, GalleryEvent, HighlightVideo, SeasonStats, PracticeSession, VideoClip } from "@/lib/types";
 
 export type TeamSlug = "u11" | "u12";
 
@@ -91,11 +91,10 @@ export async function getPlayersByTeam(team: TeamSlug): Promise<Player[]> {
       number: number;
       position: "GK" | "DEF" | "MID" | "FWD";
       photo?: { asset: { _ref: string } };
-      bio?: string;
     }>
   >(
     `*[_type == "player" && team->ageGroup == $team]{
-      _id, name, number, position, photo, bio
+      _id, name, number, position, photo
     } | order(number asc)`,
     { team }
   );
@@ -105,7 +104,6 @@ export async function getPlayersByTeam(team: TeamSlug): Promise<Player[]> {
     number: p.number,
     position: p.position,
     photoUrl: p.photo ? urlForImage(p.photo) : undefined,
-    bio: p.bio ?? undefined,
   }));
 }
 
@@ -256,12 +254,9 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
     publishedAt: string;
     author: string;
     team: { ageGroup: string };
-    coverImage?: { asset: { _ref: string } };
-    videos?: Array<{ title: string; url: string; description?: string }>;
   } | null>(
     `*[_type == "post" && slug.current == $slug][0]{
-      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, team->{ ageGroup }, coverImage,
-      videos[]{ title, url, description }
+      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, team->{ ageGroup }
     }`,
     { slug }
   );
@@ -277,8 +272,6 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
     body_es: p.body_es,
     publishedAt: p.publishedAt,
     author: p.author ?? "",
-    coverImageUrl: p.coverImage ? urlForImage(p.coverImage) : undefined,
-    videos: (p.videos ?? []) as PostVideo[],
   };
 }
 
@@ -300,8 +293,7 @@ export async function getGalleryEventsByTeam(team: TeamSlug): Promise<GalleryEve
       _id, title, title_es, date,
       images[]{ _key, image, alt }
     } | order(date desc)`,
-    { team },
-    { next: { revalidate: 0 } }
+    { team }
   );
   return raw.map((e) => ({
     id: e._id,
@@ -364,19 +356,17 @@ export async function getHighlightVideosByTeam(team: TeamSlug): Promise<Highligh
     Array<{
       _id: string;
       title: string;
-      youtubeId?: string;
-      r2Url?: string;
+      youtubeId: string;
       event: string;
       order: number | null;
     }>
   >(
     `*[_type == "highlightVideo" && team->ageGroup == $team]{
-      _id, title, youtubeId, r2Url, event, order
+      _id, title, youtubeId, event, order
     } | order(order asc, _createdAt asc)`,
-    { team },
-    { next: { revalidate: 0 } }
+    { team }
   );
-  return raw.map((v) => ({ id: v._id, title: v.title, youtubeId: v.youtubeId, r2Url: v.r2Url, event: v.event }));
+  return raw.map((v) => ({ id: v._id, title: v.title, youtubeId: v.youtubeId, event: v.event }));
 }
 
 export async function getSeasonStatsByTeam(team: TeamSlug): Promise<SeasonStats> {
@@ -414,7 +404,6 @@ type RawAnalytics = {
   fieldZones: number[];
   fieldZonesFirstHalf?: number[];
   fieldZonesSecondHalf?: number[];
-  secondHalfOnly?: boolean;
   activityBuckets: RawActivityBucket[];
   goalPressureLeft: number;
   goalPressureRight: number;
@@ -426,7 +415,6 @@ type RawAnalytics = {
   dominantZone: number;
   shotsOnTarget?: number;
   saves?: number;
-  shotEvents?: Array<{ timeSeconds: number; label: string; side: string; resultedInGoal: boolean }>;
 };
 
 type RawSessionVideo = {
@@ -457,12 +445,10 @@ const SESSION_PROJECTION = `
     markers[]{ _key, timeSeconds, label },
     clips[]{ _key, r2Url, startSeconds, endSeconds, label, clipType, saveCount, archived },
     analytics{
-      fieldZones, fieldZonesFirstHalf, fieldZonesSecondHalf, secondHalfOnly,
+      fieldZones, fieldZonesFirstHalf, fieldZonesSecondHalf,
       goalPressureLeft, goalPressureRight,
       goalPressureLeftH1, goalPressureRightH1, goalPressureLeftH2, goalPressureRightH2,
-      totalFrames, dominantZone,
-      shotsOnTarget, saves,
-      shotEvents[]{ timeSeconds, label, side, resultedInGoal },
+      totalFrames, dominantZone, shotsOnTarget, saves,
       activityBuckets[]{ _key, tStart, tEnd, detections, frames }
     }
   }
@@ -497,7 +483,6 @@ function mapSession(s: RawSession): PracticeSession {
         fieldZones: v.analytics.fieldZones ?? [],
         fieldZonesFirstHalf: v.analytics.fieldZonesFirstHalf,
         fieldZonesSecondHalf: v.analytics.fieldZonesSecondHalf,
-        secondHalfOnly: v.analytics.secondHalfOnly ?? false,
         activityBuckets: (v.analytics.activityBuckets ?? []).map((b) => ({
           tStart: b.tStart,
           tEnd: b.tEnd,
@@ -514,7 +499,6 @@ function mapSession(s: RawSession): PracticeSession {
         dominantZone: v.analytics.dominantZone ?? 0,
         shotsOnTarget: v.analytics.shotsOnTarget,
         saves: v.analytics.saves,
-        shotEvents: v.analytics.shotEvents,
       } : null,
     })),
   };

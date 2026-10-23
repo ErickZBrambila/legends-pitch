@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { getRedis } from "@/lib/redis";
 
+// DELETE — primary tagger calls this when ending the game
+export async function DELETE() {
+  const redis = getRedis();
+  if (!redis) return NextResponse.json({ ok: true });
+  await redis.del("tracker:active");
+  return NextResponse.json({ ok: true });
+}
+
 export async function GET() {
   const redis = getRedis();
   if (!redis) return NextResponse.json({ session: null });

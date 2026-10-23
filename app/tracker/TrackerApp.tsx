@@ -46,6 +46,7 @@ type ModalStep =
   | { type: "pick_sub_in"; subOutId: string; subOutName: string }
   | { type: "pick_card_player"; eventType: "yellow_card" | "red_card" }
   | { type: "pick_shot_player"; eventType: "shot_on" | "shot_off" | "save" }
+  | { type: "pick_corner_player" }
   | { type: "confirm_rival_goal" };
 
 const DRAFT_KEY = "tracker_game_draft";
@@ -92,6 +93,7 @@ const EVENT_LABELS: Record<TrackerEventType, string> = {
   shot_on: "Shot On",
   shot_off: "Shot Off",
   save: "Save",
+  corner: "Corner",
   yellow_card: "Yellow Card",
   red_card: "Red Card",
   substitution: "Sub",
@@ -103,6 +105,7 @@ const EVENT_EMOJI: Record<TrackerEventType, string> = {
   shot_on: "🎯",
   shot_off: "❌",
   save: "🧤",
+  corner: "🚩",
   yellow_card: "🟨",
   red_card: "🟥",
   substitution: "🔄",
@@ -321,6 +324,8 @@ export default function TrackerApp({ teams }: Props) {
             const snapshotEvents = ((data.events ?? []) as (TrackerEvent & { deletedAt?: string })[]).filter(
               (e) => !e.deletedAt
             );
+            // Sync timer: use primary's kickoffAt so elapsed clock matches
+            const kickoffAt = session.kickoffAt ? new Date(session.kickoffAt).getTime() : Date.now();
             setState((s) => ({
               ...s,
               taggerId,
@@ -334,10 +339,8 @@ export default function TrackerApp({ teams }: Props) {
               matchDate: session.date || "",
               phase: "live",
               half: 1,
-              // Start the clock immediately so event buttons are usable; minute will
-              // be approximate (relative to join time) but avoids the "Kick Off" block.
-              halfStartWall: Date.now(),
-              gameStartWall: Date.now(),
+              halfStartWall: kickoffAt,
+              gameStartWall: kickoffAt,
               events: snapshotEvents,
             }));
             return null;
@@ -537,6 +540,8 @@ export default function TrackerApp({ teams }: Props) {
         setModal({ type: "pick_sub_out" });
       } else if (eventType === "yellow_card" || eventType === "red_card") {
         setModal({ type: "pick_card_player", eventType });
+      } else if (eventType === "corner") {
+        setModal({ type: "pick_corner_player" });
       } else {
         setModal({ type: "pick_shot_player", eventType: eventType as "shot_on" | "shot_off" | "save" });
       }
@@ -593,13 +598,22 @@ export default function TrackerApp({ teams }: Props) {
         <div className="flex-1 overflow-y-auto px-3 py-4 max-w-sm mx-auto w-full space-y-3">
           {!clockStarted && (
             <button
-              onClick={() =>
+              onClick={() => {
+                const kickoffAt = new Date().toISOString();
+                const kickoffMs = Date.now();
                 setState((s) => ({
                   ...s,
-                  gameStartWall: Date.now(),
-                  halfStartWall: Date.now(),
-                }))
-              }
+                  gameStartWall: kickoffMs,
+                  halfStartWall: kickoffMs,
+                }));
+                if (state.sessionCode) {
+                  fetch(`/api/tracker/sessions/${state.sessionCode}/state`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ kickoffAt }),
+                  }).catch(() => {});
+                }
+              }}
               className="w-full py-6 bg-[#238636] hover:bg-[#2ea043] active:scale-95 rounded-xl font-black text-2xl tracking-wide transition-all"
             >
               ⚽ Kick Off!
@@ -636,6 +650,12 @@ export default function TrackerApp({ teams }: Props) {
               className="py-4 bg-[#161b22] hover:bg-[#21262d] active:scale-95 border border-[#30363d] rounded-xl font-semibold transition-all"
             >
               🧤 Save
+            </button>
+            <button
+              onClick={() => handleEventTap("corner")}
+              className="col-span-2 py-3 bg-[#161b22] hover:bg-[#21262d] active:scale-95 border border-[#30363d] rounded-xl font-semibold transition-all"
+            >
+              🚩 Corner
             </button>
             <button
               onClick={() => handleEventTap("yellow_card")}
@@ -992,6 +1012,27 @@ function SessionScreen({
   const [name, setName] = useState(taggerName);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [activeSession, setActiveSession] = useState<{ code: string; opponent: string } | null>(null);
+
+  // Poll for an active session so joiners can tap to join without a code
+  useEffect(() => {
+    if (mode !== "pick") return;
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/tracker/sessions/active");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.session?.code) {
+          setActiveSession({ code: data.session.code, opponent: data.session.opponent || "opponent" });
+        } else {
+          setActiveSession(null);
+        }
+      } catch {}
+    };
+    poll();
+    const id = setInterval(poll, 5000);
+    return () => clearInterval(id);
+  }, [mode]);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
@@ -1020,6 +1061,26 @@ function SessionScreen({
           <h1 className="text-2xl font-bold tracking-tight">Game Tracker</h1>
           <p className="text-[#8b949e] text-sm mt-1">North Legends FC</p>
         </div>
+
+        {activeSession && (
+          <button
+            onClick={() => {
+              setCode(activeSession.code);
+              setMode("join");
+            }}
+            className="w-full py-4 bg-[#da3633]/15 hover:bg-[#da3633]/25 active:scale-95 border border-[#da3633]/50 rounded-xl transition-all text-left px-4"
+          >
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f85149] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#f85149]" />
+              </span>
+              <span className="text-[#f85149] font-bold text-sm">Live game in progress</span>
+            </div>
+            <div className="text-[#f0f6fc] font-semibold mt-1">vs {activeSession.opponent} — Tap to join</div>
+            <div className="text-[#8b949e] text-xs mt-0.5">Code: {activeSession.code}</div>
+          </button>
+        )}
 
         <button
           onClick={() => setMode("create")}
@@ -1253,6 +1314,23 @@ function PlayerModal({ modal, players, onClose, onCommit, onNext }: ModalProps) 
               subInPlayerName: p.name,
             })
           }
+        />
+      </ModalShell>
+    );
+  }
+
+  if (modal.type === "pick_corner_player") {
+    return (
+      <ModalShell title="🚩 Corner — who took it?" onClose={onClose}>
+        <button
+          onClick={() => onCommit({ type: "corner" })}
+          className="w-full py-3 bg-[#161b22] hover:bg-[#21262d] border border-[#30363d] rounded-lg text-sm font-medium transition-all mb-2"
+        >
+          Skip / unknown
+        </button>
+        <PlayerList
+          players={sorted}
+          onSelect={(p) => onCommit({ type: "corner", playerId: p.id, playerName: p.name })}
         />
       </ModalShell>
     );

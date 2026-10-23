@@ -14,7 +14,8 @@ function fmt(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function clipSection(clip: VideoClip): "celebration" | "second" | "first" {
+function clipSection(clip: VideoClip): "saves" | "celebration" | "second" | "first" {
+  if (clip.clipType === "shot_on_target") return "saves";
   if (clip.clipType === "celebration") return "celebration";
   if (clip.clipType === "goal") return clip.startSeconds < 1800 ? "first" : "second";
   if (clip.startSeconds >= 3720) return "celebration";
@@ -26,12 +27,14 @@ const SECTION_STYLE = {
   first:       { labelKey: "firstHalf",   color: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200" },
   second:      { labelKey: "secondHalf",  color: "bg-orange-500", badge: "bg-orange-50 text-orange-700 border-orange-200" },
   celebration: { labelKey: "celebration", color: "bg-yellow-400", badge: "bg-yellow-50 text-yellow-800 border-yellow-200" },
+  saves:       { labelKey: "shotsOnTargetSection", color: "bg-green-500",  badge: "bg-green-50 text-green-700 border-green-200" },
 } as const;
 
 const TYPE_BADGE_KEY: Record<string, string> = {
-  goal:        "goalBadge",
-  celebration: "celebrationBadge",
-  highlight:   "",
+  goal:           "goalBadge",
+  celebration:    "celebrationBadge",
+  shot_on_target: "shotBadge",
+  highlight:      "",
 };
 
 function SaveButton({
@@ -240,7 +243,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     }
   }
 
-  const sections = (["first", "second", "celebration"] as const).map((key) => ({
+  const sections = (["first", "second", "celebration", "saves"] as const).map((key) => ({
     key,
     label: t(SECTION_STYLE[key].labelKey),
     color: SECTION_STYLE[key].color,
@@ -447,6 +450,22 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             <div className="w-1 h-5 rounded-full bg-emerald-500" />
             <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">{t("gameAnalytics")}</h2>
           </div>
+          {(activeVideo.analytics.shotsOnTarget != null || activeVideo.analytics.saves != null) && (
+            <div className="flex gap-4">
+              {activeVideo.analytics.shotsOnTarget != null && (
+                <div className="flex-1 rounded-2xl bg-gray-50 border border-gray-100 p-4 text-center">
+                  <p className="text-3xl font-black text-gray-900">{activeVideo.analytics.shotsOnTarget}</p>
+                  <p className="text-xs font-semibold text-gray-500 mt-1 uppercase tracking-wide">{t("shotsOnTarget")}</p>
+                </div>
+              )}
+              {activeVideo.analytics.saves != null && (
+                <div className="flex-1 rounded-2xl bg-green-50 border border-green-100 p-4 text-center">
+                  <p className="text-3xl font-black text-green-700">{activeVideo.analytics.saves}</p>
+                  <p className="text-xs font-semibold text-green-600 mt-1 uppercase tracking-wide">{t("savesCount")}</p>
+                </div>
+              )}
+            </div>
+          )}
           <FieldHeatmap analytics={activeVideo.analytics} />
           {(activeVideo.analytics.shotsOnTarget ?? 0) > 0 && (
             <div className="rounded-xl border border-gray-100 bg-gray-50 px-5 py-4">

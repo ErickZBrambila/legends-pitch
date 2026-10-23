@@ -692,7 +692,12 @@ export default function TrackerApp({ teams }: Props) {
               Half Time
             </button>
             <button
-              onClick={() => setState((s) => ({ ...s, phase: "end" }))}
+              onClick={() => {
+                setState((s) => ({ ...s, phase: "end" }));
+                if (state.isPrimary) {
+                  fetch("/api/tracker/sessions/active", { method: "DELETE" }).catch(() => {});
+                }
+              }}
               className="py-2.5 bg-[#da3633]/20 hover:bg-[#da3633]/30 border border-[#da3633]/40 rounded-lg text-sm font-semibold text-[#f85149] transition-all"
             >
               End Game

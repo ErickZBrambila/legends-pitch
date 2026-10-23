@@ -127,6 +127,12 @@ export default function AdminLogin() {
             {loading ? "Signing in…" : "Sign In"}
           </button>
 
+          {mode === "account" && (
+            <Link href="/admin/forgot" className="text-xs text-gray-500 hover:text-gray-300 transition-colors text-center">
+              Forgot password?
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={() => switchMode(mode === "account" ? "master" : "account")}

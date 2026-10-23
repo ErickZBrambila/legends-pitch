@@ -14,7 +14,8 @@
     "news": "News",
     "gallery": "Gallery",
     "contact": "Contact",
-    "roadmap": "What's Coming"
+    "roadmap": "What's Coming",
+    "share": "Share this page"
   },
   "Footer": {
     "tagline": "Developing Players, Building Leaders",
@@ -166,6 +167,7 @@
     "nowPlaying": "{label} · tap ↓ to download",
     "playing": "Playing",
     "goals": "Goals",
+    "conceded": "Conceded",
     "allMoments": "All Moments",
     "momentsHint": "{count} highlights · tap to jump",
     "gameAnalytics": "Game Analytics",
@@ -173,6 +175,10 @@
     "secondHalf": "2nd Half",
     "celebration": "Celebration 🎉",
     "clipsCount": "{count} clips",
+    "shotsOnTargetSection": "Shots on Target",
+    "shotBadge": "🎯 Shot on Target",
+    "shotsOnTarget": "Shots on Target",
+    "savesCount": "Saves",
     "goalBadge": "⚽ Goal",
     "celebrationBadge": "🎉 Celebration",
     "beFirst": "Be the first",

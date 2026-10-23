@@ -9,6 +9,7 @@ import NavTip from "@/components/NavTip";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import PushPermission from "@/components/PushPermission";
 import LanguagePickerModal from "@/components/LanguagePickerModal";
+import TeamPreferenceRedirect from "@/components/TeamPreferenceRedirect";
 import SiteBannerClient from "@/components/SiteBannerClient";
 import PageViewTracker from "@/components/PageViewTracker";
 import WhatsNewModal from "@/components/WhatsNewModal";
@@ -20,14 +21,11 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
   title: {
-    default: "North Legends FC",
+    default: "⚽ North Legends FC",
     template: "%s | North Legends FC",
   },
   description:
     "Official website of the North Legends FC youth soccer team — schedules, roster, news, and more.",
-  icons: {
-    apple: "/apple-icon.png",
-  },
 };
 
 export default async function RootLayout({
@@ -38,12 +36,13 @@ export default async function RootLayout({
   const locale = await getLocale();
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? headersList.get("x-invoke-path") ?? "";
-  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/neo");
+  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/neo") || pathname.startsWith("/tracker");
   return (
     <html lang={locale} className={`${geist.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>
           {!isAdminRoute && <LanguagePickerModal />}
+          {!isAdminRoute && <TeamPreferenceRedirect />}
           {!isAdminRoute && <SiteBannerClient />}
           {!isAdminRoute && <Nav />}
           {!isAdminRoute && <NavTip />}

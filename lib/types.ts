@@ -35,6 +35,7 @@ export interface Player {
   number: number;
   position: "GK" | "DEF" | "MID" | "FWD";
   photoUrl?: string;
+  bio?: string;
 }
 
 export interface PhotoSubmission {
@@ -78,7 +79,8 @@ export interface GalleryImage {
 
 export interface HighlightVideo {
   id: string;
-  youtubeId: string;
+  youtubeId?: string;
+  r2Url?: string;
   title: string;
   event: string;
 }
@@ -103,7 +105,7 @@ export interface VideoClip {
   startSeconds: number;
   endSeconds: number;
   label: string;
-  clipType?: "highlight" | "goal" | "celebration";
+  clipType?: "highlight" | "goal" | "celebration" | "shot_on_target";
   saveCount: number;
   archived: boolean;
 }
@@ -128,6 +130,10 @@ export interface VideoAnalytics {
   goalPressureRightH2?: number;
   totalFrames: number;
   dominantZone: number;
+  shotsOnTarget?: number;
+  saves?: number;
+  secondHalfOnly?: boolean;
+  shotEvents?: { resultedInGoal: boolean }[];
 }
 
 export interface SessionVideo {
@@ -159,6 +165,7 @@ export type TrackerEventType =
   | "shot_on"
   | "shot_off"
   | "save"
+  | "corner"
   | "yellow_card"
   | "red_card"
   | "substitution";
@@ -168,7 +175,7 @@ export interface TrackerEvent {
   type: TrackerEventType;
   half: 1 | 2;
   minute: number;
-  wallTimestamp: string;
+  wallTimestamp: string;       // ISO — maps to KickReel video timeline
   taggerId?: string;
   confidence?: "sure" | "maybe";
   playerId?: string;

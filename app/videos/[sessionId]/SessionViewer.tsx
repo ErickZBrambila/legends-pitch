@@ -14,7 +14,8 @@ function fmt(seconds: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function clipSection(clip: VideoClip): "celebration" | "second" | "first" {
+function clipSection(clip: VideoClip): "saves" | "celebration" | "second" | "first" {
+  if (clip.clipType === "shot_on_target") return "saves";
   if (clip.clipType === "celebration") return "celebration";
   if (clip.clipType === "goal") return clip.startSeconds < 1800 ? "first" : "second";
   if (clip.startSeconds >= 3720) return "celebration";
@@ -26,12 +27,14 @@ const SECTION_STYLE = {
   first:       { labelKey: "firstHalf",   color: "bg-blue-500",   badge: "bg-blue-50 text-blue-700 border-blue-200" },
   second:      { labelKey: "secondHalf",  color: "bg-orange-500", badge: "bg-orange-50 text-orange-700 border-orange-200" },
   celebration: { labelKey: "celebration", color: "bg-yellow-400", badge: "bg-yellow-50 text-yellow-800 border-yellow-200" },
+  saves:       { labelKey: "shotsOnTargetSection", color: "bg-green-500",  badge: "bg-green-50 text-green-700 border-green-200" },
 } as const;
 
 const TYPE_BADGE_KEY: Record<string, string> = {
-  goal:        "goalBadge",
-  celebration: "celebrationBadge",
-  highlight:   "",
+  goal:           "goalBadge",
+  celebration:    "celebrationBadge",
+  shot_on_target: "shotBadge",
+  highlight:      "",
 };
 
 function SaveButton({
@@ -240,7 +243,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     }
   }
 
-  const sections = (["first", "second", "celebration"] as const).map((key) => ({
+  const sections = (["first", "second", "celebration", "saves"] as const).map((key) => ({
     key,
     label: t(SECTION_STYLE[key].labelKey),
     color: SECTION_STYLE[key].color,
@@ -249,6 +252,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   })).filter((s) => s.clips.length > 0);
 
   const goals = activeVideo.clips.filter((c) => c.clipType === "goal");
+  const rivalGoals = activeVideo.clips.filter((c) => (c.clipType as string) === "rival_goal");
   const driveUrl = session.videos.find((v) => v.driveUrl)?.driveUrl;
 
   return (
@@ -391,6 +395,32 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         </section>
       )}
 
+      {/* Rival goals */}
+      {rivalGoals.length > 0 && (
+        <section className="mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🚨</span>
+            <h2 className="text-sm font-black text-red-800 uppercase tracking-wide">{t("conceded")}</h2>
+            <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">{rivalGoals.length}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {rivalGoals.map((c, i) => (
+              <button
+                key={c.id}
+                onClick={() => playClip(c.r2Url, false)}
+                className={`px-3 py-1.5 border text-sm font-semibold rounded-full transition-colors ${
+                  activeClipUrl === c.r2Url
+                    ? "bg-red-600 text-white border-red-600"
+                    : "bg-white text-red-800 border-red-300 hover:bg-red-100"
+                }`}
+              >
+                🚨 {i + 1} · {c.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Marker chips */}
       {activeVideo.markers.length > 0 && (
         <section className="mb-8">
@@ -420,7 +450,44 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             <div className="w-1 h-5 rounded-full bg-emerald-500" />
             <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide">{t("gameAnalytics")}</h2>
           </div>
+          {(activeVideo.analytics.shotsOnTarget != null || activeVideo.analytics.saves != null) && (
+            <div className="flex gap-4">
+              {activeVideo.analytics.shotsOnTarget != null && (
+                <div className="flex-1 rounded-2xl bg-gray-50 border border-gray-100 p-4 text-center">
+                  <p className="text-3xl font-black text-gray-900">{activeVideo.analytics.shotsOnTarget}</p>
+                  <p className="text-xs font-semibold text-gray-500 mt-1 uppercase tracking-wide">{t("shotsOnTarget")}</p>
+                </div>
+              )}
+              {activeVideo.analytics.saves != null && (
+                <div className="flex-1 rounded-2xl bg-green-50 border border-green-100 p-4 text-center">
+                  <p className="text-3xl font-black text-green-700">{activeVideo.analytics.saves}</p>
+                  <p className="text-xs font-semibold text-green-600 mt-1 uppercase tracking-wide">{t("savesCount")}</p>
+                </div>
+              )}
+            </div>
+          )}
           <FieldHeatmap analytics={activeVideo.analytics} />
+          {(activeVideo.analytics.shotsOnTarget ?? 0) > 0 && (
+            <div className="rounded-xl border border-gray-100 bg-gray-50 px-5 py-4">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-wide mb-3">Shot Stats</p>
+              <div className="flex gap-6">
+                <div className="text-center">
+                  <p className="text-2xl font-black text-gray-900">{activeVideo.analytics.shotsOnTarget}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Shots on Target</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-black text-emerald-600">{activeVideo.analytics.saves}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Saves</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-black text-amber-500">
+                    {(activeVideo.analytics.shotEvents ?? []).filter(e => e.resultedInGoal).length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">Goals</p>
+                </div>
+              </div>
+            </div>
+          )}
           <ActivityTimeline analytics={activeVideo.analytics} clips={activeVideo.clips} markers={activeVideo.markers} />
         </section>
       )}

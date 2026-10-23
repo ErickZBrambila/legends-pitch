@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import type { Player } from "@/lib/types";
 import RosterField from "./RosterField";
 import PhotoSubmitModal from "./PhotoSubmitModal";
+import PlayerPhotoLightbox from "./PlayerPhotoLightbox";
 
 const POSITION_COLORS: Record<string, string> = {
   GK: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -33,6 +34,15 @@ export default function RosterView({
   const t = useTranslations("Roster");
   const [view, setView] = useState<"field" | "list">("field");
   const [photoModal, setPhotoModal] = useState<Player | null>(null);
+  const [lightboxPlayer, setLightboxPlayer] = useState<Player | null>(null);
+
+  function handlePlayerClick(player: Player) {
+    if (player.photoUrl || player.bio) {
+      setLightboxPlayer(player);
+    } else {
+      setPhotoModal(player);
+    }
+  }
 
   const pendingSet = new Set(pendingPlayerIds);
 
@@ -62,9 +72,12 @@ export default function RosterView({
 
       {view === "field" ? (
         <div className="flex flex-col items-center">
-          <RosterField players={players} />
+          <RosterField players={players} onPlayerClick={handlePlayerClick} />
           <p className="text-xs text-gray-400 mt-4 text-center">
             {t("playersSeason", { count: players.length })}
+          </p>
+          <p className="text-xs text-gray-400 mt-1 text-center">
+            📷 Tap a player to view or add their photo
           </p>
         </div>
       ) : (
@@ -82,7 +95,8 @@ export default function RosterView({
                     return (
                       <div
                         key={player.id}
-                        className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-all"
+                        onClick={() => handlePlayerClick(player)}
+                        className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-all cursor-pointer"
                       >
                         {/* Avatar */}
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-[var(--color-navy)] flex items-center justify-center mb-3 flex-shrink-0">
@@ -108,20 +122,22 @@ export default function RosterView({
                           {pos}
                         </span>
 
-                        {/* Photo submit button */}
-                        {!player.photoUrl && (
-                          <button
-                            onClick={() => setPhotoModal(player)}
-                            className={`mt-2.5 flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors ${
-                              hasPending
-                                ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-                                : "bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-700"
-                            }`}
-                          >
-                            <span>📷</span>
-                            <span>{hasPending ? "Pending review" : "Add photo"}</span>
-                          </button>
-                        )}
+                        {/* Photo button — visible for all players */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setPhotoModal(player); }}
+                          className={`mt-2.5 flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors ${
+                            hasPending
+                              ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                              : player.photoUrl
+                              ? "bg-gray-50 text-gray-400 border border-gray-200 hover:bg-gray-100 hover:text-gray-600"
+                              : "bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-700"
+                          }`}
+                        >
+                          <span>📷</span>
+                          <span>
+                            {hasPending ? "Pending review" : player.photoUrl ? "Change photo" : "Add photo"}
+                          </span>
+                        </button>
                       </div>
                     );
                   })}
@@ -130,6 +146,14 @@ export default function RosterView({
             );
           })}
         </div>
+      )}
+
+      {lightboxPlayer && (
+        <PlayerPhotoLightbox
+          player={lightboxPlayer}
+          onClose={() => setLightboxPlayer(null)}
+          onChangePhoto={(p) => { setLightboxPlayer(null); setPhotoModal(p); }}
+        />
       )}
 
       {photoModal && (

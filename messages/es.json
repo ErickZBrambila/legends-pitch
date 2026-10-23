@@ -14,7 +14,8 @@
     "news": "Noticias",
     "gallery": "Galería",
     "contact": "Contacto",
-    "roadmap": "Próximamente"
+    "roadmap": "Próximamente",
+    "share": "Compartir esta página"
   },
   "Footer": {
     "tagline": "Formando Jugadores, Creando Líderes",
@@ -166,6 +167,7 @@
     "nowPlaying": "{label} · toca ↓ para descargar",
     "playing": "Reproduciendo",
     "goals": "Goles",
+    "conceded": "Goles en Contra",
     "allMoments": "Todos los Momentos",
     "momentsHint": "{count} jugadas destacadas · toca para saltar",
     "gameAnalytics": "Análisis del Partido",
@@ -173,6 +175,10 @@
     "secondHalf": "2do Tiempo",
     "celebration": "Celebración 🎉",
     "clipsCount": "{count} clips",
+    "shotsOnTargetSection": "Tiros a Puerta",
+    "shotBadge": "🎯 Tiro a Puerta",
+    "shotsOnTarget": "Tiros a Puerta",
+    "savesCount": "Atajadas",
     "goalBadge": "⚽ Gol",
     "celebrationBadge": "🎉 Celebración",
     "beFirst": "Sé el primero",

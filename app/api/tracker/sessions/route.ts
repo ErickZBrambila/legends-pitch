@@ -52,6 +52,8 @@ export async function POST(req: NextRequest) {
       [taggerId]: JSON.stringify({ taggerId, name: taggerName || "Primary", isPrimary: true }),
     }),
     redis.expire(`tracker:session:${code}:taggers`, SESSION_TTL),
+    // Publish as the active session so joiners can discover it without a code
+    redis.set("tracker:active", code, { ex: SESSION_TTL }),
   ]);
 
   return NextResponse.json({ code, session });

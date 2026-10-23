@@ -1,15 +1,19 @@
 import { getRedis } from "@/lib/redis";
 import { createHash } from "crypto";
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+const TZ = "America/Chicago";
+
+function localDateStr(offsetDays = 0): string {
+  const d = new Date();
+  if (offsetDays) d.setDate(d.getDate() - offsetDays);
+  return d.toLocaleDateString("en-CA", { timeZone: TZ }); // en-CA gives YYYY-MM-DD
 }
 
 export async function trackPageView(path: string, ip: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
 
-  const date = today();
+  const date = localDateStr();
   const ipHash = createHash("sha256").update(ip).digest("hex").slice(0, 16);
 
   await Promise.all([
@@ -27,31 +31,36 @@ export interface DailyStats {
   uniques: number;
 }
 
+export interface PushSubscriberBreakdown {
+  total: number;
+  ios: number;
+  android: number;
+  other: number;
+}
+
 export interface AnalyticsData {
   daily: DailyStats[];
   topPages: Array<{ path: string; views: number }>;
-  pushSubscribers: number;
+  pushSubscribers: PushSubscriberBreakdown;
   totalPageviews: number;
 }
 
 export async function getAnalytics(): Promise<AnalyticsData> {
   const redis = getRedis();
   if (!redis) {
-    return { daily: [], topPages: [], pushSubscribers: 0, totalPageviews: 0 };
+    return { daily: [], topPages: [], pushSubscribers: { total: 0, ios: 0, android: 0, other: 0 }, totalPageviews: 0 };
   }
 
-  // Build last 14 days
+  // Build last 14 days in local (Central) time
   const dates: string[] = [];
   for (let i = 13; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    dates.push(d.toISOString().slice(0, 10));
+    dates.push(localDateStr(i));
   }
 
-  const [topPagesRaw, pushSubsRaw, ...dailyResults] = await Promise.all([
+  const [topPagesRaw, pushSubsRaw, dailyResults] = await Promise.all([
     redis.zrange<string[]>("analytics:pages", 0, 9, { rev: true, withScores: true }),
-    redis.hlen("push:subs"),
-    ...dates.map(async (date) => {
+    redis.hgetall<Record<string, { endpoint: string }>>("push:subs"),
+    Promise.all(dates.map(async (date) => {
       const [daily, uniq] = await Promise.all([
         redis.hgetall<Record<string, number>>(`analytics:daily:${date}`),
         redis.pfcount(`analytics:uniq:${date}`),
@@ -60,7 +69,7 @@ export async function getAnalytics(): Promise<AnalyticsData> {
         ? Object.values(daily).reduce((s, v) => s + Number(v), 0)
         : 0;
       return { date, pageviews, uniques: uniq ?? 0 };
-    }),
+    })),
   ]);
 
   // zrange with withScores returns [member, score, member, score, ...]
@@ -71,13 +80,24 @@ export async function getAnalytics(): Promise<AnalyticsData> {
     }
   }
 
-  const daily = dailyResults as DailyStats[];
+  const daily = dailyResults;
   const totalPageviews = topPages.reduce((s, p) => s + p.views, 0);
+
+  const pushBreakdown: PushSubscriberBreakdown = { total: 0, ios: 0, android: 0, other: 0 };
+  if (pushSubsRaw) {
+    for (const sub of Object.values(pushSubsRaw)) {
+      const endpoint = sub?.endpoint ?? "";
+      pushBreakdown.total++;
+      if (endpoint.includes("web.push.apple.com")) pushBreakdown.ios++;
+      else if (endpoint.includes("fcm.googleapis.com")) pushBreakdown.android++;
+      else pushBreakdown.other++;
+    }
+  }
 
   return {
     daily,
     topPages,
-    pushSubscribers: pushSubsRaw ?? 0,
+    pushSubscribers: pushBreakdown,
     totalPageviews,
   };
 }

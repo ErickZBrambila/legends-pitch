@@ -252,7 +252,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   })).filter((s) => s.clips.length > 0);
 
   const goals = activeVideo.clips.filter((c) => c.clipType === "goal");
-  const rivalGoals = activeVideo.clips.filter((c) => c.clipType === "rival_goal");
+  const rivalGoals = activeVideo.clips.filter((c) => (c.clipType as string) === "rival_goal");
   const driveUrl = session.videos.find((v) => v.driveUrl)?.driveUrl;
 
   return (

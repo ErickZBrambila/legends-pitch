@@ -35,6 +35,7 @@ export interface Player {
   number: number;
   position: "GK" | "DEF" | "MID" | "FWD";
   photoUrl?: string;
+  bio?: string;
 }
 
 export interface PhotoSubmission {
@@ -131,6 +132,8 @@ export interface VideoAnalytics {
   dominantZone: number;
   shotsOnTarget?: number;
   saves?: number;
+  secondHalfOnly?: boolean;
+  shotEvents?: { resultedInGoal: boolean }[];
 }
 
 export interface SessionVideo {

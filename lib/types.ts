@@ -164,6 +164,9 @@ export interface PracticeSession {
   videos: SessionVideo[];
 }
 
+// ─── Tracker ──────────────────────────────────────────────────────────────────
+
+
 export type TrackerEventType =
   | "goal"
   | "rival_goal"
@@ -180,6 +183,8 @@ export interface TrackerEvent {
   half: 1 | 2;
   minute: number;
   wallTimestamp: string;       // ISO — maps to KickReel video timeline
+  taggerId?: string;
+  confidence?: "sure" | "maybe";
   playerId?: string;
   playerName?: string;
   assistPlayerId?: string;

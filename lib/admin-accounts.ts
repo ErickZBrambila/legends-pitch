@@ -12,6 +12,7 @@ export type AdminAccount = {
   displayName: string;
   role: AdminRole;
   approved: boolean;
+  revoked: boolean;
   createdAt: string;
 };
 
@@ -152,7 +153,8 @@ export async function createAdminAccount(
     email: normalizedEmail,
     displayName,
     role,
-    approved: true,
+    approved: false,
+    revoked: false,
     createdAt: new Date().toISOString(),
   };
 
@@ -211,7 +213,7 @@ export async function revokeAdminAccount(id: string): Promise<void> {
   const stored = await redis.get<StoredAccount>(redisKey("account", id));
   if (!stored) return;
 
-  const updated = { ...stored, approved: false };
+  const updated = { ...stored, approved: false, revoked: true };
   await Promise.all([
     redis.set(redisKey("account", id), JSON.stringify(updated)),
     redis.sadd(redisKey("revoked"), id),
@@ -225,7 +227,7 @@ export async function approveAdminAccount(id: string): Promise<void> {
   const stored = await redis.get<StoredAccount>(redisKey("account", id));
   if (!stored) return;
 
-  const updated = { ...stored, approved: true };
+  const updated = { ...stored, approved: true, revoked: false };
   await Promise.all([
     redis.set(redisKey("account", id), JSON.stringify(updated)),
     redis.srem(redisKey("revoked"), id),
@@ -257,6 +259,14 @@ export async function resetAdminPassword(id: string, newPassword: string): Promi
   const updated: StoredAccount = { ...stored, passwordHash: hashPassword(newPassword) };
   await redis.set(redisKey("account", id), JSON.stringify(updated));
   return true;
+}
+
+export async function setAdminRole(id: string, role: AdminRole): Promise<void> {
+  const redis = makeRedis();
+  if (!redis) return;
+  const stored = await redis.get<StoredAccount>(redisKey("account", id));
+  if (!stored) return;
+  await redis.set(redisKey("account", id), JSON.stringify({ ...stored, role }));
 }
 
 export async function hasAnyAdminAccount(): Promise<boolean> {

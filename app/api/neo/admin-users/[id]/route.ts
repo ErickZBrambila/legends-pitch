@@ -1,21 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getNeoSession } from "@/lib/neo-auth";
-import { revokeAdminAccount, approveAdminAccount, deleteAdminAccount, resetAdminPassword } from "@/lib/admin-accounts";
+import {
+  revokeAdminAccount,
+  approveAdminAccount,
+  deleteAdminAccount,
+  resetAdminPassword,
+  setAdminRole,
+  type AdminRole,
+} from "@/lib/admin-accounts";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const authed = await getNeoSession();
   if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  let action: unknown, newPassword: unknown;
+  let action: unknown, newPassword: unknown, role: unknown;
   try {
-    ({ action, newPassword } = await req.json());
+    ({ action, newPassword, role } = await req.json());
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
   if (action === "approve") {
     await approveAdminAccount(id);
+    if (role === "admin" || role === "media_uploader") {
+      await setAdminRole(id, role as AdminRole);
+    }
     return NextResponse.json({ ok: true });
   }
 

@@ -35,6 +35,7 @@ export interface Player {
   number: number;
   position: "GK" | "DEF" | "MID" | "FWD";
   photoUrl?: string;
+  bio?: string;
 }
 
 export interface PhotoSubmission {
@@ -43,6 +44,12 @@ export interface PhotoSubmission {
   imageUrl: string;
   status: "pending" | "approved" | "rejected";
   submittedAt: string;
+}
+
+export interface PostVideo {
+  title: string;
+  url: string;
+  description?: string;
 }
 
 export interface NewsPost {
@@ -58,6 +65,7 @@ export interface NewsPost {
   author: string;
   status?: "draft" | "published";
   coverImageUrl?: string;
+  videos?: PostVideo[];
   sourceMatchId?: string;
   sourceFreeFormContext?: string;
 }
@@ -78,7 +86,8 @@ export interface GalleryImage {
 
 export interface HighlightVideo {
   id: string;
-  youtubeId: string;
+  youtubeId?: string;
+  r2Url?: string;
   title: string;
   event: string;
 }
@@ -103,7 +112,7 @@ export interface VideoClip {
   startSeconds: number;
   endSeconds: number;
   label: string;
-  clipType?: "highlight" | "goal" | "celebration";
+  clipType?: "highlight" | "goal" | "rival_goal" | "celebration" | "shot_on_target";
   saveCount: number;
   archived: boolean;
 }
@@ -119,6 +128,7 @@ export interface VideoAnalytics {
   fieldZones: number[];              // 10 values, normalized full-game
   fieldZonesFirstHalf?: number[];    // 1st half only
   fieldZonesSecondHalf?: number[];   // 2nd half only (same orientation as 1st)
+  secondHalfOnly?: boolean;          // true when only 2nd-half footage was recorded
   activityBuckets: ActivityBucket[];
   goalPressureLeft: number;
   goalPressureRight: number;
@@ -128,6 +138,9 @@ export interface VideoAnalytics {
   goalPressureRightH2?: number;
   totalFrames: number;
   dominantZone: number;
+  shotsOnTarget?: number;
+  saves?: number;
+  shotEvents?: { timeSeconds: number; label: string; side: string; resultedInGoal: boolean }[];
 }
 
 export interface SessionVideo {
@@ -153,6 +166,7 @@ export interface PracticeSession {
 
 // ─── Tracker ──────────────────────────────────────────────────────────────────
 
+
 export type TrackerEventType =
   | "goal"
   | "rival_goal"
@@ -168,7 +182,7 @@ export interface TrackerEvent {
   type: TrackerEventType;
   half: 1 | 2;
   minute: number;
-  wallTimestamp: string;
+  wallTimestamp: string;       // ISO — maps to KickReel video timeline
   taggerId?: string;
   confidence?: "sure" | "maybe";
   playerId?: string;

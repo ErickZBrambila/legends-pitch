@@ -8,7 +8,7 @@ import Image from "next/image";
 import PhotoQueue from "./PhotoQueue";
 
 export const revalidate = 0;
-export const metadata = { title: "Photo Queue · Admin" };
+export const metadata = { title: "⚙ Photos · Admin" };
 
 const LABELS = {
   en: { crumb: "Photo Queue", heading: "Photo Queue", sub: "Review player photos submitted by parents. Approve to publish to the roster, reject to discard." },

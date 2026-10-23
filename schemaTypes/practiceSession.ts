@@ -78,6 +78,7 @@ export default defineType({
                 defineField({ name: "fieldZones", title: "Field Zones (L→R)", type: "array", of: [{ type: "number" }] }),
                 defineField({ name: "fieldZonesFirstHalf", title: "Field Zones 1st Half", type: "array", of: [{ type: "number" }] }),
                 defineField({ name: "fieldZonesSecondHalf", title: "Field Zones 2nd Half", type: "array", of: [{ type: "number" }] }),
+                defineField({ name: "secondHalfOnly", title: "2nd Half footage only?", type: "boolean", description: "Check if only the 2nd half was recorded — fixes timeline colors and heatmap labels" }),
                 defineField({ name: "goalPressureLeft", title: "Goal Pressure Left", type: "number" }),
                 defineField({ name: "goalPressureRight", title: "Goal Pressure Right", type: "number" }),
                 defineField({ name: "goalPressureLeftH1", title: "Goal Pressure Left H1", type: "number" }),

@@ -1,32 +1,79 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState, KeyboardEvent, ClipboardEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+const DIGITS = 4;
+
 export default function FamilyLogin({ next }: { next: string }) {
-  const [passcode, setPasscode] = useState("");
+  const [digits, setDigits] = useState<string[]>(Array(DIGITS).fill(""));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const inputs = useRef<(HTMLInputElement | null)[]>([]);
+
+  function focusAt(index: number) {
+    inputs.current[Math.max(0, Math.min(DIGITS - 1, index))]?.focus();
+  }
+
+  function handleChange(index: number, value: string) {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[index] = digit;
+    setDigits(next);
+    setError("");
+    if (digit) focusAt(index + 1);
+  }
+
+  function handleKeyDown(index: number, e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace") {
+      if (digits[index]) {
+        const next = [...digits];
+        next[index] = "";
+        setDigits(next);
+      } else {
+        focusAt(index - 1);
+      }
+    } else if (e.key === "ArrowLeft") {
+      focusAt(index - 1);
+    } else if (e.key === "ArrowRight") {
+      focusAt(index + 1);
+    }
+  }
+
+  function handlePaste(e: ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, DIGITS);
+    if (!pasted) return;
+    const next = [...digits];
+    for (let i = 0; i < DIGITS; i++) {
+      next[i] = pasted[i] ?? "";
+    }
+    setDigits(next);
+    focusAt(Math.min(pasted.length, DIGITS - 1));
+  }
+
+  const pin = digits.join("");
+  const ready = pin.length === DIGITS;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!ready) return;
     setLoading(true);
     setError("");
 
     const res = await fetch("/api/family/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ passcode }),
+      body: JSON.stringify({ passcode: pin }),
     });
 
     if (res.ok) {
       window.location.href = next;
     } else {
-      setError("Incorrect passcode · Contraseña incorrecta");
-      setPasscode("");
+      setError("Incorrect PIN · PIN incorrecto");
+      setDigits(Array(DIGITS).fill(""));
+      focusAt(0);
     }
     setLoading(false);
   }
@@ -40,9 +87,7 @@ export default function FamilyLogin({ next }: { next: string }) {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-black text-white">Team Access · Acceso al Equipo</h1>
-            <p className="text-sm text-gray-300 mt-1">
-              North Legends FC · Families only · Solo familias
-            </p>
+            <p className="text-sm text-gray-300 mt-1">North Legends FC · Families only · Solo familias</p>
           </div>
         </div>
 
@@ -85,36 +130,50 @@ export default function FamilyLogin({ next }: { next: string }) {
         </p>
 
         <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur rounded-2xl p-6 shadow-2xl border border-white/10">
-          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-widest mb-2">
-            Team Passcode · Código del Equipo
+          <label className="block text-xs font-semibold text-gray-300 uppercase tracking-widest mb-4 text-center">
+            4-Digit PIN · PIN de 4 Dígitos
           </label>
-          <input
-            type="password"
-            value={passcode}
-            onChange={(e) => setPasscode(e.target.value)}
-            placeholder="Enter passcode"
-            required
-            autoFocus
-            className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[var(--color-accent)] transition-colors text-sm"
-          />
+
+          <div className="flex justify-center gap-3 mb-2">
+            {digits.map((d, i) => (
+              <input
+                key={i}
+                ref={(el) => { inputs.current[i] = el; }}
+                type="tel"
+                inputMode="numeric"
+                maxLength={1}
+                value={d}
+                autoFocus={i === 0}
+                onChange={(e) => handleChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                onPaste={handlePaste}
+                onFocus={(e) => e.target.select()}
+                className={`w-14 h-16 text-center text-2xl font-black rounded-xl border-2 bg-white/10 text-white
+                  focus:outline-none transition-colors caret-transparent
+                  ${d ? "border-[var(--color-accent)]" : "border-white/20"}
+                  ${error ? "border-red-400" : ""}
+                  focus:border-[var(--color-accent)]`}
+              />
+            ))}
+          </div>
 
           {error && (
-            <p className="mt-3 text-sm text-red-400 flex items-center gap-1.5">
+            <p className="mt-3 text-sm text-red-400 flex items-center justify-center gap-1.5">
               <span>⚠</span> {error}
             </p>
           )}
 
           <button
             type="submit"
-            disabled={loading || !passcode}
-            className="mt-4 w-full py-3 bg-[var(--color-accent)] text-[var(--color-navy)] font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={loading || !ready}
+            className="mt-5 w-full py-3 bg-[var(--color-accent)] text-[var(--color-navy)] font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? "Checking…" : "Enter · Entrar"}
           </button>
         </form>
 
         <p className="text-center text-xs text-gray-500 mt-6">
-          Get the passcode from Coach Hugo · Pide el código al Entrenador Hugo
+          Get the PIN from Coach Hugo · Pide el PIN al Entrenador Hugo
         </p>
       </div>
     </div>

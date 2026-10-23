@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PortableText } from "next-sanity";
@@ -58,6 +59,19 @@ export default async function NewsPostPage({
           </h1>
         </header>
 
+        {post.coverImageUrl && (
+          <div className="mb-6 rounded-xl overflow-hidden">
+            <Image
+              src={post.coverImageUrl}
+              alt={post.title}
+              width={800}
+              height={450}
+              className="w-full object-cover"
+              priority
+            />
+          </div>
+        )}
+
         <div className="prose prose-sm md:prose max-w-none text-gray-700 leading-relaxed">
           {(() => {
             const activeBody = locale === "es" && post.body_es && post.body_es.length > 0 ? post.body_es : post.body;
@@ -68,6 +82,29 @@ export default async function NewsPostPage({
             );
           })()}
         </div>
+
+        {post.videos && post.videos.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Videos</h2>
+            <div className="flex flex-col gap-4">
+              {post.videos.map((v, i) => (
+                <a
+                  key={i}
+                  href={v.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 hover:border-[var(--color-primary)] hover:bg-gray-50 transition-colors group"
+                >
+                  <span className="mt-0.5 text-[var(--color-primary)] text-xl">▶</span>
+                  <div>
+                    <p className="font-semibold text-gray-900 group-hover:text-[var(--color-primary)] transition-colors">{v.title}</p>
+                    {v.description && <p className="text-sm text-gray-500 mt-0.5">{v.description}</p>}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </article>
     </div>
   );

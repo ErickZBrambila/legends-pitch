@@ -23,6 +23,7 @@ export default defineType({
       validation: (r) => r.required(),
     }),
     defineField({ name: "photo", title: "Photo", type: "image", options: { hotspot: true } }),
+    defineField({ name: "bio", title: "Bio", type: "text", rows: 4, description: "Short biography written by the player's family (max 500 characters)" }),
   ],
   orderings: [
     { title: "Jersey Number", name: "numberAsc", by: [{ field: "number", direction: "asc" }] },

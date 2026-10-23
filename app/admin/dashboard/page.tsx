@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { generateMagicToken } from "@/lib/family-auth";
 import Link from "next/link";
 import Image from "next/image";
 import AdminLangToggle from "@/components/AdminLangToggle";
 import AdminBreadcrumb from "@/components/AdminBreadcrumb";
+import FamilyLinkCopy from "@/components/FamilyLinkCopy";
 
-export const metadata = { title: "Admin · North Legends FC" };
+export const metadata = { title: "⚙ Admin · NLFC" };
 
 const CONTENT = {
   en: {
@@ -34,9 +36,27 @@ const CONTENT = {
         badge: "New",
       },
       {
+        href: "/admin/media",
+        title: "Photos & Videos",
+        description: "Upload game and practice photos into albums, or add YouTube highlight videos — no Sanity needed.",
+        badge: "New",
+      },
+      {
         href: "/admin/photos",
         title: "Photo Queue",
         description: "Review player photos submitted by parents from the roster page. Approve to publish, reject to discard.",
+        badge: "New",
+      },
+      {
+        href: "/admin/kickreel",
+        title: "KickReel Stats",
+        description: "Review submitted game tracking sessions. Download JSON, apply score to match, or delete entries.",
+        badge: "New",
+      },
+      {
+        href: "/admin/push",
+        title: "Push Notifications",
+        description: "Send a push notification to all subscribed families. Your name is logged with every send.",
         badge: "New",
       },
       {
@@ -73,9 +93,27 @@ const CONTENT = {
         badge: "Nuevo",
       },
       {
+        href: "/admin/media",
+        title: "Fotos y Videos",
+        description: "Sube fotos de partidos y prácticas en álbumes, o agrega videos de YouTube — sin necesidad de Sanity.",
+        badge: "Nuevo",
+      },
+      {
         href: "/admin/photos",
         title: "Cola de Fotos",
         description: "Revisa las fotos de jugadores enviadas por los padres desde la página de alineación. Aprueba para publicar o rechaza.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/kickreel",
+        title: "KickReel Stats",
+        description: "Revisa las sesiones de seguimiento de partidos enviadas. Descarga JSON, aplica el marcador al partido o elimina entradas.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/push",
+        title: "Notificaciones Push",
+        description: "Envía una notificación push a todas las familias suscritas. Tu nombre queda registrado en cada envío.",
         badge: "Nuevo",
       },
       {
@@ -131,6 +169,9 @@ export default async function DashboardPage() {
   const [authed, locale] = await Promise.all([getAdminSession(), getLocale()]);
   if (!authed) redirect("/admin");
   const c = locale === "es" ? CONTENT.es : CONTENT.en;
+  const magicToken = generateMagicToken();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://northlegendsfc.com";
+  const magicUrl = `${baseUrl}/api/family/magic?t=${magicToken}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -158,6 +199,7 @@ export default async function DashboardPage() {
           {c.cards.map((card) => (
             <HubCard key={card.href} {...card} />
           ))}
+          <FamilyLinkCopy url={magicUrl} />
         </div>
       </div>
     </div>

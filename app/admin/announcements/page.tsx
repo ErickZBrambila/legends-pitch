@@ -4,7 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import AnnouncementsAdmin from "./AnnouncementsAdmin";
 import { getAllAnnouncements } from "@/lib/sanity/queries";
 
-export const metadata = { title: "Announcements · Admin" };
+export const metadata = { title: "⚙ Announcements · Admin" };
 
 export default async function AdminAnnouncementsPage({
   searchParams,

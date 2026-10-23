@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Cropper from "react-easy-crop";
+import type { Area } from "react-easy-crop";
 import type { Player } from "@/lib/types";
 
-type Step = "password" | "photo";
+type Step = "pin" | "photo";
+
+const PIN_DIGITS = 4;
+const BIO_MAX = 500;
 
 interface Submission { id: string; submittedAt: string }
 
@@ -13,14 +18,52 @@ interface Props {
   onClose: () => void;
 }
 
+function createImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.addEventListener("load", () => resolve(img));
+    img.addEventListener("error", reject);
+    img.setAttribute("crossOrigin", "anonymous");
+    img.src = url;
+  });
+}
+
+async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(
+    image,
+    pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+    0, 0, pixelCrop.width, pixelCrop.height
+  );
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => { if (blob) resolve(blob); else reject(new Error("Canvas toBlob failed")); },
+      "image/jpeg",
+      0.92
+    );
+  });
+}
+
 export default function PhotoSubmitModal({ player, onClose }: Props) {
-  const [step, setStep] = useState<Step>("password");
-  const [passcode, setPasscode] = useState("");
-  const [passError, setPassError] = useState("");
-  const [passLoading, setPassLoading] = useState(false);
+  const [step, setStep] = useState<Step>("pin");
+  const [digits, setDigits] = useState<string[]>(Array(PIN_DIGITS).fill(""));
+  const [pinError, setPinError] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
+  const pinInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [existing, setExisting] = useState<Submission | null>(null);
   const [existingChecked, setExistingChecked] = useState(false);
+
+  // Crop state
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [cropLoading, setCropLoading] = useState(false);
 
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -28,45 +71,157 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
   const [submitError, setSubmitError] = useState("");
   const [done, setDone] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [removeApprovedLoading, setRemoveApprovedLoading] = useState(false);
+
+  const [bio, setBio] = useState(player.bio ?? "");
+  const [bioSaving, setBioSaving] = useState(false);
+  const [bioSaved, setBioSaved] = useState(false);
+  const [bioError, setBioError] = useState("");
 
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Close on Escape
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  async function verifyPassword(e: React.FormEvent) {
+  // Skip PIN step if user already has a valid family session
+  useEffect(() => {
+    fetch("/api/family/session").then(async (res) => {
+      if (res.ok) {
+        const check = await fetch(`/api/photo-submission?playerId=${player.id}`);
+        const data = await check.json();
+        setExisting(data.submission ?? null);
+        setExistingChecked(true);
+        setStep("photo");
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function pinFocusAt(index: number) {
+    pinInputs.current[Math.max(0, Math.min(PIN_DIGITS - 1, index))]?.focus();
+  }
+
+  function handlePinChange(index: number, value: string) {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[index] = digit;
+    setDigits(next);
+    setPinError("");
+    if (digit) pinFocusAt(index + 1);
+  }
+
+  function handlePinKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace") {
+      if (digits[index]) {
+        const next = [...digits];
+        next[index] = "";
+        setDigits(next);
+      } else {
+        pinFocusAt(index - 1);
+      }
+    } else if (e.key === "ArrowLeft") {
+      pinFocusAt(index - 1);
+    } else if (e.key === "ArrowRight") {
+      pinFocusAt(index + 1);
+    }
+  }
+
+  function handlePinPaste(e: React.ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
-    setPassLoading(true);
-    setPassError("");
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, PIN_DIGITS);
+    if (!pasted) return;
+    const next = [...digits];
+    for (let i = 0; i < PIN_DIGITS; i++) next[i] = pasted[i] ?? "";
+    setDigits(next);
+    pinFocusAt(Math.min(pasted.length, PIN_DIGITS - 1));
+  }
+
+  async function verifyPin(e: React.FormEvent) {
+    e.preventDefault();
+    const pin = digits.join("");
+    if (pin.length !== PIN_DIGITS) return;
+    setPinLoading(true);
+    setPinError("");
     try {
       const res = await fetch("/api/family/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passcode }),
+        body: JSON.stringify({ passcode: pin }),
       });
-      if (!res.ok) { setPassError("Incorrect password · Contraseña incorrecta"); return; }
-
-      // Check for existing pending submission
+      if (!res.ok) {
+        setPinError("Incorrect PIN · PIN incorrecto");
+        setDigits(Array(PIN_DIGITS).fill(""));
+        pinFocusAt(0);
+        return;
+      }
       const check = await fetch(`/api/photo-submission?playerId=${player.id}`);
       const data = await check.json();
       setExisting(data.submission ?? null);
       setExistingChecked(true);
       setStep("photo");
     } finally {
-      setPassLoading(false);
+      setPinLoading(false);
     }
   }
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+    setCropSrc(URL.createObjectURL(f));
     setSubmitError("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  const onCropComplete = useCallback((_: Area, pixels: Area) => {
+    setCroppedAreaPixels(pixels);
+  }, []);
+
+  async function confirmCrop() {
+    if (!cropSrc || !croppedAreaPixels) return;
+    setCropLoading(true);
+    try {
+      const blob = await getCroppedBlob(cropSrc, croppedAreaPixels);
+      setFile(new File([blob], "photo.jpg", { type: "image/jpeg" }));
+      setPreview(URL.createObjectURL(blob));
+      URL.revokeObjectURL(cropSrc);
+      setCropSrc(null);
+    } finally {
+      setCropLoading(false);
+    }
+  }
+
+  function cancelCrop() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  }
+
+  async function saveBio(e: React.FormEvent) {
+    e.preventDefault();
+    setBioSaving(true);
+    setBioError("");
+    setBioSaved(false);
+    try {
+      const res = await fetch("/api/player-bio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId: player.id, bio }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setBioError(d.error ?? "Something went wrong");
+        return;
+      }
+      setBioSaved(true);
+      setTimeout(() => setBioSaved(false), 3000);
+    } finally {
+      setBioSaving(false);
+    }
   }
 
   async function submitPhoto(e: React.FormEvent) {
@@ -78,10 +233,8 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
       const fd = new FormData();
       fd.append("playerId", player.id);
       fd.append("photo", file);
-
       const url = existing ? `/api/photo-submission/${existing.id}` : "/api/photo-submission";
       const method = existing ? "PUT" : "POST";
-
       const res = await fetch(url, { method, body: fd });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -105,6 +258,16 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
     }
   }
 
+  async function removeApprovedPhoto() {
+    setRemoveApprovedLoading(true);
+    try {
+      const res = await fetch(`/api/player-photo?playerId=${player.id}`, { method: "DELETE" });
+      if (res.ok) setDone(true);
+    } finally {
+      setRemoveApprovedLoading(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -116,7 +279,7 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <p className="font-bold text-gray-900 text-sm">
-              {step === "password" ? "Team Password" : `Photo for ${player.name}`}
+              {step === "pin" ? "Team PIN · PIN del Equipo" : cropSrc ? "Crop Photo" : `Photo for ${player.name}`}
             </p>
             <p className="text-xs text-gray-400">#{player.number} · {player.position}</p>
           </div>
@@ -127,115 +290,251 @@ export default function PhotoSubmitModal({ player, onClose }: Props) {
           </button>
         </div>
 
-        <div className="px-5 py-5">
-          {/* ── Password step ── */}
-          {step === "password" && (
-            <form onSubmit={verifyPassword} className="flex flex-col gap-3">
-              <p className="text-sm text-gray-500">Enter the team password to continue · Ingresa la contraseña del equipo</p>
-              <input
-                type="password"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Team password"
-                autoFocus
-                required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+        {/* ── Crop step — full-bleed, no padding ── */}
+        {cropSrc && (
+          <div className="flex flex-col">
+            <div className="relative w-full bg-black" style={{ height: 300 }}>
+              <Cropper
+                image={cropSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
               />
-              {passError && <p className="text-xs text-red-500">{passError}</p>}
-              <button
-                type="submit"
-                disabled={passLoading || !passcode}
-                className="w-full py-2.5 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
-              >
-                {passLoading ? "Checking…" : "Continue · Continuar"}
-              </button>
-            </form>
-          )}
-
-          {/* ── Done state ── */}
-          {step === "photo" && done && (
-            <div className="flex flex-col items-center gap-3 py-4 text-center">
-              <span className="text-4xl">{file ? "✅" : "🗑️"}</span>
-              <p className="font-semibold text-gray-800">
-                {file ? "Photo submitted!" : "Submission removed"}
-              </p>
-              <p className="text-sm text-gray-500">
-                {file
-                  ? "Coach Hugo will review it and add it to the roster."
-                  : "Your photo submission has been deleted."}
-              </p>
-              <button onClick={onClose} className="mt-1 px-5 py-2 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity">
-                Close
-              </button>
             </div>
-          )}
+            <div className="px-5 py-4 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400">🔍</span>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.01}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="flex-1 accent-[var(--color-accent)]"
+                  aria-label="Zoom"
+                />
+                <span className="text-xs text-gray-400">🔍</span>
+              </div>
+              <p className="text-xs text-gray-400 text-center">Drag to reposition · Pinch or slide to zoom</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={cancelCrop}
+                  className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmCrop}
+                  disabled={cropLoading}
+                  className="flex-1 py-2.5 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+                >
+                  {cropLoading ? "Cropping…" : "Use this crop"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-          {/* ── Photo step ── */}
-          {step === "photo" && !done && existingChecked && (
-            <form onSubmit={submitPhoto} className="flex flex-col gap-4">
-              {existing && !preview && (
-                <div className="flex flex-col gap-2">
-                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                    You already have a pending submission. Pick a new photo to replace it, or remove the current one.
+        {/* Everything below is hidden while cropper is open */}
+        {!cropSrc && (
+          <div className="px-5 py-5">
+            {/* ── PIN step ── */}
+            {step === "pin" && (
+              <form onSubmit={verifyPin} className="flex flex-col gap-4">
+                <p className="text-sm text-gray-500 text-center">Enter the 4-digit team PIN · Ingresa el PIN del equipo</p>
+                <div className="flex justify-center gap-3">
+                  {digits.map((d, i) => (
+                    <input
+                      key={i}
+                      ref={(el) => { pinInputs.current[i] = el; }}
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={d}
+                      autoFocus={i === 0}
+                      onChange={(e) => handlePinChange(i, e.target.value)}
+                      onKeyDown={(e) => handlePinKeyDown(i, e)}
+                      onPaste={handlePinPaste}
+                      onFocus={(e) => e.target.select()}
+                      className={`w-14 h-16 text-center text-2xl font-black rounded-xl border-2 bg-gray-50 text-gray-900
+                        focus:outline-none transition-colors caret-transparent
+                        ${d ? "border-[var(--color-accent)]" : "border-gray-200"}
+                        ${pinError ? "border-red-400" : ""}
+                        focus:border-[var(--color-accent)]`}
+                    />
+                  ))}
+                </div>
+                {pinError && (
+                  <p className="text-xs text-red-500 flex items-center justify-center gap-1">
+                    <span>⚠</span> {pinError}
                   </p>
-                </div>
-              )}
+                )}
+                <button
+                  type="submit"
+                  disabled={pinLoading || digits.join("").length !== PIN_DIGITS}
+                  className="w-full py-2.5 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+                >
+                  {pinLoading ? "Checking…" : "Continue · Continuar"}
+                </button>
+                <p className="text-xs text-gray-400 text-center">Get the PIN from Coach Hugo · Pide el PIN al Entrenador Hugo</p>
+              </form>
+            )}
 
-              {/* Preview */}
-              {preview ? (
+            {/* ── Done state ── */}
+            {step === "photo" && done && (
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <span className="text-4xl">{file ? "✅" : "🗑️"}</span>
+                <p className="font-semibold text-gray-800">
+                  {file ? "Photo submitted!" : "Photo removed"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {file
+                    ? "Coach Hugo will review it and add it to the roster."
+                    : "The photo has been removed from the roster."}
+                </p>
+                <button onClick={onClose} className="mt-1 px-5 py-2 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity">
+                  Close
+                </button>
+              </div>
+            )}
+
+            {/* ── Approved photo management ── */}
+            {step === "photo" && !done && existingChecked && player.photoUrl && !preview && (
+              <div className="flex flex-col gap-4">
                 <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-100">
-                  <Image src={preview} alt="Preview" fill className="object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => { setPreview(null); setFile(null); if (fileRef.current) fileRef.current.value = ""; }}
-                    className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs hover:bg-black/70"
-                  >
-                    ✕
-                  </button>
+                  <Image src={player.photoUrl} alt={player.name} fill className="object-cover" />
                 </div>
-              ) : (
+                <p className="text-xs text-gray-500 text-center">Current roster photo</p>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
-                  className="w-full aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[var(--color-accent)] hover:text-[var(--color-navy)] transition-colors"
+                  className="w-full py-2.5 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity"
                 >
-                  <span className="text-3xl">📷</span>
-                  <span className="text-sm font-medium">Tap to choose photo</span>
-                  <span className="text-xs">JPG or PNG · max 5 MB</span>
+                  Replace photo
                 </button>
-              )}
-
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={onFileChange}
-              />
-
-              {submitError && <p className="text-xs text-red-500">{submitError}</p>}
-
-              <button
-                type="submit"
-                disabled={!file || submitLoading}
-                className="w-full py-2.5 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
-              >
-                {submitLoading ? "Uploading…" : existing ? "Update Photo" : "Submit Photo"}
-              </button>
-
-              {existing && (
                 <button
                   type="button"
-                  onClick={deleteSubmission}
-                  disabled={deleteLoading}
+                  onClick={removeApprovedPhoto}
+                  disabled={removeApprovedLoading}
                   className="w-full py-2 text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-40"
                 >
-                  {deleteLoading ? "Removing…" : "Remove my submission"}
+                  {removeApprovedLoading ? "Removing…" : "Remove photo from roster"}
                 </button>
-              )}
-            </form>
-          )}
-        </div>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={onFileChange}
+                />
+              </div>
+            )}
+
+            {/* ── Photo step ── */}
+            {step === "photo" && !done && existingChecked && (!player.photoUrl || preview) && (
+              <form onSubmit={submitPhoto} className="flex flex-col gap-4">
+                {existing && !preview && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    You already have a pending submission. Pick a new photo to replace it, or remove the current one.
+                  </p>
+                )}
+
+                {preview ? (
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <Image src={preview} alt="Preview" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => { setPreview(null); setFile(null); }}
+                      className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs hover:bg-black/70"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="w-full aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[var(--color-accent)] hover:text-[var(--color-navy)] transition-colors"
+                  >
+                    <span className="text-3xl">📷</span>
+                    <span className="text-sm font-medium">Tap to choose photo</span>
+                    <span className="text-xs">JPG or PNG · max 5 MB</span>
+                  </button>
+                )}
+
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={onFileChange}
+                />
+
+                {submitError && <p className="text-xs text-red-500">{submitError}</p>}
+
+                <button
+                  type="submit"
+                  disabled={!file || submitLoading}
+                  className="w-full py-2.5 bg-[var(--color-navy)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+                >
+                  {submitLoading ? "Uploading…" : existing ? "Update Photo" : "Submit Photo"}
+                </button>
+
+                {existing && (
+                  <button
+                    type="button"
+                    onClick={deleteSubmission}
+                    disabled={deleteLoading}
+                    className="w-full py-2 text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-40"
+                  >
+                    {deleteLoading ? "Removing…" : "Remove my submission"}
+                  </button>
+                )}
+              </form>
+            )}
+
+            {/* ── Bio section (visible whenever photo step is active and not done) ── */}
+            {step === "photo" && !done && existingChecked && !cropSrc && (
+              <form onSubmit={saveBio} className="flex flex-col gap-3 mt-5 pt-5 border-t border-gray-100">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    About {player.name} · Sobre {player.name}
+                  </label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Favorite position, hobbies, fun facts… · Posición favorita, pasatiempos, datos curiosos…
+                  </p>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => {
+                      setBio(e.target.value.slice(0, BIO_MAX));
+                      setBioSaved(false);
+                    }}
+                    rows={4}
+                    placeholder="He loves playing forward and his favorite player is Mbappe…"
+                    className="w-full text-sm text-gray-800 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+                  />
+                  <p className="text-right text-xs text-gray-300 mt-0.5">{bio.length}/{BIO_MAX}</p>
+                </div>
+                {bioError && <p className="text-xs text-red-500">{bioError}</p>}
+                <button
+                  type="submit"
+                  disabled={bioSaving}
+                  className="w-full py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+                >
+                  {bioSaving ? "Saving…" : bioSaved ? "Bio saved! ✓" : "Save bio · Guardar bio"}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

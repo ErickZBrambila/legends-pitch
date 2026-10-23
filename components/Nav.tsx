@@ -8,6 +8,16 @@ import { useState, useEffect } from "react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import SearchModal from "./SearchModal";
 
+function useStandaloneMode() {
+  const [isStandalone, setIsStandalone] = useState(false);
+  useEffect(() => {
+    const iosStandalone = (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const mqlStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    setIsStandalone(iosStandalone || mqlStandalone);
+  }, []);
+  return isStandalone;
+}
+
 const HAND_KEY = "nlfc_hand";
 
 const links = [
@@ -27,6 +37,15 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [leftHanded, setLeftHanded] = useState(false);
+  const isStandalone = useStandaloneMode();
+
+  async function handleShare() {
+    try {
+      await navigator.share({ title: document.title, url: window.location.href });
+    } catch {
+      // user cancelled or API unavailable — no-op
+    }
+  }
 
   useEffect(() => {
     setLeftHanded(localStorage.getItem(HAND_KEY) === "left");
@@ -131,6 +150,17 @@ export default function Nav() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
           </button>
+          {isStandalone && (
+            <button
+              onClick={handleShare}
+              aria-label={t("share")}
+              className="p-2 rounded-md text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 1 1 0-2.684m0 2.684 6.632 3.316m-6.632-6 6.632-3.316m0 0a3 3 0 1 0 5.367-2.684 3 3 0 0 0-5.367 2.684zm0 9.316a3 3 0 1 0 5.368 2.684 3 3 0 0 0-5.368-2.684z" />
+              </svg>
+            </button>
+          )}
           <LanguageSwitcher />
           {hamburger}
         </div>

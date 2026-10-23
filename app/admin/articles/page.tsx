@@ -5,7 +5,7 @@ import ArticlesAdmin from "./ArticlesAdmin";
 import { getPostsByTeamAdmin, purgeOldDrafts } from "@/lib/sanity/queries";
 import { getGotSportData } from "@/lib/data/gotsport";
 
-export const metadata = { title: "Match Articles · Admin" };
+export const metadata = { title: "⚙ Articles · Admin" };
 
 export default async function AdminArticlesPage({
   searchParams,

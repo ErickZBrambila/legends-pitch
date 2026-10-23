@@ -9,6 +9,9 @@ import type { GameDayPushPayload } from "@/app/api/cron/game-day-push/route";
 const WINDOW_MS = 28 * 60 * 60 * 1000;
 const REMINDER_BEFORE_KICKOFF_S = 2 * 60 * 60; // 2 hours
 
+// Dec 23, 2026 midnight CST = Dec 24 06:00 UTC — cron stops queuing after this date
+const SEASON_END_MS = new Date("2026-12-24T06:00:00Z").getTime();
+
 function appUrl() {
   return process.env.APP_URL ?? "https://legends-pitch.vercel.app";
 }
@@ -26,6 +29,10 @@ export async function GET(req: NextRequest) {
   const qstash = new QStash({ token: qstashToken, baseUrl: process.env.QSTASH_URL });
 
   const now = Date.now();
+  if (now >= SEASON_END_MS) {
+    return NextResponse.json({ ok: true, message: "Season over — cron retired" });
+  }
+
   const cutoff = now + WINDOW_MS;
 
   const [u11, u12] = await Promise.all([

@@ -112,7 +112,7 @@ export interface VideoClip {
   startSeconds: number;
   endSeconds: number;
   label: string;
-  clipType?: "highlight" | "goal" | "rival_goal" | "celebration";
+  clipType?: "highlight" | "goal" | "rival_goal" | "celebration" | "shot_on_target";
   saveCount: number;
   archived: boolean;
 }
@@ -138,6 +138,9 @@ export interface VideoAnalytics {
   goalPressureRightH2?: number;
   totalFrames: number;
   dominantZone: number;
+  shotsOnTarget?: number;
+  saves?: number;
+  shotEvents?: { timeSeconds: number; label: string; side: string; resultedInGoal: boolean }[];
 }
 
 export interface SessionVideo {

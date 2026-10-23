@@ -10,7 +10,10 @@ const GOTSPORT_URLS: Record<string, string> = {
 
 // Maximum time to keep chasing a result after kickoff
 const MAX_CHASE_MS = 8 * 60 * 60 * 1000;
-const RETRY_DELAY_S = 30 * 60; // 30 min
+const RETRY_DELAY_S = 60 * 60; // 1 hour
+
+// Dec 23, 2026 midnight CST = Dec 24 06:00 UTC
+const SEASON_END_MS = new Date("2026-12-24T06:00:00Z").getTime();
 
 function appUrl() {
   return process.env.APP_URL ?? "https://legends-pitch.vercel.app";
@@ -84,6 +87,12 @@ export async function POST(req: NextRequest) {
 
   const { team, matchId, kickoffIso, opponent } = payload;
   const now = Date.now();
+
+  if (now >= SEASON_END_MS) {
+    console.log(`[result-checker] Season over — dropping ${matchId}`);
+    return NextResponse.json({ ok: true, action: "season-over" });
+  }
+
   const kickoffMs = new Date(kickoffIso).getTime();
   const elapsed = now - kickoffMs;
 
@@ -112,7 +121,7 @@ export async function POST(req: NextRequest) {
       delay: RETRY_DELAY_S,
       body: payload,
     });
-    console.log(`[result-checker] No result yet for ${matchId}, retrying in 30 min`);
+    console.log(`[result-checker] No result yet for ${matchId}, retrying in 1 h`);
     return NextResponse.json({ ok: true, action: "retrying" });
   }
 

@@ -301,6 +301,10 @@ export default function TrackerApp({ teams }: Props) {
             }
             const data = await res.json();
             const session = data.session as Record<string, string>;
+            // Filter tombstones from the late-joiner snapshot
+            const snapshotEvents = ((data.events ?? []) as (TrackerEvent & { deletedAt?: string })[]).filter(
+              (e) => !e.deletedAt
+            );
             setState((s) => ({
               ...s,
               taggerId,
@@ -315,7 +319,7 @@ export default function TrackerApp({ teams }: Props) {
               phase: "live",
               half: 1,
               halfStartWall: null,
-              events: [],
+              events: snapshotEvents,
             }));
             return null;
           } catch {

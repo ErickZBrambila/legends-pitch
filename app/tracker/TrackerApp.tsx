@@ -1082,6 +1082,7 @@ function SessionScreen({
           </button>
         )}
 
+
         <button
           onClick={() => setMode("create")}
           className="w-full py-5 bg-[#238636] hover:bg-[#2ea043] active:scale-95 rounded-xl font-bold text-lg transition-all"

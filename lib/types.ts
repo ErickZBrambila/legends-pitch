@@ -171,7 +171,7 @@ export interface TrackerEvent {
   type: TrackerEventType;
   half: 1 | 2;
   minute: number;
-  wallTimestamp: string;
+  wallTimestamp: string;       // ISO — maps to KickReel video timeline
   taggerId?: string;
   confidence?: "sure" | "maybe";
   playerId?: string;

@@ -128,6 +128,11 @@ export default function LoginForm() {
             Create one
           </Link>
         </p>
+        <p className="text-center text-xs text-gray-500 mt-2">
+          <Link href="/parent/forgot" className="text-gray-400 hover:text-white transition-colors">
+            Forgot password?
+          </Link>
+        </p>
       </div>
     </div>
   );

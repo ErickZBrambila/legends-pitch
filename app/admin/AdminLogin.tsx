@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function AdminLogin() {
   const [password, setPassword] = useState("");
@@ -71,7 +72,13 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
+        <p className="text-center text-xs text-gray-500 mt-4">
+          <Link href="/admin/forgot" className="hover:text-gray-300 transition-colors">
+            Forgot password?
+          </Link>
+        </p>
+
+        <p className="text-center text-xs text-gray-600 mt-2">
           North Legends FC · Coaches only
         </p>
       </div>

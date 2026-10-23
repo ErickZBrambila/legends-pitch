@@ -162,6 +162,7 @@ export default function TrackerApp({ teams }: Props) {
   const [submitError, setSubmitError] = useState("");
   const [discardConfirm, setDiscardConfirm] = useState(false);
   const [otherTaggers, setOtherTaggers] = useState(0);
+  const [codeCopied, setCodeCopied] = useState(false);
   const syncQueueRef = useRef<TrackerEvent[]>([]);
   const syncingRef = useRef(false);
 
@@ -194,11 +195,26 @@ export default function TrackerApp({ teams }: Props) {
         const data = await res.json();
         const count = (data.taggers?.length ?? 1) - 1;
         setOtherTaggers(Math.max(0, count));
+        // Merge server events into local state so all taggers see each other's events.
+        // Local-only events (still in syncQueue) are preserved.
+        const serverEvents = ((data.events ?? []) as (TrackerEvent & { deletedAt?: string })[])
+          .filter((e) => !e.deletedAt);
+        if (serverEvents.length > 0) {
+          setState((s) => {
+            const byId = new Map(s.events.map((e) => [e.id, e]));
+            for (const e of serverEvents) byId.set(e.id, e);
+            const merged = Array.from(byId.values()).sort(
+              (a, b) => new Date(a.wallTimestamp).getTime() - new Date(b.wallTimestamp).getTime()
+            );
+            return { ...s, events: merged };
+          });
+        }
       } catch {}
     };
     poll();
     const id = setInterval(poll, 10000);
     return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.sessionCode, state.phase]);
 
   // Fire-and-forget sync queue flusher
@@ -318,7 +334,10 @@ export default function TrackerApp({ teams }: Props) {
               matchDate: session.date || "",
               phase: "live",
               half: 1,
-              halfStartWall: null,
+              // Start the clock immediately so event buttons are usable; minute will
+              // be approximate (relative to join time) but avoids the "Kick Off" block.
+              halfStartWall: Date.now(),
+              gameStartWall: Date.now(),
               events: snapshotEvents,
             }));
             return null;
@@ -551,9 +570,17 @@ export default function TrackerApp({ teams }: Props) {
           {/* Session badge */}
           {state.sessionCode && (
             <div className="flex items-center justify-center gap-3 mt-2 text-xs text-[#8b949e]">
-              <span className="font-mono tracking-widest bg-[#21262d] px-2 py-0.5 rounded">
-                {state.sessionCode}
-              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(state.sessionCode).catch(() => {});
+                  setCodeCopied(true);
+                  setTimeout(() => setCodeCopied(false), 2000);
+                }}
+                className="font-mono tracking-widest bg-[#21262d] hover:bg-[#30363d] active:scale-95 px-2 py-1 rounded transition-all"
+                title="Tap to copy code"
+              >
+                {codeCopied ? "✓ Copied!" : `Code: ${state.sessionCode}`}
+              </button>
               {otherTaggers > 0 && (
                 <span className="text-[#3fb950]">
                   +{otherTaggers} tagger{otherTaggers !== 1 ? "s" : ""}

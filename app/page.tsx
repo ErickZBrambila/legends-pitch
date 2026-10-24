@@ -8,7 +8,7 @@ import ScrollDepthTracker from "@/components/ScrollDepthTracker";
 import TrackedLink from "@/components/TrackedLink";
 import TrackedAnchor from "@/components/TrackedAnchor";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
-import { getPostsByTeam, getLatestAnnouncement } from "@/lib/sanity/queries";
+import { getPostsByTeam, getLatestAnnouncement, getLatestSessionWithReel } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import { getGotSportData, LOCATION_COORDS } from "@/lib/data/gotsport";
 import GameWeather from "@/components/GameWeather";
@@ -51,9 +51,10 @@ export default async function Home({
   const ts = await getTranslations("Sponsors");
   const locale = await getLocale();
 
-  const [latestNews, latestAnnouncement] = await Promise.all([
+  const [latestNews, latestAnnouncement, latestReelSession] = await Promise.all([
     getPostsByTeam(team),
     getLatestAnnouncement(team),
+    getLatestSessionWithReel(team),
   ]);
 
   const { matches } = await getGotSportData(team);
@@ -115,6 +116,31 @@ export default async function Home({
           </div>
         </div>
       </section>
+
+      {/* Latest Match Reel teaser */}
+      {latestReelSession && (
+        <Link
+          href={`/videos/${latestReelSession.id}?team=${team}`}
+          className="block bg-[var(--color-navy)] border-b border-white/10 hover:bg-[#1a2235] transition-colors"
+        >
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+            <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/40">
+              <svg className="w-4 h-4 text-[var(--color-accent)]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+            <p className="text-white text-sm font-semibold flex-1 leading-snug">
+              🎬 Fresh from the pitch!{" "}
+              <span className="text-[var(--color-accent)]">
+                {latestReelSession.compilationTitle}
+              </span>
+            </p>
+            <span className="shrink-0 text-[var(--color-accent)] text-xs font-bold tracking-wide">
+              Watch →
+            </span>
+          </div>
+        </Link>
+      )}
 
       {/* Next match countdown */}
       {nextMatch && (

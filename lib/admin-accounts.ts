@@ -23,11 +23,13 @@ type StoredAccount = AdminAccount & { passwordHash: string };
 export const ADMIN_COOKIE = "nlfc_admin";
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 hours
 
-function getSecret(): string {
+// No fallback: a hardcoded default would be public in this repo and would let
+// anyone forge an admin session. Missing secret = nobody can log in.
+function getSecret(): string | null {
   const s = process.env.ADMIN_SESSION_SECRET;
   if (!s) {
-    console.warn("[admin-accounts] ADMIN_SESSION_SECRET not set — using insecure dev fallback");
-    return "dev-fallback-admin-secret-change-in-prod";
+    console.error("[admin-accounts] ADMIN_SESSION_SECRET not set — admin sessions disabled");
+    return null;
   }
   return s;
 }
@@ -75,6 +77,7 @@ function b64url(buf: Buffer): string {
 
 export function createAdminSession(account: AdminAccount): string {
   const secret = getSecret();
+  if (!secret) throw new Error("ADMIN_SESSION_SECRET is not configured");
   const payload = b64url(
     Buffer.from(JSON.stringify({ id: account.id, role: account.role, exp: Date.now() + COOKIE_MAX_AGE * 1000 }))
   );
@@ -84,6 +87,7 @@ export function createAdminSession(account: AdminAccount): string {
 
 export function verifyAdminSessionToken(token: string): { id: string; role: AdminRole } | null {
   const secret = getSecret();
+  if (!secret) return null;
   const parts = token.split(".");
   if (parts.length !== 2) return null;
   const [payload, sig] = parts;

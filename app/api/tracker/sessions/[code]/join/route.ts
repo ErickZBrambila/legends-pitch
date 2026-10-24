@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis } from "@/lib/redis";
+import { familyAccessDenied } from "@/lib/family-access";
 
 const SESSION_TTL = 60 * 60 * 24 * 7;
 
@@ -7,6 +8,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  const denied = await familyAccessDenied();
+  if (denied) return denied;
+
   const redis = getRedis();
   if (!redis) return NextResponse.json({ error: "Storage unavailable" }, { status: 503 });
 

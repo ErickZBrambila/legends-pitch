@@ -21,7 +21,9 @@ function base64urlToUint8Array(s: string): Uint8Array {
 type AdminTokenPayload = { id: string; role: string; exp: number };
 
 async function verifyAdminToken(token: string): Promise<AdminTokenPayload | null> {
-  const secret = process.env.ADMIN_SESSION_SECRET ?? "dev-fallback-admin-secret-change-in-prod";
+  // No hardcoded fallback — a default secret would be public in the repo.
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret) return null;
   const parts = token.split(".");
   if (parts.length !== 2) return null;
   const [payload, sig] = parts;
@@ -78,7 +80,9 @@ async function verifyParentToken(token: string): Promise<boolean> {
   const payload = token.slice(0, dot);
   const sigB64url = token.slice(dot + 1);
 
-  const secret = process.env.PARENT_SESSION_SECRET ?? "dev-parent-secret-2026-nlfc";
+  // No hardcoded fallback — a default secret would be public in the repo.
+  const secret = process.env.PARENT_SESSION_SECRET;
+  if (!secret) return false;
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -162,14 +166,18 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  // Family gate — /videos, /gallery, /highlights require EITHER:
+  // Family gate — /videos, /gallery, /highlights, /tracker require EITHER:
   //   (a) valid family passcode cookie, OR
   //   (b) valid parent account session token
-  const familyProtected = ["/videos", "/gallery", "/highlights"];
+  // These pages also re-check on the server (see lib/family-access.ts), so a
+  // middleware bypass alone no longer exposes them.
+  const familyProtected = ["/videos", "/gallery", "/highlights", "/tracker"];
   if (familyProtected.some((p) => pathname.startsWith(p))) {
     const familyToken = req.cookies.get("nlfc_family")?.value;
-    const expectedFamily = await sha256(process.env.FAMILY_PASSCODE ?? "", "-nlfc-family-2026");
-    if (familyToken === expectedFamily) {
+    const passcode = process.env.FAMILY_PASSCODE;
+    // An unset passcode must not make sha256("" + salt) a valid cookie.
+    const expectedFamily = passcode ? await sha256(passcode, "-nlfc-family-2026") : null;
+    if (expectedFamily && familyToken === expectedFamily) {
       const res = NextResponse.next();
       res.headers.set("x-pathname", pathname);
       return res;

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { getRedis } from "@/lib/redis";
+import { familyAccessDenied } from "@/lib/family-access";
 
 // DELETE — primary tagger calls this when ending the game
 export async function DELETE() {
+  const denied = await familyAccessDenied();
+  if (denied) return denied;
+
   const redis = getRedis();
   if (!redis) return NextResponse.json({ ok: true });
   await redis.del("tracker:active");
@@ -10,6 +14,9 @@ export async function DELETE() {
 }
 
 export async function GET() {
+  const denied = await familyAccessDenied();
+  if (denied) return denied;
+
   const redis = getRedis();
   if (!redis) return NextResponse.json({ session: null });
 

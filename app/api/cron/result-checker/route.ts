@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Client as QStash } from "@upstash/qstash";
 import { broadcastPush } from "@/lib/push";
 import { getGotSportData } from "@/lib/data/gotsport";
+import { verifyQStashRequest } from "@/lib/qstash-verify";
 
 const GOTSPORT_URLS: Record<string, string> = {
   u11: "https://system.gotsport.com/org_event/events/55587/schedules?team=4373770",
@@ -72,17 +73,23 @@ export interface ResultCheckerPayload {
 }
 
 export async function POST(req: NextRequest) {
-  // Verify request came from QStash
-  const sig = req.headers.get("upstash-signature");
-  if (!sig) {
-    return NextResponse.json({ error: "Missing QStash signature" }, { status: 401 });
-  }
+  // Verify the request really came from QStash before doing anything.
+  const verified = await verifyQStashRequest(req);
+  if ("error" in verified) return verified.error;
 
   let payload: ResultCheckerPayload;
   try {
-    payload = await req.json();
+    payload = JSON.parse(verified.body);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (
+    (payload?.team !== "u11" && payload?.team !== "u12") ||
+    typeof payload.matchId !== "string" ||
+    typeof payload.opponent !== "string" || payload.opponent.length > 100 ||
+    typeof payload.kickoffIso !== "string" || isNaN(Date.parse(payload.kickoffIso))
+  ) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
   const { team, matchId, kickoffIso, opponent } = payload;

@@ -9,12 +9,17 @@ function hashNeoPassword(password: string): string {
     .digest("hex");
 }
 
+// Refuses when THE_ONE is unset — otherwise sha256("-nlfc-neo-2026") would
+// be a valid cookie that anyone can compute.
+export function verifyNeoToken(token: string | undefined): boolean {
+  const password = process.env.THE_ONE;
+  if (!password || !token) return false;
+  return token === hashNeoPassword(password);
+}
+
 export async function getNeoSession(): Promise<boolean> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(NEO_COOKIE)?.value;
-  if (!token) return false;
-  const expected = hashNeoPassword(process.env.THE_ONE ?? "");
-  return token === expected;
+  return verifyNeoToken(cookieStore.get(NEO_COOKIE)?.value);
 }
 
 export { NEO_COOKIE, hashNeoPassword };

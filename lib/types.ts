@@ -155,6 +155,8 @@ export interface PracticeSession {
   sessionType: "PRACTICE" | "GAME";
   sessionDate: string;
   videos: SessionVideo[];
+  compilationUrl?: string;
+  compilationTitle?: string;
 }
 
 // ─── Tracker ──────────────────────────────────────────────────────────────────

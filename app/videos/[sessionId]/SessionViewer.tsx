@@ -109,16 +109,19 @@ function getFirstClip(video: SessionVideo) {
 
 export default function SessionViewer({ session }: { session: PracticeSession }) {
   const t = useTranslations("Session");
+  const compilationUrl = session.compilationUrl ?? null;
+  const compilationTitle = session.compilationTitle ?? "Full Goals Reel";
+
   const [activeVideo, setActiveVideo] = useState<SessionVideo>(session.videos[0]);
   const [activeClipUrl, setActiveClipUrl] = useState<string | null>(
-    () => getFirstClip(session.videos[0])?.r2Url ?? null
+    () => compilationUrl ?? getFirstClip(session.videos[0])?.r2Url ?? null
   );
+  const [isCompilationActive, setIsCompilationActive] = useState(!!compilationUrl);
   const [isLoading, setIsLoading] = useState(false);
   const [savedClips, setSavedClips] = useState<Set<string>>(new Set());
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
   const pendingPlay = useRef(false);
-  // true while we're chaining through goals; false once user picks a non-goal clip
   const goalsModeRef = useRef(false);
 
   // Load saved clips from localStorage on mount
@@ -129,28 +132,39 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     } catch {}
   }, []);
 
-  // On mount / video-tab change: auto-play first goal if available, else preload first clip
+  // On mount: if compilation exists load it (no autoplay). On video-tab change: load first goal.
   useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    // First mount with compilation — preload only, no autoplay
+    if (compilationUrl && isCompilationActive) {
+      vid.pause();
+      vid.src = compilationUrl;
+      vid.load();
+      pendingPlay.current = false;
+      return;
+    }
+
     const goals = activeVideo.clips.filter((c) => c.clipType === "goal" && !c.archived);
     const firstGoal = goals[0] ?? null;
     const firstClip = getFirstClip(activeVideo);
-    const vid = videoRef.current;
-    if (!vid) return;
 
     if (firstGoal) {
       goalsModeRef.current = true;
       setActiveClipUrl(firstGoal.r2Url);
+      setIsCompilationActive(false);
       vid.pause();
       vid.src = firstGoal.r2Url;
       vid.load();
-      pendingPlay.current = true; // auto-play
+      pendingPlay.current = true;
     } else if (firstClip) {
       goalsModeRef.current = false;
       setActiveClipUrl(firstClip.r2Url);
+      setIsCompilationActive(false);
       vid.pause();
       vid.src = firstClip.r2Url;
       vid.load();
-      // pendingPlay stays false — preload only
     } else {
       setActiveClipUrl(null);
       vid.removeAttribute("src");
@@ -209,8 +223,27 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     if (clip) playClip(clip.r2Url, clip.clipType === "goal");
   }
 
+  function playCompilation() {
+    if (!compilationUrl) return;
+    goalsModeRef.current = false;
+    setIsCompilationActive(true);
+    setActiveClipUrl(compilationUrl);
+    setIsLoading(true);
+    pendingPlay.current = true;
+    const vid = videoRef.current;
+    if (vid) {
+      vid.pause();
+      vid.removeAttribute("src");
+      vid.load();
+      vid.src = compilationUrl;
+      vid.load();
+    }
+    playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function playClip(url: string, isGoal = false) {
     goalsModeRef.current = isGoal;
+    setIsCompilationActive(false);
     setActiveClipUrl(url);
     setIsLoading(true);
     pendingPlay.current = true;
@@ -308,9 +341,29 @@ export default function SessionViewer({ session }: { session: PracticeSession })
         </div>
       )}
 
-      {/* Now playing — clip heading (above video) */}
+      {/* Now playing — header */}
       <div className="mb-2 min-h-[48px]">
-        {currentClip ? (
+        {isCompilationActive ? (
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--color-accent)] text-[var(--color-navy)] text-[10px] font-black mb-1">
+                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                Full Goals Reel
+              </span>
+              <h3 className="text-lg font-black text-gray-900 leading-snug">{compilationTitle}</h3>
+            </div>
+            <a
+              href={`/api/clip-download?url=${encodeURIComponent(compilationUrl!)}&filename=${encodeURIComponent(compilationTitle + ".mp4")}`}
+              download={compilationTitle + ".mp4"}
+              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-[var(--color-navy)] text-xs font-bold hover:bg-[var(--color-accent)]/20 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Download
+            </a>
+          </div>
+        ) : currentClip ? (
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
@@ -368,6 +421,31 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     </div>
     {/* ── RIGHT PANEL (goals, clips, analytics) on foldable ── */}
     <div className="fold-panel-right">
+
+      {/* Full Goals Reel pill */}
+      {compilationUrl && (
+        <div className="mb-6">
+          <button
+            onClick={playCompilation}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all ${
+              isCompilationActive
+                ? "bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--color-navy)]"
+                : "bg-[var(--color-accent)]/5 border-[var(--color-accent)]/40 text-gray-800 hover:bg-[var(--color-accent)]/10"
+            }`}
+          >
+            <span className={`flex items-center justify-center w-8 h-8 rounded-full ${isCompilationActive ? "bg-[var(--color-navy)]/20" : "bg-[var(--color-accent)]/20"}`}>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+            <div className="flex-1 text-left">
+              <p className="text-xs font-black uppercase tracking-wide opacity-70">Full Goals Reel</p>
+              <p className="text-sm font-bold leading-snug">{compilationTitle}</p>
+            </div>
+            {isCompilationActive && (
+              <span className="text-[10px] font-black uppercase tracking-wide opacity-70">Now Playing</span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Goals quick-access */}
       {goals.length > 0 && (

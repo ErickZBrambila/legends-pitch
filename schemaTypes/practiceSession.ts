@@ -14,6 +14,8 @@ export default defineType({
       options: { list: [{ title: "Practice", value: "PRACTICE" }, { title: "Game", value: "GAME" }] },
     }),
     defineField({ name: "sessionDate", title: "Date", type: "datetime" }),
+    defineField({ name: "compilationUrl", title: "Goals Compilation URL (R2)", type: "url", description: "Full goals/highlights compilation video for this session" }),
+    defineField({ name: "compilationTitle", title: "Compilation Title", type: "string", description: "e.g. Goals Compilation · Oct 18 vs Elgin United" }),
     defineField({
       name: "videos",
       title: "Videos",

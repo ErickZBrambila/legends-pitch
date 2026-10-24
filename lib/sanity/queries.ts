@@ -356,17 +356,51 @@ export async function getHighlightVideosByTeam(team: TeamSlug): Promise<Highligh
     Array<{
       _id: string;
       title: string;
-      youtubeId: string;
+      youtubeId?: string;
+      r2Url?: string;
       event: string;
       order: number | null;
     }>
   >(
     `*[_type == "highlightVideo" && team->ageGroup == $team]{
-      _id, title, youtubeId, event, order
+      _id, title, youtubeId, r2Url, event, order
     } | order(order asc, _createdAt asc)`,
     { team }
   );
-  return raw.map((v) => ({ id: v._id, title: v.title, youtubeId: v.youtubeId, event: v.event }));
+  return raw.map((v) => ({ id: v._id, title: v.title, youtubeId: v.youtubeId, r2Url: v.r2Url, event: v.event }));
+}
+
+export async function getLatestSessionWithReel(team: TeamSlug): Promise<{ id: string; sessionName: string; compilationTitle: string } | null> {
+  const raw = await sanityClient.fetch<{ _id: string; sessionName: string; compilationTitle?: string } | null>(
+    `*[_type in ["practiceSession","gameSession"] && team->ageGroup == $team && defined(compilationUrl)]{
+      _id, sessionName, compilationTitle
+    } | order(sessionDate desc) [0]`,
+    { team },
+    { next: { revalidate: 300 } }
+  );
+  if (!raw) return null;
+  return {
+    id: raw._id,
+    sessionName: raw.sessionName,
+    compilationTitle: raw.compilationTitle ?? raw.sessionName,
+  };
+}
+
+export async function getLatestMatchReel(team: TeamSlug): Promise<HighlightVideo | null> {
+  const raw = await sanityClient.fetch<{
+    _id: string;
+    title: string;
+    r2Url: string;
+    event: string;
+  } | null>(
+    `*[_type == "highlightVideo" && team->ageGroup == $team && defined(r2Url)]{
+      _id, title, r2Url, event
+    } | order(order asc, _createdAt desc) [0]`,
+    { team },
+    { next: { revalidate: 300 } }
+  );
+  if (!raw) return null;
+  return { id: raw._id, title: raw.title, r2Url: raw.r2Url, event: raw.event };
 }
 
 export async function getSeasonStatsByTeam(team: TeamSlug): Promise<SeasonStats> {
@@ -435,11 +469,13 @@ type RawSession = {
   sessionName: string;
   sessionType: "PRACTICE" | "GAME";
   sessionDate: string;
+  compilationUrl?: string;
+  compilationTitle?: string;
   videos: RawSessionVideo[];
 };
 
 const SESSION_PROJECTION = `
-  _id, sessionName, sessionType, sessionDate,
+  _id, sessionName, sessionType, sessionDate, compilationUrl, compilationTitle,
   videos[]{
     _key, fileName, r2Url, driveUrl, thumbnailUrl, durationSeconds, resolution,
     markers[]{ _key, timeSeconds, label },
@@ -460,6 +496,8 @@ function mapSession(s: RawSession): PracticeSession {
     sessionName: s.sessionName,
     sessionType: s.sessionType,
     sessionDate: s.sessionDate,
+    compilationUrl: s.compilationUrl,
+    compilationTitle: s.compilationTitle,
     videos: (s.videos ?? []).map((v) => ({
       id: v._key,
       fileName: v.fileName ?? "",

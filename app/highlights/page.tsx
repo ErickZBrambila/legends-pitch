@@ -4,6 +4,9 @@ import TeamTabs from "@/components/TeamTabs";
 import { getHighlightVideosByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import type { HighlightVideo } from "@/lib/types";
+import { requireFamilyAccess } from "@/lib/family-access";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Highlights");
@@ -22,6 +25,9 @@ export default async function HighlightsPage({
 }: {
   searchParams: Promise<{ team?: string }>;
 }) {
+  // Server-side gate (don't rely on middleware alone for kids' media).
+  await requireFamilyAccess("/highlights");
+
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
 

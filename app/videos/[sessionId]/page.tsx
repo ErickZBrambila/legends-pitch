@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getSessionById } from "@/lib/sanity/queries";
 import SessionViewer from "./SessionViewer";
+import { requireFamilyAccess } from "@/lib/family-access";
+
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ sessionId: string }>; searchParams: Promise<{ team?: string }> };
 
@@ -25,6 +28,9 @@ function formatDate(iso: string, locale: string) {
 }
 
 export default async function SessionPage({ params, searchParams }: Props) {
+  // Server-side gate (don't rely on middleware alone for kids' media).
+  await requireFamilyAccess("/videos");
+
   const { sessionId } = await params;
   const { team } = await searchParams;
   const teamSlug = team === "u12" ? "u12" : "u11";

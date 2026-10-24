@@ -37,11 +37,13 @@ export async function verifyPassword(stored: string, candidate: string): Promise
   }
 }
 
-function getSessionSecret(): string {
+// No fallback: a hardcoded default would be public in this repo and would let
+// anyone forge a parent session. Missing secret = nobody can log in.
+function getSessionSecret(): string | null {
   const secret = process.env.PARENT_SESSION_SECRET;
   if (!secret) {
-    console.warn("PARENT_SESSION_SECRET not set — using insecure dev fallback");
-    return "dev-parent-secret-2026-nlfc";
+    console.error("PARENT_SESSION_SECRET not set — parent sessions disabled");
+    return null;
   }
   return secret;
 }
@@ -60,6 +62,7 @@ export function generateSessionToken(accountId: string): string {
   const expiry = Date.now() + SESSION_EXPIRY_MS;
   const payload = toBase64url(`${accountId}:${expiry}`);
   const secret = getSessionSecret();
+  if (!secret) throw new Error("PARENT_SESSION_SECRET is not configured");
   const sig = toBase64url(createHmac("sha256", secret).update(payload).digest());
   return `${payload}.${sig}`;
 }
@@ -71,6 +74,7 @@ export function verifySessionToken(token: string): string | null {
   const sig = token.slice(dot + 1);
 
   const secret = getSessionSecret();
+  if (!secret) return null;
   const expectedSig = toBase64url(createHmac("sha256", secret).update(payload).digest());
   const sigBuf = fromBase64url(sig);
   const expectedBuf = fromBase64url(expectedSig);
@@ -92,7 +96,19 @@ export async function getParentSession(): Promise<ParentAccount | null> {
   if (!token) return null;
   const accountId = verifySessionToken(token);
   if (!accountId) return null;
-  return getAccountById(accountId);
+
+  // Honour revocation here too (previously only the middleware checked it).
+  const redis = getRedis();
+  if (!redis) return null;
+  try {
+    if (await redis.sismember("parents:revoked", accountId)) return null;
+  } catch {
+    return null; // fail closed
+  }
+
+  const account = await getAccountById(accountId);
+  if (!account || !account.approved) return null;
+  return account;
 }
 
 export async function createAccount(opts: {

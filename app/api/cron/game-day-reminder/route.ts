@@ -17,8 +17,10 @@ function appUrl() {
 }
 
 export async function GET(req: NextRequest) {
+  // Fail closed: if CRON_SECRET is unset, "Bearer undefined" must not authorize.
+  const cronSecret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -6,6 +6,9 @@ import VideoCollectionFolder from "@/components/VideoCollectionFolder";
 import { getSessionsByTeam, getHighlightVideosByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import type { PracticeSession, HighlightVideo } from "@/lib/types";
+import { requireFamilyAccess } from "@/lib/family-access";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Videos");
@@ -44,6 +47,9 @@ export default async function VideosPage({
 }: {
   searchParams: Promise<{ team?: string }>;
 }) {
+  // Server-side gate (don't rely on middleware alone for kids' media).
+  await requireFamilyAccess("/videos");
+
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
   const t = await getTranslations("Videos");

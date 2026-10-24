@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAccount, generateSessionToken, PARENT_COOKIE } from "@/lib/parent-auth";
-import { FAMILY_COOKIE, hashPasscode } from "@/lib/family-auth";
+import { FAMILY_COOKIE, isValidFamilyToken } from "@/lib/family-auth";
 import { rateLimit } from "@/lib/ratelimit";
 
 function isValidEmail(email: string): boolean {
@@ -11,9 +11,7 @@ export async function POST(req: NextRequest) {
   const limited = await rateLimit(req, "register");
   if (limited) return limited;
 
-  const familyToken = req.cookies.get(FAMILY_COOKIE)?.value;
-  const expectedFamily = hashPasscode(process.env.FAMILY_PASSCODE ?? "");
-  if (familyToken !== expectedFamily) {
+  if (!isValidFamilyToken(req.cookies.get(FAMILY_COOKIE)?.value)) {
     return NextResponse.json({ error: "Team PIN required" }, { status: 403 });
   }
 

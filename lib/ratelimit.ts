@@ -24,6 +24,7 @@ const LIMITS = {
   "photo-submission": { requests: 5,  window: "1 h"  },  // 5 photo uploads per hour per IP
   "player-bio":       { requests: 10, window: "1 h"  },  // 10 bio saves per hour per IP
   register:           { requests: 5,  window: "1 h"  },  // 5 registration attempts per hour per IP
+  tracker:            { requests: 120, window: "1 m" },  // live game tagging writes
 } as const;
 
 type LimitKey = keyof typeof LIMITS;

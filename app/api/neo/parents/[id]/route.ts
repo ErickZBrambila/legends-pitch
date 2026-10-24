@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
+import { NEO_COOKIE, verifyNeoToken } from "@/lib/neo-auth";
 import { approveAccount, revokeAccount, deleteAccount } from "@/lib/parent-auth";
 
-const NEO_COOKIE = "nlfc_neo";
-
-function verifyNeoToken(token: string): boolean {
-  const expected = createHash("sha256")
-    .update((process.env.THE_ONE ?? "") + "-nlfc-neo-2026")
-    .digest("hex");
-  return token === expected;
-}
 
 function validateId(id: unknown): id is string {
   return typeof id === "string" && id.length > 0 && id.length <= 100;

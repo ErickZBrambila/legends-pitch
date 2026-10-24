@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import { getGalleryEventsByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
+import { requireFamilyAccess } from "@/lib/family-access";
 
 export const revalidate = 0; // always fetch fresh from Sanity
 
@@ -25,6 +26,9 @@ export default async function GalleryPage({
 }: {
   searchParams: Promise<{ team?: string }>;
 }) {
+  // Server-side gate (don't rely on middleware alone for kids' media).
+  await requireFamilyAccess("/gallery");
+
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
 

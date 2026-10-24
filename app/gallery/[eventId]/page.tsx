@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import GalleryLightbox from "@/components/GalleryLightbox";
 import { getGalleryEventById } from "@/lib/sanity/queries";
+import { requireFamilyAccess } from "@/lib/family-access";
 
 export const revalidate = 0;
 
@@ -24,6 +25,9 @@ export default async function GalleryEventPage({
   params: Promise<{ eventId: string }>;
   searchParams: Promise<{ team?: string }>;
 }) {
+  // Server-side gate (don't rely on middleware alone for kids' media).
+  await requireFamilyAccess("/gallery");
+
   const [{ eventId }, { team: teamParam }] = await Promise.all([params, searchParams]);
   const team = teamParam === "u12" ? "u12" : "u11";
 

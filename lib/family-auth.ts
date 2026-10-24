@@ -10,16 +10,29 @@ export function hashPasscode(passcode: string): string {
     .digest("hex");
 }
 
-export function generateMagicToken(): string {
+// Returns null when FAMILY_PASSCODE is unset. Previously an unset passcode
+// made the expected cookie sha256("-nlfc-family-2026"), which anyone can compute.
+export function generateMagicToken(): string | null {
+  const passcode = process.env.FAMILY_PASSCODE;
+  if (!passcode) return null;
   return createHash("sha256")
-    .update((process.env.FAMILY_PASSCODE ?? "") + "-nlfc-magic-link-2026")
+    .update(passcode + "-nlfc-magic-link-2026")
     .digest("hex");
+}
+
+/** Expected family cookie value, or null if the family gate isn't configured. */
+export function expectedFamilyToken(): string | null {
+  const passcode = process.env.FAMILY_PASSCODE;
+  if (!passcode) return null;
+  return hashPasscode(passcode);
+}
+
+export function isValidFamilyToken(token: string | undefined): boolean {
+  const expected = expectedFamilyToken();
+  return !!expected && !!token && token === expected;
 }
 
 export async function getFamilySession(): Promise<boolean> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(FAMILY_COOKIE)?.value;
-  if (!token) return false;
-  const expected = hashPasscode(process.env.FAMILY_PASSCODE ?? "");
-  return token === expected;
+  return isValidFamilyToken(cookieStore.get(FAMILY_COOKIE)?.value);
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis } from "@/lib/redis";
+import { familyAccessDenied } from "@/lib/family-access";
 
 // Merge windows per event family (seconds)
 const WINDOWS: Record<string, number> = {
@@ -149,6 +150,9 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  const denied = await familyAccessDenied();
+  if (denied) return denied;
+
   const redis = getRedis();
   if (!redis) return NextResponse.json({ error: "Storage unavailable" }, { status: 503 });
 

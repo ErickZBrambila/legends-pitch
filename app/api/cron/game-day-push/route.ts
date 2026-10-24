@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { broadcastPush } from "@/lib/push";
+import { verifyQStashRequest } from "@/lib/qstash-verify";
 
 export interface GameDayPushPayload {
   team: "U11" | "U12";
@@ -9,17 +10,31 @@ export interface GameDayPushPayload {
   location: string;
 }
 
-export async function POST(req: NextRequest) {
-  const sig = req.headers.get("upstash-signature");
-  if (!sig) {
-    return NextResponse.json({ error: "Missing QStash signature" }, { status: 401 });
-  }
+function isValidPayload(p: unknown): p is GameDayPushPayload {
+  if (typeof p !== "object" || p === null) return false;
+  const o = p as Record<string, unknown>;
+  return (
+    (o.team === "U11" || o.team === "U12") &&
+    (o.homeAway === "home" || o.homeAway === "away") &&
+    typeof o.opponent === "string" && o.opponent.length <= 100 &&
+    typeof o.location === "string" && o.location.length <= 200 &&
+    typeof o.kickoffIso === "string" && !isNaN(Date.parse(o.kickoffIso))
+  );
+}
 
-  let payload: GameDayPushPayload;
+export async function POST(req: NextRequest) {
+  // Verify the request really came from QStash before doing anything.
+  const verified = await verifyQStashRequest(req);
+  if ("error" in verified) return verified.error;
+
+  let payload: unknown;
   try {
-    payload = await req.json();
+    payload = JSON.parse(verified.body);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  if (!isValidPayload(payload)) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
   const { team, opponent, kickoffIso, homeAway, location } = payload;

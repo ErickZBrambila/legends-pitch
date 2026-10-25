@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getParentSession, getPlayerOwner } from "@/lib/parent-auth";
+import { getParentSession, getPlayerOwners } from "@/lib/parent-auth";
 import { getPlayersByTeam } from "@/lib/sanity/queries";
 
 export async function GET() {
@@ -18,11 +18,12 @@ export async function GET() {
 
   const withStatus = await Promise.all(
     allPlayers.map(async (p) => {
-      const owner = await getPlayerOwner(p.id);
+      const owners = await getPlayerOwners(p.id);
       return {
         ...p,
-        claimedByMe: owner === account.id,
-        claimed: owner !== null,
+        claimedByMe: owners.includes(account.id),
+        // "claimed" means at capacity (2 parents) and I'm not one of them
+        claimed: owners.length >= 2 && !owners.includes(account.id),
       };
     }),
   );

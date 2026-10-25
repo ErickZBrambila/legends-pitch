@@ -178,9 +178,9 @@ export async function deleteAccount(id: string): Promise<void> {
   if (!redis) return;
   const stored = await redis.get<StoredAccount>(`parent:account:${id}`);
   if (!stored) return;
-  // Release all claimed players before deleting.
+  // Remove this account from every player's owners set.
   for (const playerId of stored.playerIds ?? []) {
-    await redis.del(`player:owner:${playerId}`);
+    await redis.srem(`player:owners:${playerId}`, id);
   }
   await redis.del(`parent:account:${id}`);
   await redis.del(`parent:email:${stored.email}`);
@@ -190,6 +190,8 @@ export async function deleteAccount(id: string): Promise<void> {
 
 // ── Player claiming ────────────────────────────────────────────────────────
 
+const MAX_OWNERS_PER_PLAYER = 2;
+
 export async function claimPlayer(
   accountId: string,
   playerId: string,
@@ -197,15 +199,14 @@ export async function claimPlayer(
   const redis = getRedis();
   if (!redis) return { error: "Service unavailable" };
 
-  // Atomic SET NX — only succeeds if no one owns this player yet.
-  const claimed = await redis.set(`player:owner:${playerId}`, accountId, { nx: true });
-  if (!claimed) {
-    const owner = await redis.get<string>(`player:owner:${playerId}`);
-    if (owner === accountId) return { ok: true }; // already theirs
-    return { error: "This player is already claimed by another family" };
+  const owners = await redis.smembers<string[]>(`player:owners:${playerId}`);
+  if (owners.includes(accountId)) return { ok: true }; // already theirs
+  if (owners.length >= MAX_OWNERS_PER_PLAYER) {
+    return { error: "This player already has two linked parents" };
   }
 
-  // Add to account's playerIds.
+  await redis.sadd(`player:owners:${playerId}`, accountId);
+
   const stored = await redis.get<StoredAccount>(`parent:account:${accountId}`);
   if (!stored) return { error: "Account not found" };
   if (!stored.playerIds.includes(playerId)) {
@@ -219,11 +220,7 @@ export async function releasePlayer(accountId: string, playerId: string): Promis
   const redis = getRedis();
   if (!redis) return;
 
-  // Only release if this account is the current owner.
-  const owner = await redis.get<string>(`player:owner:${playerId}`);
-  if (owner !== accountId) return;
-
-  await redis.del(`player:owner:${playerId}`);
+  await redis.srem(`player:owners:${playerId}`, accountId);
 
   const stored = await redis.get<StoredAccount>(`parent:account:${accountId}`);
   if (!stored) return;
@@ -231,22 +228,24 @@ export async function releasePlayer(accountId: string, playerId: string): Promis
   await redis.set(`parent:account:${accountId}`, JSON.stringify(stored));
 }
 
-// Admin override — reassigns a player regardless of current ownership.
+// Admin override — clears all existing owners and assigns to target account only.
 export async function adminAssignPlayer(targetAccountId: string, playerId: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
 
-  const currentOwner = await redis.get<string>(`player:owner:${playerId}`);
-  if (currentOwner && currentOwner !== targetAccountId) {
-    // Strip from previous owner's list.
-    const prev = await redis.get<StoredAccount>(`parent:account:${currentOwner}`);
+  const currentOwners = await redis.smembers<string[]>(`player:owners:${playerId}`);
+  // Strip from all previous owners' playerIds lists.
+  for (const ownerId of currentOwners) {
+    if (ownerId === targetAccountId) continue;
+    const prev = await redis.get<StoredAccount>(`parent:account:${ownerId}`);
     if (prev) {
       prev.playerIds = prev.playerIds.filter((id) => id !== playerId);
-      await redis.set(`parent:account:${currentOwner}`, JSON.stringify(prev));
+      await redis.set(`parent:account:${ownerId}`, JSON.stringify(prev));
     }
   }
 
-  await redis.set(`player:owner:${playerId}`, targetAccountId);
+  await redis.del(`player:owners:${playerId}`);
+  await redis.sadd(`player:owners:${playerId}`, targetAccountId);
 
   const stored = await redis.get<StoredAccount>(`parent:account:${targetAccountId}`);
   if (!stored) return;
@@ -260,19 +259,19 @@ export async function adminReleasePlayer(playerId: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
 
-  const owner = await redis.get<string>(`player:owner:${playerId}`);
-  if (!owner) return;
-
-  await redis.del(`player:owner:${playerId}`);
-
-  const stored = await redis.get<StoredAccount>(`parent:account:${owner}`);
-  if (!stored) return;
-  stored.playerIds = stored.playerIds.filter((id) => id !== playerId);
-  await redis.set(`parent:account:${owner}`, JSON.stringify(stored));
+  const owners = await redis.smembers<string[]>(`player:owners:${playerId}`);
+  for (const ownerId of owners) {
+    const stored = await redis.get<StoredAccount>(`parent:account:${ownerId}`);
+    if (stored) {
+      stored.playerIds = stored.playerIds.filter((id) => id !== playerId);
+      await redis.set(`parent:account:${ownerId}`, JSON.stringify(stored));
+    }
+  }
+  await redis.del(`player:owners:${playerId}`);
 }
 
-export async function getPlayerOwner(playerId: string): Promise<string | null> {
+export async function getPlayerOwners(playerId: string): Promise<string[]> {
   const redis = getRedis();
-  if (!redis) return null;
-  return redis.get<string>(`player:owner:${playerId}`);
+  if (!redis) return [];
+  return redis.smembers<string[]>(`player:owners:${playerId}`);
 }

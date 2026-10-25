@@ -6,11 +6,18 @@ import Link from "next/link";
 
 const DIGITS = 4;
 
-export default function FamilyLogin({ next }: { next: string }) {
+export default function FamilyLogin({ next, isParentLoggedIn }: { next: string; isParentLoggedIn: boolean }) {
   const [digits, setDigits] = useState<string[]>(Array(DIGITS).fill(""));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
+
+  async function handleParentSignOut() {
+    setSigningOut(true);
+    await fetch("/api/parent/logout", { method: "POST" }).catch(() => {});
+    window.location.reload();
+  }
 
   function focusAt(index: number) {
     inputs.current[Math.max(0, Math.min(DIGITS - 1, index))]?.focus();
@@ -80,6 +87,26 @@ export default function FamilyLogin({ next }: { next: string }) {
 
   return (
     <div className="min-h-screen bg-[var(--color-navy)] flex items-center justify-center px-4">
+      {/* Top-right parent auth button */}
+      <div className="fixed top-4 right-4">
+        {isParentLoggedIn ? (
+          <button
+            onClick={handleParentSignOut}
+            disabled={signingOut}
+            className="text-xs text-gray-400 hover:text-white transition-colors bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 disabled:opacity-40"
+          >
+            {signingOut ? "…" : "Sign out"}
+          </button>
+        ) : (
+          <Link
+            href="/parent/login"
+            className="text-xs text-gray-400 hover:text-white transition-colors bg-white/5 border border-white/10 rounded-lg px-3 py-1.5"
+          >
+            Sign in
+          </Link>
+        )}
+      </div>
+
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8 gap-3">
           <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-[var(--color-accent)] shadow-xl">

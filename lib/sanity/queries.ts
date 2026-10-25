@@ -371,13 +371,19 @@ export async function getHighlightVideosByTeam(team: TeamSlug): Promise<Highligh
 }
 
 export async function getLatestSessionWithReel(team: TeamSlug): Promise<{ id: string; sessionName: string; compilationTitle: string } | null> {
-  const raw = await sanityClient.fetch<{ _id: string; sessionName: string; compilationTitle?: string } | null>(
-    `*[_type in ["practiceSession","gameSession"] && team->ageGroup == $team && defined(compilationUrl)]{
-      _id, sessionName, compilationTitle
-    } | order(sessionDate desc) [0]`,
-    { team },
-    { cache: "no-store" }
-  );
+  // Use native fetch (not sanityClient) so Next.js cache: no-store is actually honoured.
+  // @sanity/client uses get-it as its HTTP transport, which bypasses Next.js's patched fetch
+  // and silently ignores cache options.
+  const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? "fg925bng";
+  const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
+  const query = `*[_type in ["practiceSession","gameSession"] && team->ageGroup == $team && defined(compilationUrl)]{_id, sessionName, compilationTitle} | order(sessionDate desc) [0]`;
+  const url = new URL(`https://${projectId}.api.sanity.io/v2024-01-01/data/query/${dataset}`);
+  url.searchParams.set("query", query);
+  url.searchParams.set("$team", `"${team}"`);
+  const resp = await fetch(url.toString(), { cache: "no-store" });
+  if (!resp.ok) return null;
+  const data = await resp.json() as { result?: { _id: string; sessionName: string; compilationTitle?: string } | null };
+  const raw = data.result ?? null;
   if (!raw) return null;
   return {
     id: raw._id,

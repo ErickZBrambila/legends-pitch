@@ -9,6 +9,7 @@ export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [teamPin, setTeamPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [emailTaken, setEmailTaken] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,7 @@ export default function RegisterForm() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Please enter a valid email address.";
     if (password.length < 8) return "Password must be at least 8 characters.";
     if (password !== confirmPassword) return "Passwords do not match.";
+    if (!teamPin.trim()) return "Team PIN is required.";
     return null;
   }
 
@@ -35,6 +37,17 @@ export default function RegisterForm() {
 
     setLoading(true);
     try {
+      const pinRes = await fetch("/api/family/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode: teamPin }),
+      });
+      if (!pinRes.ok) {
+        setError("Incorrect Team PIN · PIN incorrecto");
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch("/api/parent/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -153,6 +166,27 @@ export default function RegisterForm() {
               required
               className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[var(--color-accent)] transition-colors text-sm"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="teamPin"
+              className="block text-xs font-semibold text-gray-300 uppercase tracking-widest mb-2"
+            >
+              Team PIN · PIN del Equipo
+            </label>
+            <input
+              id="teamPin"
+              type="tel"
+              inputMode="numeric"
+              maxLength={4}
+              value={teamPin}
+              onChange={(e) => setTeamPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="4-digit code from your coach"
+              required
+              className="w-full bg-white/10 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-[var(--color-accent)] transition-colors text-sm tracking-widest"
+            />
+            <p className="text-xs text-gray-500 mt-1">Get the PIN from Coach Hugo · Pide el PIN al Entrenador Hugo</p>
           </div>
 
           {error && (

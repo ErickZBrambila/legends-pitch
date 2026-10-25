@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
 export async function POST(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("secret");
@@ -7,14 +7,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { path, tag } = await req.json().catch(() => ({}));
-
-  if (tag) {
-    revalidateTag(tag);
-    return NextResponse.json({ revalidated: true, tag });
-  }
-
+  const { path } = await req.json().catch(() => ({}));
   const target = typeof path === "string" ? path : "/";
-  revalidatePath(target);
+  revalidatePath(target, "layout");
   return NextResponse.json({ revalidated: true, path: target });
 }

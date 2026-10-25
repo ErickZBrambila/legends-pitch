@@ -376,7 +376,7 @@ export async function getLatestSessionWithReel(team: TeamSlug): Promise<{ id: st
       _id, sessionName, compilationTitle
     } | order(sessionDate desc) [0]`,
     { team },
-    { next: { revalidate: 60, tags: ["latest-reel"] } }
+    { next: { revalidate: 60 } }
   );
   if (!raw) return null;
   return {

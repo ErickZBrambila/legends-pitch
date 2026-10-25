@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getFamilySession } from "@/lib/family-auth";
+import { getParentSession } from "@/lib/parent-auth";
 import FamilyLogin from "./FamilyLogin";
 
 export const metadata = { title: "Team Access · North Legends FC" };
@@ -14,5 +15,7 @@ export default async function FamilyPage({
   const destination = next && next.startsWith("/") ? next : "/videos";
 
   if (authed) redirect(destination);
-  return <FamilyLogin next={destination} />;
+
+  const parentSession = await getParentSession();
+  return <FamilyLogin next={destination} isParentLoggedIn={!!parentSession} />;
 }

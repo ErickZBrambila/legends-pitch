@@ -92,10 +92,23 @@ export default function AccountView({
   }
 
   const claimedPlayers = roster?.filter((p) => claimedIds.includes(p.id)) ?? [];
-  const claimablePlayers = roster?.filter((p) => !p.claimed && !claimedIds.includes(p.id)) ?? [];
+
+  const u11Claimable = roster?.filter((p) => !p.claimed && !claimedIds.includes(p.id) && p.team === "U11") ?? [];
+  const u12Claimable = roster?.filter((p) => !p.claimed && !claimedIds.includes(p.id) && p.team === "U12") ?? [];
 
   return (
     <div className="min-h-screen bg-[var(--color-navy)] flex items-center justify-center px-4 py-10">
+      {/* Top-right sign out */}
+      <div className="fixed top-4 right-4">
+        <button
+          onClick={handleLogout}
+          disabled={logoutLoading}
+          className="text-xs text-gray-400 hover:text-white transition-colors bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 disabled:opacity-40"
+        >
+          {logoutLoading ? "…" : "Sign out"}
+        </button>
+      </div>
+
       <div className="w-full max-w-sm flex flex-col gap-4">
 
         {welcome && (
@@ -170,38 +183,78 @@ export default function AccountView({
           {/* Roster picker */}
           {showPicker && (
             <div className="mt-2 border-t border-white/10 pt-4">
-              <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-widest">
+              <p className="text-xs text-gray-400 mb-3 font-semibold uppercase tracking-widest">
                 Available players
               </p>
               {pickerLoading && <p className="text-sm text-gray-400">Loading roster…</p>}
-              {!pickerLoading && claimablePlayers.length === 0 && (
+              {!pickerLoading && u11Claimable.length === 0 && u12Claimable.length === 0 && (
                 <p className="text-sm text-gray-400">
                   All players are currently claimed by other families.
                 </p>
               )}
-              <ul className="flex flex-col gap-2">
-                {claimablePlayers.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
-                    <div>
-                      <span className="text-white text-sm">{p.name}</span>
-                      <span className="text-gray-400 text-xs ml-2">#{p.number} · {p.team}</span>
-                    </div>
-                    <button
-                      onClick={() => handleClaim(p.id)}
-                      disabled={actionLoading === p.id}
-                      className="text-xs text-[var(--color-accent)] hover:opacity-80 disabled:opacity-40 font-semibold transition-opacity"
-                    >
-                      {actionLoading === p.id ? "…" : "Claim"}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => setShowPicker(false)}
-                className="mt-3 text-xs text-gray-500 hover:text-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
+
+              {/* U11 group */}
+              {!pickerLoading && u11Claimable.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-[var(--color-accent)] font-bold uppercase tracking-widest mb-1.5">U11</p>
+                  <ul className="flex flex-col gap-2">
+                    {u11Claimable.map((p) => (
+                      <li key={p.id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                        <div>
+                          <span className="text-white text-sm">{p.name}</span>
+                          <span className="text-gray-400 text-xs ml-2">#{p.number}</span>
+                        </div>
+                        <button
+                          onClick={() => handleClaim(p.id)}
+                          disabled={actionLoading === p.id}
+                          className="text-xs text-[var(--color-accent)] hover:opacity-80 disabled:opacity-40 font-semibold transition-opacity"
+                        >
+                          {actionLoading === p.id ? "…" : "Claim"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* U12 group */}
+              {!pickerLoading && u12Claimable.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs text-[var(--color-accent)] font-bold uppercase tracking-widest mb-1.5">U12</p>
+                  <ul className="flex flex-col gap-2">
+                    {u12Claimable.map((p) => (
+                      <li key={p.id} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2">
+                        <div>
+                          <span className="text-white text-sm">{p.name}</span>
+                          <span className="text-gray-400 text-xs ml-2">#{p.number}</span>
+                        </div>
+                        <button
+                          onClick={() => handleClaim(p.id)}
+                          disabled={actionLoading === p.id}
+                          className="text-xs text-[var(--color-accent)] hover:opacity-80 disabled:opacity-40 font-semibold transition-opacity"
+                        >
+                          {actionLoading === p.id ? "…" : "Claim"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-white/10">
+                <button
+                  onClick={() => { window.location.href = "/family"; }}
+                  className="flex-1 py-2 bg-[var(--color-accent)] text-[var(--color-navy)] text-sm font-bold rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  Done · Family Portal
+                </button>
+                <button
+                  onClick={() => setShowPicker(false)}
+                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
 
@@ -217,14 +270,6 @@ export default function AccountView({
           )}
         </div>
 
-        {/* Logout */}
-        <button
-          onClick={handleLogout}
-          disabled={logoutLoading}
-          className="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-300 font-semibold rounded-xl border border-white/10 transition-colors disabled:opacity-40 text-sm"
-        >
-          {logoutLoading ? "Signing out…" : "Sign out"}
-        </button>
       </div>
     </div>
   );

@@ -1,9 +1,13 @@
 import { NextRequest } from "next/server";
 import { rateLimit } from "@/lib/ratelimit";
+import { getParentSession } from "@/lib/parent-auth";
 
 const ALLOWED_HOST = "pub-ec6efd6486724c999de33694e15dd4dc.r2.dev";
 
 export async function GET(req: NextRequest) {
+  const account = await getParentSession();
+  if (!account) return new Response("Parent account required", { status: 401 });
+
   const limited = await rateLimit(req, "download");
   if (limited) return limited;
 

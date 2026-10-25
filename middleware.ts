@@ -164,30 +164,14 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  // Family gate — /videos, /gallery, /highlights require EITHER:
-  //   (a) valid family passcode cookie, OR
-  //   (b) valid parent account session token
-  const familyProtected = ["/videos", "/gallery", "/highlights"];
-  if (familyProtected.some((p) => pathname.startsWith(p))) {
-    const familyToken = req.cookies.get("nlfc_family")?.value;
-    const expectedFamily = await sha256(process.env.FAMILY_PASSCODE ?? "", "-nlfc-family-2026");
-    if (familyToken === expectedFamily) {
-      const res = NextResponse.next();
-      res.headers.set("x-pathname", pathname);
-      return res;
-    }
-
-    const parentToken = req.cookies.get("nlfc_parent")?.value;
-    if (parentToken && (await verifyParentToken(parentToken))) {
-      const res = NextResponse.next();
-      res.headers.set("x-pathname", pathname);
-      return res;
-    }
-
+  // /family is a legacy entry point — redirect to parent login
+  if (pathname === "/family" || pathname.startsWith("/family/")) {
     const url = req.nextUrl.clone();
-    url.pathname = "/family";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    url.pathname = "/parent/login";
+    // preserve any ?next= param so old bookmarks still land correctly
+    const next = req.nextUrl.searchParams.get("next");
+    if (next) url.searchParams.set("next", next);
+    return NextResponse.redirect(url, 308);
   }
 
   const res = NextResponse.next();

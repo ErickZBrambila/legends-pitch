@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFamilySession } from "@/lib/family-auth";
+import { getParentSession } from "@/lib/parent-auth";
 import { sanityClient, sanityWriteClient } from "@/lib/sanity/client";
 import { rateLimit } from "@/lib/ratelimit";
 
@@ -10,7 +10,7 @@ export async function DELETE(
   const limited = await rateLimit(req, "photo-submission");
   if (limited) return limited;
 
-  const authed = await getFamilySession();
+  const authed = await getParentSession();
   if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
@@ -37,7 +37,7 @@ export async function PUT(
   const limited = await rateLimit(req, "photo-submission");
   if (limited) return limited;
 
-  const authed = await getFamilySession();
+  const authed = await getParentSession();
   if (!authed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;

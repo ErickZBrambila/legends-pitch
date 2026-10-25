@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { PracticeSession, SessionVideo, VideoClip } from "@/lib/types";
 import FieldHeatmap from "@/components/FieldHeatmap";
 import ActivityTimeline from "@/components/ActivityTimeline";
+import GandalfGate from "@/components/GandalfGate";
 
 const SAVED_KEY = "nlfc_saved_clips";
 
@@ -119,6 +120,8 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   const [isCompilationActive, setIsCompilationActive] = useState(!!compilationUrl);
   const [isLoading, setIsLoading] = useState(false);
   const [savedClips, setSavedClips] = useState<Set<string>>(new Set());
+  const [isParent, setIsParent] = useState<boolean | null>(null);
+  const [showGandalf, setShowGandalf] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
   const pendingPlay = useRef(false);
@@ -131,6 +134,20 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       if (raw) setSavedClips(new Set(JSON.parse(raw) as string[]));
     } catch {}
   }, []);
+
+  // Check parent auth once on mount
+  useEffect(() => {
+    fetch("/api/parent/me")
+      .then((r) => setIsParent(r.ok))
+      .catch(() => setIsParent(false));
+  }, []);
+
+  function guardDownload(e: React.MouseEvent) {
+    if (!isParent) {
+      e.preventDefault();
+      setShowGandalf(true);
+    }
+  }
 
   // On mount: if compilation exists load it (no autoplay). On video-tab change: load first goal.
   useEffect(() => {
@@ -289,9 +306,29 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   const driveUrl = session.videos.find((v) => v.driveUrl)?.driveUrl;
 
   return (
+    <>
+    {showGandalf && (
+      <GandalfGate
+        onClose={() => setShowGandalf(false)}
+        returnPath={typeof window !== "undefined" ? window.location.pathname + window.location.search : undefined}
+      />
+    )}
     <div className="fold-two-panel">
     {/* ── LEFT PANEL (sticky video) on foldable, full-width on normal screens ── */}
     <div className="fold-panel-left">
+      {/* Download nudge — shown only when not logged in as parent */}
+      {isParent === false && (
+        <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded-xl bg-[var(--color-navy)]/5 border border-[var(--color-navy)]/10 text-sm">
+          <span className="text-lg">🔒</span>
+          <p className="flex-1 text-gray-600 text-xs leading-snug">
+            <span className="font-bold text-gray-800">Want to download clips?</span>{" "}
+            <a href="/parent/register" className="text-[var(--color-primary)] font-semibold underline underline-offset-2">
+              Create a free parent account
+            </a>{" "}
+            to unlock downloads.
+          </p>
+        </div>
+      )}
       {/* Full-game Drive download banner */}
       {driveUrl && (
         <a
@@ -355,6 +392,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
             <a
               href={`/api/clip-download?url=${encodeURIComponent(compilationUrl!)}&filename=${encodeURIComponent(compilationTitle + ".mp4")}`}
               download={compilationTitle + ".mp4"}
+              onClick={guardDownload}
               className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-[var(--color-navy)] text-xs font-bold hover:bg-[var(--color-accent)]/20 transition-colors"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -661,7 +699,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                   <a
                     href={`/api/clip-download?url=${encodeURIComponent(clip.r2Url)}&filename=${encodeURIComponent(clip.label + ".mp4")}`}
                     download={clip.label + ".mp4"}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); guardDownload(e); }}
                     className="flex items-center justify-center gap-1 py-1.5 border-t border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-gray-50 transition-colors"
                   >
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -677,5 +715,6 @@ export default function SessionViewer({ session }: { session: PracticeSession })
       ))}
     </div>
     </div>
+    </>
   );
 }

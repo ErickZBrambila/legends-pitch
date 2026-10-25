@@ -130,28 +130,17 @@ export async function getAccountByEmail(email: string): Promise<StoredAccount | 
   if (!redis) return null;
   const id = await redis.get<string>(`parent:email:${email.toLowerCase()}`);
   if (!id) return null;
-  const raw = await redis.get<string>(`parent:account:${id}`);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as StoredAccount;
-  } catch {
-    return null;
-  }
+  return redis.get<StoredAccount>(`parent:account:${id}`);
 }
 
 export async function getAccountById(id: string): Promise<ParentAccount | null> {
   const redis = getRedis();
   if (!redis) return null;
-  const raw = await redis.get<string>(`parent:account:${id}`);
-  if (!raw) return null;
-  try {
-    const stored = JSON.parse(raw) as StoredAccount;
-    const { passwordHash: _ph, ...account } = stored;
-    void _ph;
-    return account;
-  } catch {
-    return null;
-  }
+  const stored = await redis.get<StoredAccount>(`parent:account:${id}`);
+  if (!stored) return null;
+  const { passwordHash: _ph, ...account } = stored;
+  void _ph;
+  return account;
 }
 
 export async function getAllAccounts(): Promise<ParentAccount[]> {
@@ -166,52 +155,37 @@ export async function getAllAccounts(): Promise<ParentAccount[]> {
 export async function approveAccount(id: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
-  const raw = await redis.get<string>(`parent:account:${id}`);
-  if (!raw) return;
-  try {
-    const stored = JSON.parse(raw) as StoredAccount;
-    stored.approved = true;
-    await redis.set(`parent:account:${id}`, JSON.stringify(stored));
-    await redis.srem("parents:revoked", id);
-  } catch {
-    // no-op
-  }
+  const stored = await redis.get<StoredAccount>(`parent:account:${id}`);
+  if (!stored) return;
+  stored.approved = true;
+  await redis.set(`parent:account:${id}`, JSON.stringify(stored));
+  await redis.srem("parents:revoked", id);
 }
 
 export async function revokeAccount(id: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
-  const raw = await redis.get<string>(`parent:account:${id}`);
-  if (!raw) return;
-  try {
-    const stored = JSON.parse(raw) as StoredAccount;
-    stored.approved = false;
-    await redis.set(`parent:account:${id}`, JSON.stringify(stored));
-    // Blocklist so the middleware immediately rejects existing session tokens.
-    await redis.sadd("parents:revoked", id);
-  } catch {
-    // no-op
-  }
+  const stored = await redis.get<StoredAccount>(`parent:account:${id}`);
+  if (!stored) return;
+  stored.approved = false;
+  await redis.set(`parent:account:${id}`, JSON.stringify(stored));
+  // Blocklist so the middleware immediately rejects existing session tokens.
+  await redis.sadd("parents:revoked", id);
 }
 
 export async function deleteAccount(id: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
-  const raw = await redis.get<string>(`parent:account:${id}`);
-  if (!raw) return;
-  try {
-    const stored = JSON.parse(raw) as StoredAccount;
-    // Release all claimed players before deleting.
-    for (const playerId of stored.playerIds ?? []) {
-      await redis.del(`player:owner:${playerId}`);
-    }
-    await redis.del(`parent:account:${id}`);
-    await redis.del(`parent:email:${stored.email}`);
-    await redis.srem("parents:all", id);
-    await redis.srem("parents:revoked", id);
-  } catch {
-    // no-op
+  const stored = await redis.get<StoredAccount>(`parent:account:${id}`);
+  if (!stored) return;
+  // Release all claimed players before deleting.
+  for (const playerId of stored.playerIds ?? []) {
+    await redis.del(`player:owner:${playerId}`);
   }
+  await redis.del(`parent:account:${id}`);
+  await redis.del(`parent:email:${stored.email}`);
+  await redis.srem("parents:all", id);
+  await redis.srem("parents:revoked", id);
 }
 
 // ── Player claiming ────────────────────────────────────────────────────────
@@ -232,16 +206,11 @@ export async function claimPlayer(
   }
 
   // Add to account's playerIds.
-  const raw = await redis.get<string>(`parent:account:${accountId}`);
-  if (!raw) return { error: "Account not found" };
-  try {
-    const stored = JSON.parse(raw) as StoredAccount;
-    if (!stored.playerIds.includes(playerId)) {
-      stored.playerIds = [...stored.playerIds, playerId];
-      await redis.set(`parent:account:${accountId}`, JSON.stringify(stored));
-    }
-  } catch {
-    return { error: "Failed to update account" };
+  const stored = await redis.get<StoredAccount>(`parent:account:${accountId}`);
+  if (!stored) return { error: "Account not found" };
+  if (!stored.playerIds.includes(playerId)) {
+    stored.playerIds = [...stored.playerIds, playerId];
+    await redis.set(`parent:account:${accountId}`, JSON.stringify(stored));
   }
   return { ok: true };
 }
@@ -256,15 +225,10 @@ export async function releasePlayer(accountId: string, playerId: string): Promis
 
   await redis.del(`player:owner:${playerId}`);
 
-  const raw = await redis.get<string>(`parent:account:${accountId}`);
-  if (!raw) return;
-  try {
-    const stored = JSON.parse(raw) as StoredAccount;
-    stored.playerIds = stored.playerIds.filter((id) => id !== playerId);
-    await redis.set(`parent:account:${accountId}`, JSON.stringify(stored));
-  } catch {
-    // no-op
-  }
+  const stored = await redis.get<StoredAccount>(`parent:account:${accountId}`);
+  if (!stored) return;
+  stored.playerIds = stored.playerIds.filter((id) => id !== playerId);
+  await redis.set(`parent:account:${accountId}`, JSON.stringify(stored));
 }
 
 // Admin override — reassigns a player regardless of current ownership.
@@ -275,30 +239,20 @@ export async function adminAssignPlayer(targetAccountId: string, playerId: strin
   const currentOwner = await redis.get<string>(`player:owner:${playerId}`);
   if (currentOwner && currentOwner !== targetAccountId) {
     // Strip from previous owner's list.
-    const prevRaw = await redis.get<string>(`parent:account:${currentOwner}`);
-    if (prevRaw) {
-      try {
-        const prev = JSON.parse(prevRaw) as StoredAccount;
-        prev.playerIds = prev.playerIds.filter((id) => id !== playerId);
-        await redis.set(`parent:account:${currentOwner}`, JSON.stringify(prev));
-      } catch {
-        // no-op
-      }
+    const prev = await redis.get<StoredAccount>(`parent:account:${currentOwner}`);
+    if (prev) {
+      prev.playerIds = prev.playerIds.filter((id) => id !== playerId);
+      await redis.set(`parent:account:${currentOwner}`, JSON.stringify(prev));
     }
   }
 
   await redis.set(`player:owner:${playerId}`, targetAccountId);
 
-  const raw = await redis.get<string>(`parent:account:${targetAccountId}`);
-  if (!raw) return;
-  try {
-    const stored = JSON.parse(raw) as StoredAccount;
-    if (!stored.playerIds.includes(playerId)) {
-      stored.playerIds = [...stored.playerIds, playerId];
-      await redis.set(`parent:account:${targetAccountId}`, JSON.stringify(stored));
-    }
-  } catch {
-    // no-op
+  const stored = await redis.get<StoredAccount>(`parent:account:${targetAccountId}`);
+  if (!stored) return;
+  if (!stored.playerIds.includes(playerId)) {
+    stored.playerIds = [...stored.playerIds, playerId];
+    await redis.set(`parent:account:${targetAccountId}`, JSON.stringify(stored));
   }
 }
 
@@ -311,15 +265,10 @@ export async function adminReleasePlayer(playerId: string): Promise<void> {
 
   await redis.del(`player:owner:${playerId}`);
 
-  const raw = await redis.get<string>(`parent:account:${owner}`);
-  if (!raw) return;
-  try {
-    const stored = JSON.parse(raw) as StoredAccount;
-    stored.playerIds = stored.playerIds.filter((id) => id !== playerId);
-    await redis.set(`parent:account:${owner}`, JSON.stringify(stored));
-  } catch {
-    // no-op
-  }
+  const stored = await redis.get<StoredAccount>(`parent:account:${owner}`);
+  if (!stored) return;
+  stored.playerIds = stored.playerIds.filter((id) => id !== playerId);
+  await redis.set(`parent:account:${owner}`, JSON.stringify(stored));
 }
 
 export async function getPlayerOwner(playerId: string): Promise<string | null> {

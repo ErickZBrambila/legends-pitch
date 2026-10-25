@@ -795,18 +795,28 @@ export default function TrackerApp({ teams }: Props) {
       setSubmitting(true);
       setSubmitError("");
       try {
-        const res = await fetch(`/api/tracker/sessions/${state.sessionCode}/export`);
-        if (!res.ok) throw new Error("Export failed");
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `tracker-${state.sessionCode}-${state.matchDate || "game"}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const exportRes = await fetch(`/api/tracker/sessions/${state.sessionCode}/export`);
+        if (!exportRes.ok) throw new Error("Export failed");
+        const exportDoc = await exportRes.json();
+        const submitRes = await fetch("/api/tracker/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            gameId: exportDoc.sessionCode,
+            teamAgeGroup: exportDoc.teamAgeGroup,
+            matchId: exportDoc.matchId,
+            opponent: exportDoc.opponent,
+            homeAway: exportDoc.homeAway,
+            date: exportDoc.date,
+            submittedAt: exportDoc.submittedAt,
+            events: exportDoc.events,
+            finalScore: exportDoc.finalScore,
+          }),
+        });
+        if (!submitRes.ok) throw new Error("Save failed");
         setState((s) => ({ ...s, phase: "submitted" }));
       } catch {
-        setSubmitError("Download failed — check connection and try again.");
+        setSubmitError("Failed to save — check connection and try again.");
       } finally {
         setSubmitting(false);
       }
@@ -916,7 +926,7 @@ export default function TrackerApp({ teams }: Props) {
               disabled={submitting}
               className="w-full py-4 bg-[#238636] hover:bg-[#2ea043] disabled:bg-[#21262d] disabled:text-[#484f58] rounded-xl font-bold text-lg transition-colors"
             >
-              {submitting ? "Preparing…" : "⬇ Download Merged JSON"}
+              {submitting ? "Saving…" : "Submit Game Stats"}
             </button>
           ) : (
             <button
@@ -981,7 +991,7 @@ export default function TrackerApp({ teams }: Props) {
         </div>
         {state.sessionCode && (
           <p className="text-[#8b949e] text-sm max-w-xs">
-            Session <span className="font-mono text-[#f0f6fc]">{state.sessionCode}</span> — merged JSON downloaded.
+            Session <span className="font-mono text-[#f0f6fc]">{state.sessionCode}</span> — saved to server.
           </p>
         )}
         <button

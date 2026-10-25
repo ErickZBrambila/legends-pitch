@@ -254,9 +254,10 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
     publishedAt: string;
     author: string;
     team: { ageGroup: string };
+    coverImage?: { _type?: string; asset?: { _ref: string } } | null;
   } | null>(
     `*[_type == "post" && slug.current == $slug][0]{
-      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, team->{ ageGroup }
+      _id, title, title_es, slug, excerpt, excerpt_es, body, body_es, publishedAt, author, team->{ ageGroup }, coverImage
     }`,
     { slug }
   );
@@ -272,6 +273,7 @@ export async function getPostBySlug(slug: string): Promise<NewsPost | null> {
     body_es: p.body_es,
     publishedAt: p.publishedAt,
     author: p.author ?? "",
+    coverImageUrl: p.coverImage ? urlForImage(p.coverImage) : undefined,
   };
 }
 

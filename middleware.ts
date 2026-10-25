@@ -144,7 +144,9 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Admin gate — all /admin/* sub-pages require valid HMAC session token
-  if (pathname.startsWith("/admin/") && pathname !== "/admin") {
+  // Register, forgot, and reset are public-facing pages for new coaches.
+  const adminPublic = ["/admin/register", "/admin/forgot", "/admin/reset"];
+  if (pathname.startsWith("/admin/") && pathname !== "/admin" && !adminPublic.some((p) => pathname.startsWith(p))) {
     const token = req.cookies.get("nlfc_admin")?.value;
     if (!token) return NextResponse.redirect(new URL("/admin", req.url));
 

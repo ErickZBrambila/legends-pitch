@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import TeamTabs from "@/components/TeamTabs";
 import VideoCollectionFolder from "@/components/VideoCollectionFolder";
 import { getSessionsByTeam, getHighlightVideosByTeam } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
 import type { PracticeSession, HighlightVideo } from "@/lib/types";
+import { getParentSession } from "@/lib/parent-auth";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Videos");
@@ -48,9 +50,10 @@ export default async function VideosPage({
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
   const t = await getTranslations("Videos");
   const locale = await getLocale();
-  const [sessions, highlightVideos] = await Promise.all([
+  const [sessions, highlightVideos, parentAccount] = await Promise.all([
     getSessionsByTeam(team),
     getHighlightVideosByTeam(team),
+    getParentSession(),
   ]);
 
   // Group YouTube highlights by event
@@ -61,6 +64,21 @@ export default async function VideosPage({
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
+      {/* Download nudge banner for non-parents */}
+      {!parentAccount && (
+        <div className="flex items-center gap-3 mb-6 px-4 py-3 rounded-xl bg-[var(--color-navy)]/5 border border-[var(--color-navy)]/10">
+          <span className="text-xl">🔒</span>
+          <p className="flex-1 text-sm text-gray-600">
+            <span className="font-bold text-gray-800">Download clips & reels</span>{" "}
+            — free for NLFC parents.{" "}
+            <Link href="/parent/register" className="text-[var(--color-primary)] font-semibold underline underline-offset-2">
+              Create your account
+            </Link>
+            .
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
         <div>

@@ -15,10 +15,18 @@ interface RowState {
   loading: boolean;
 }
 
+function playerLabel(playerIds: string[], playerNames: Record<string, string>): string {
+  if (playerIds.length === 0) return "—";
+  const names = playerIds.map((id) => playerNames[id] ?? id);
+  return names.join(", ");
+}
+
 export default function ParentAccountsTable({
   accounts: initial,
+  playerNames,
 }: {
   accounts: ParentAccount[];
+  playerNames: Record<string, string>;
 }) {
   const [accounts, setAccounts] = useState<ParentAccount[]>(initial);
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
@@ -119,14 +127,14 @@ export default function ParentAccountsTable({
                     {account.email}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 md:hidden">
-                    {account.playerIds.length > 0 ? `${account.playerIds.length} player(s)` : "—"}
+                    {playerLabel(account.playerIds, playerNames)}
                   </p>
                 </td>
                 <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">
                   {account.email}
                 </td>
                 <td className="px-4 py-3 text-gray-500 hidden md:table-cell">
-                  {account.playerIds.length > 0 ? `${account.playerIds.length} player(s)` : "—"}
+                  {playerLabel(account.playerIds, playerNames)}
                 </td>
                 <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell font-mono">
                   {formatDate(account.createdAt)}

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getNeoSession } from "@/lib/neo-auth";
 import { getAllAccounts } from "@/lib/parent-auth";
+import { getPlayersByTeam } from "@/lib/sanity/queries";
 import ParentAccountsTable from "./ParentAccountsTable";
 
 export const metadata = { title: "Parent Accounts · North Legends FC Admin" };
@@ -9,7 +10,14 @@ export default async function ParentsPage() {
   const authed = await getNeoSession();
   if (!authed) redirect("/neo/login");
 
-  const accounts = await getAllAccounts();
+  const [accounts, u11, u12] = await Promise.all([
+    getAllAccounts(),
+    getPlayersByTeam("u11"),
+    getPlayersByTeam("u12"),
+  ]);
+
+  const playerNames: Record<string, string> = {};
+  for (const p of [...u11, ...u12]) playerNames[p.id] = p.name;
 
   const pendingCount = accounts.filter((a) => !a.approved).length;
 
@@ -49,7 +57,7 @@ export default async function ParentsPage() {
           )}
         </div>
 
-        <ParentAccountsTable accounts={accounts} />
+        <ParentAccountsTable accounts={accounts} playerNames={playerNames} />
 
       </div>
     </div>

@@ -3,79 +3,43 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
-// ── 8-bit Gandalf pixel art ─────────────────────────────────────────────────
-// 16 cols × 22 rows, pixel size 9px → 144 × 198px
-const PX = 9;
-const COLORS: Record<string, string> = {
-  g: "#888",    // hat (mid grey)
-  G: "#555",    // hat brim / band
-  f: "#ffcc88", // face
-  e: "#1a0a00", // eyes
-  w: "#f5f0e8", // beard
-  R: "#5c5c7a", // robe
-  b: "#7b4a1e", // staff
-  y: "#ffd700", // staff glow
-};
-
-const GRID = [
-  "......gg........",
-  ".....gggg.......",
-  "....gggggg......",
-  "...gggggggg.....",
-  "..gggggggggg....",
-  "..GGGGGGGGGG....",
-  "...ffffffff.....",
-  "...f.e..e.f.....",
-  "...ffffffff.....",
-  "...fwwwwwwwf....",
-  "..Rfwwwwwwwfgg..",
-  ".bRRwwwwwwwRRR..",
-  "..bRRwwwwwwRRR..",
-  "...bRRwwwwRRRR..",
-  "....bRRwwRRRRR..",
-  ".....bRRRRRRR...",
-  "......bRRRRR....",
-  ".......bRRR.....",
-  "........bR......",
-  ".........b......",
-  ".........b......",
-  ".........y......",
-];
+const C = "#2d1a0e"; // dark brown silhouette, matches the reference image
 
 function GandalfSprite() {
-  const rects: React.ReactElement[] = [];
-  GRID.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) {
-      const ch = row[x];
-      if (ch === "." || !COLORS[ch]) continue;
-      rects.push(
-        <rect key={`${x}-${y}`} x={x * PX} y={y * PX} width={PX} height={PX} fill={COLORS[ch]} />
-      );
-    }
-  });
   return (
     <svg
-      width={16 * PX}
-      height={22 * PX}
-      viewBox={`0 0 ${16 * PX} ${22 * PX}`}
-      style={{ imageRendering: "pixelated" }}
+      viewBox="0 0 210 205"
+      width="170"
+      height="166"
       aria-hidden="true"
+      style={{ display: "block" }}
     >
-      {rects}
+      {/* Pointed hat */}
+      <path d="M 105,2 L 60,62 L 150,62 Z" fill={C} />
+      {/* Hat brim — wider ellipse at base of hat */}
+      <ellipse cx="105" cy="66" rx="56" ry="11" fill={C} />
+      {/* Head */}
+      <ellipse cx="105" cy="83" rx="20" ry="18" fill={C} />
+      {/* Body / robes — narrow at shoulders, flares dramatically to bottom */}
+      <path d="M 82,97 Q 105,88 128,97 L 162,196 L 46,196 Z" fill={C} />
+      {/* Left arm — from left shoulder reaching upper-left to hand */}
+      <polygon points="82,97  82,107  18,78  18,68" fill={C} />
+      {/* Sword blade — from left hand angled diagonally up-right toward center */}
+      <polygon points="18,68  14,75  76,12  80,7" fill={C} />
+      {/* Right arm — from right shoulder extending to the right */}
+      <polygon points="128,97  128,107  172,85  172,75" fill={C} />
+      {/* Staff — tall, from right hand sweeping down to lower-right */}
+      <polygon points="170,75  175,75  196,200  191,202" fill={C} />
     </svg>
   );
 }
 
-// ── Modal ───────────────────────────────────────────────────────────────────
-
 interface Props {
   onClose: () => void;
-  /** Where the user was trying to go — used to build the ?next= redirect */
   returnPath?: string;
 }
 
 export default function GandalfGate({ onClose, returnPath }: Props) {
-  // Close on Escape
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -94,22 +58,26 @@ export default function GandalfGate({ onClose, returnPath }: Props) {
       aria-labelledby="gandalf-title"
     >
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Card */}
-      <div className="relative z-10 bg-white rounded-2xl shadow-2xl max-w-xs w-full text-center overflow-hidden">
-        {/* Pixelated header bar */}
-        <div className="bg-[var(--color-navy)] px-4 pt-5 pb-2 flex flex-col items-center gap-3">
+      <div className="relative z-10 bg-white rounded-2xl shadow-2xl max-w-sm w-full text-center overflow-hidden">
+
+        {/* Hero section — cream background + silhouette, matching reference image */}
+        <div className="bg-[#f5f1eb] px-4 pt-5 pb-3 flex flex-col items-center">
+          <p
+            className="font-black uppercase leading-none tracking-tight mb-2"
+            style={{ fontSize: "1.75rem", color: C, fontFamily: "Impact, 'Arial Black', sans-serif" }}
+          >
+            YOU SHALL
+          </p>
           <GandalfSprite />
           <p
             id="gandalf-title"
-            className="text-white font-black uppercase tracking-widest text-lg leading-tight"
-            style={{ fontFamily: "'Courier New', monospace", letterSpacing: "0.1em" }}
+            className="font-black uppercase leading-none tracking-tight mt-2"
+            style={{ fontSize: "1.75rem", color: C, fontFamily: "Impact, 'Arial Black', sans-serif" }}
           >
-            YOU SHALL<br />NOT PASS!
+            NOT PASS!
           </p>
         </div>
 
@@ -122,7 +90,6 @@ export default function GandalfGate({ onClose, returnPath }: Props) {
           <p className="text-gray-400 text-xs mb-5">
             Create your free account and get instant access to download any clip or reel.
           </p>
-
           <div className="flex flex-col gap-2">
             <Link
               href={`/parent/register${next}`}
@@ -144,7 +111,7 @@ export default function GandalfGate({ onClose, returnPath }: Props) {
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white hover:bg-white/20 transition text-lg leading-none"
+          className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-black/10 text-gray-500 hover:bg-black/15 hover:text-gray-700 transition text-lg leading-none"
           aria-label="Close"
         >
           ✕

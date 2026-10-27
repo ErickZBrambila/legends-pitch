@@ -8,11 +8,13 @@ on:
     - cron: "0 1 * * 1"
   workflow_dispatch: # allow manual trigger from GitHub Actions UI
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -24,14 +26,27 @@ jobs:
       - name: Scrape GotSport results
         run: node scripts/scrape-gotsport.mjs
 
-      - name: Commit updated cache
+      - name: Open self-merging PR if scores changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add lib/data/gotsport-cache.json
           if git diff --staged --quiet; then
             echo "No changes — results already up to date."
-          else
-            git commit -m "chore: update GotSport results cache [skip ci]"
-            git push
+            exit 0
           fi
+
+          BRANCH="chore/gotsport-cache-$(date +%Y%m%d-%H%M)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git commit -m "chore: update GotSport results cache [skip ci]"
+          git push origin "$BRANCH"
+
+          PR_URL=$(gh pr create \
+            --title "chore: update GotSport results cache" \
+            --body "Automated results update — $(date -u '+%b %d %Y')" \
+            --base main --head "$BRANCH")
+
+          echo "PR created: $PR_URL"
+          gh pr merge "$PR_URL" --squash --delete-branch --auto

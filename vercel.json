@@ -6,12 +6,8 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/refresh-team?team=u11",
-      "schedule": "0 */6 * * *"
-    },
-    {
-      "path": "/api/cron/refresh-team?team=u12",
-      "schedule": "30 */6 * * *"
+      "path": "/api/cron/refresh-team",
+      "schedule": "0 4 * * *"
     }
   ]
 }

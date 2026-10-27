@@ -11,16 +11,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const team = req.nextUrl.searchParams.get("team") as TeamSlug | null;
-  if (team !== "u11" && team !== "u12") {
-    return NextResponse.json({ error: "team must be u11 or u12" }, { status: 400 });
-  }
+  const teamParam = req.nextUrl.searchParams.get("team");
 
-  const data = await refreshGotSportCache(team);
-  return NextResponse.json({
-    ok: true,
-    team,
-    matchCount: data.matches.length,
-    source: data.source,
-  });
+  // "all" (or no param) refreshes both teams — used by the single daily Vercel cron
+  const teams: TeamSlug[] =
+    teamParam === "u11" || teamParam === "u12" ? [teamParam] : ["u11", "u12"];
+
+  const results = await Promise.all(
+    teams.map(async (team) => {
+      const data = await refreshGotSportCache(team);
+      return { team, matchCount: data.matches.length, source: data.source };
+    })
+  );
+
+  return NextResponse.json({ ok: true, results });
 }

@@ -1,0 +1,53 @@
+name: Update GotSport results cache
+
+on:
+  schedule:
+    # Sun 01:00 UTC = Sat 8pm CDT — catches Saturday game results
+    - cron: "0 1 * * 0"
+    # Mon 01:00 UTC = Sun 8pm CDT — catches Sunday game results
+    - cron: "0 1 * * 1"
+  workflow_dispatch: # allow manual trigger from GitHub Actions UI
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Scrape GotSport results
+        run: node scripts/scrape-gotsport.mjs
+
+      - name: Check if cache changed
+        id: diff
+        run: |
+          git diff --quiet lib/data/gotsport-cache.json && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open self-merging PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="chore/gotsport-cache-$(date +%Y%m%d-%H%M)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add lib/data/gotsport-cache.json
+          git commit -m "chore: update GotSport results cache [skip ci]"
+          git push origin "$BRANCH"
+
+          PR_URL=$(gh pr create \
+            --title "chore: update GotSport results cache" \
+            --body "Automated results update — $(date -u '+%b %d %Y')" \
+            --base main --head "$BRANCH")
+
+          echo "PR: $PR_URL"
+          gh pr merge "$PR_URL" --squash --delete-branch --auto

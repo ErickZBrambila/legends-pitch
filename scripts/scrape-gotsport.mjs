@@ -7,7 +7,7 @@
  * Requires: Node 18+ (uses built-in fetch)
  */
 
-import { writeFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -174,12 +174,38 @@ async function scrapeTeam(team, url) {
   return { standings, matrixScores };
 }
 
-const result = { updatedAt: new Date().toISOString() };
+const outPath = join(__dirname, "../lib/data/gotsport-cache.json");
+
+// Read existing cache to compare — only write if scores actually changed
+const existing = existsSync(outPath)
+  ? JSON.parse(readFileSync(outPath, "utf8"))
+  : {};
+
+const result = {};
+let changed = false;
 
 for (const [team, url] of Object.entries(URLS)) {
-  result[team] = await scrapeTeam(team, url);
+  const fresh = await scrapeTeam(team, url);
+  result[team] = fresh;
+
+  const oldScores = JSON.stringify(existing[team]?.matrixScores ?? []);
+  const newScores = JSON.stringify(fresh.matrixScores);
+  const oldStandings = JSON.stringify(existing[team]?.standings ?? []);
+  const newStandings = JSON.stringify(fresh.standings);
+
+  if (oldScores !== newScores || oldStandings !== newStandings) {
+    changed = true;
+    console.log(`  -> ${team} changed`);
+  } else {
+    console.log(`  -> ${team} unchanged`);
+  }
 }
 
-const outPath = join(__dirname, "../lib/data/gotsport-cache.json");
+if (!changed) {
+  console.log("\nNo score or standings changes — skipping file write.");
+  process.exit(0);
+}
+
+result.updatedAt = new Date().toISOString();
 writeFileSync(outPath, JSON.stringify(result, null, 2) + "\n");
 console.log(`\nWrote ${outPath}`);

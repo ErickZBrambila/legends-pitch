@@ -18,28 +18,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Scrape GotSport results
-        run: node scripts/scrape-gotsport.mjs
+        id: scrape
+        run: |
+          node scripts/scrape-gotsport.mjs && echo "changed=true" >> "$GITHUB_OUTPUT" || echo "changed=false" >> "$GITHUB_OUTPUT"
 
-      - name: Open self-merging PR if scores changed
+      - name: Open self-merging PR
+        if: steps.scrape.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git add lib/data/gotsport-cache.json
-          if git diff --staged --quiet; then
-            echo "No changes — results already up to date."
-            exit 0
-          fi
-
           BRANCH="chore/gotsport-cache-$(date +%Y%m%d-%H%M)"
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
+          git add lib/data/gotsport-cache.json
           git commit -m "chore: update GotSport results cache [skip ci]"
           git push origin "$BRANCH"
 
@@ -48,5 +48,5 @@ jobs:
             --body "Automated results update — $(date -u '+%b %d %Y')" \
             --base main --head "$BRANCH")
 
-          echo "PR created: $PR_URL"
+          echo "PR: $PR_URL"
           gh pr merge "$PR_URL" --squash --delete-branch --auto

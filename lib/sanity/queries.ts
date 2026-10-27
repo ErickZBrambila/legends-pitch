@@ -378,7 +378,7 @@ export async function getLatestSessionWithReel(team: TeamSlug): Promise<{ id: st
   // and silently ignores cache options.
   const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? "fg925bng";
   const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production";
-  const query = `*[_type in ["practiceSession","gameSession"] && team->ageGroup == $team && defined(compilationUrl)]{_id, sessionName, compilationTitle} | order(sessionDate desc) [0]`;
+  const query = `*[_type in ["practiceSession","gameSession"] && team->ageGroup == $team && defined(compilationUrl)] | order(sessionDate desc) [0]{_id, sessionName, compilationTitle}`;
   const url = new URL(`https://${projectId}.api.sanity.io/v2024-01-01/data/query/${dataset}`);
   url.searchParams.set("query", query);
   url.searchParams.set("$team", `"${team}"`);

@@ -1,6 +1,7 @@
 import type { TeamSlug } from "@/lib/sanity/queries";
 import type { Match } from "@/lib/types";
 import { fetchSportsYouGames } from "./sportsyou";
+import { getRedis } from "@/lib/redis";
 
 export interface StandingRow {
   rank: number;
@@ -20,9 +21,10 @@ interface GotSportData {
   matches: Match[];
 }
 
-const GOTSPORT_SCHEDULE_URLS: Record<string, string> = {
-  u11: "https://system.gotsport.com/org_event/events/55587/schedules?team=4373770",
-  u12: "https://system.gotsport.com/org_event/events/55587/schedules?team=4373769",
+// Group results pages are server-rendered HTML — no reCAPTCHA wall
+const GOTSPORT_RESULTS_URLS: Partial<Record<TeamSlug, string>> = {
+  u11: "https://system.gotsport.com/org_event/events/55587/results?group=510042",
+  u12: "https://system.gotsport.com/org_event/events/55587/results?group=510048",
 };
 
 function cellText(html: string): string {
@@ -64,7 +66,7 @@ function parseStandings(html: string): StandingRow[] {
     const teamName = cells[1];
     if (!teamName || /^\d+$/.test(teamName)) continue;
 
-    const o = 2; // statOffset
+    const o = 2;
     const gp  = parseInt(cells[o],     10);
     const w   = parseInt(cells[o + 1], 10);
     const l   = parseInt(cells[o + 2], 10);
@@ -86,9 +88,76 @@ function parseStandings(html: string): StandingRow[] {
   return rows;
 }
 
-// --- Schedule parser ---
+// --- Results matrix parser ---
 
-// Maps GotSport full team names → canonical display names used in the app
+interface MatrixScore {
+  opponent: string;
+  goalsFor: number;
+  goalsAgainst: number;
+  result: "W" | "L" | "D";
+}
+
+// Parses the cross-table on the GotSport group results page.
+// Each row is a team; each cell is the score(s) that team played vs the column team.
+// Row/column order is identical. The Legends row is found by name; opponent scores come
+// from cells[i+1] where i is the opponent's 0-based row index.
+function parseResultsMatrix(html: string): MatrixScore[] {
+  const trPattern = /<tr[\s\S]*?<\/tr>/g;
+  let trMatch: RegExpExecArray | null;
+
+  const matrixRows: { teamName: string; cells: string[] }[] = [];
+
+  while ((trMatch = trPattern.exec(html)) !== null) {
+    const cells: string[] = [];
+    const tdPattern = /<td[^>]*>([\s\S]*?)<\/td>/g;
+    let tdMatch: RegExpExecArray | null;
+    while ((tdMatch = tdPattern.exec(trMatch[0])) !== null) {
+      cells.push(cellText(tdMatch[1]));
+    }
+
+    if (cells.length < 4) continue;
+
+    const first = cells[0].trim();
+    if (!first || /^\d+$/.test(first) || first.length < 3) continue;
+
+    // Must have at least one score cell to be a matrix row
+    const hasScore = cells.slice(1).some((c) => /\d+-\d+/.test(c) || c === "- -");
+    if (!hasScore) continue;
+
+    matrixRows.push({ teamName: first, cells });
+  }
+
+  const legendsIdx = matrixRows.findIndex((r) => /North Legends/i.test(r.teamName));
+  if (legendsIdx === -1) return [];
+
+  const legendsRow = matrixRows[legendsIdx];
+  const scores: MatrixScore[] = [];
+
+  for (let i = 0; i < matrixRows.length; i++) {
+    if (i === legendsIdx) continue;
+    const opponent = canonicalOpponent(matrixRows[i].teamName);
+    const cell = legendsRow.cells[i + 1] ?? "";
+
+    for (const part of cell.split(/\s+/)) {
+      if (part === "-" || part === "") continue;
+      const m = part.match(/^(\d+)-(\d+)$/);
+      if (!m) continue;
+      const gf = parseInt(m[1], 10);
+      const ga = parseInt(m[2], 10);
+      scores.push({
+        opponent,
+        goalsFor: gf,
+        goalsAgainst: ga,
+        result: gf > ga ? "W" : gf < ga ? "L" : "D",
+      });
+    }
+  }
+
+  return scores;
+}
+
+// --- Opponent name mapping ---
+
 const GOTSPORT_OPPONENT_MAP: Record<string, string> = {
   "Elgin United- Ramirez 2016 B":       "Elgin United (Ramirez)",
   "Elgin United-Ramirez 2016 B":        "Elgin United (Ramirez)",
@@ -113,142 +182,28 @@ function canonicalOpponent(raw: string): string {
   return t;
 }
 
-const MONTHS_IDX: Record<string, string> = {
-  Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
-  Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
-};
-
-// Parses GotSport cell text like "Oct 24, 2026 11:30AM CDT CDT" → ISO string
-function parseCentralToISO(cell: string): string {
-  const dm = cell.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})/);
-  const tm = cell.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*(CDT|CST)/i);
-  if (!dm || !tm) return "";
-
-  const [, mon, dayStr, year] = dm;
-  const [, hStr, min, ampm, tz] = tm;
-
-  let h = parseInt(hStr);
-  if (ampm.toUpperCase() === "PM" && h !== 12) h += 12;
-  if (ampm.toUpperCase() === "AM" && h === 12) h = 0;
-
-  const mo = MONTHS_IDX[mon];
-  const day = dayStr.padStart(2, "0");
-  const hh = h.toString().padStart(2, "0");
-  const offset = tz.toUpperCase() === "CDT" ? "-05:00" : "-06:00";
-
-  return `${year}-${mo}-${day}T${hh}:${min}:00${offset}`;
-}
-
-function gotsportLocationName(raw: string): string {
-  const u = raw.toUpperCase();
-  if (u.includes("WCRP") || u.includes("BORHO")) {
-    return u.includes("SOUTH") ? "WCRP South" : "WCRP North";
-  }
-  if (u.includes("SHENANDOAH") || u.includes("N AVENUE C")) return "Shenandoah Field 2";
-  if (u.includes("KOROMPAI") || u.includes("RESEARCH LOOP") || u.includes("CROSSROADS")) return "Crossroads Park";
-  if (u.includes("HERITAGE") || u.includes("1502 PARK")) return "Heritage Park";
-  if (u.includes("MEADOWHEATH")) return "Town & Country Field 23W";
-  if (u.includes("SHORELINE") || u.includes("WELLS BRANCH")) return "Wells Branch Soccer";
-  if (u.includes("BAGDAD") || u.includes("SERNA")) return "Serna Athletic Fields";
-  if (u.includes("BASTROP")) return "Bastrop Youth Soccer";
-  if (u.includes("RIVERWALK")) return "Riverwalk #3";
-  if (u.includes("JARRELL")) return "Jarrell Elementary School";
-  return raw.replace(/\s*-\s*.+$/, "").trim();
-}
-
-function parseSchedule(html: string, team: string): Match[] {
-  const LEGENDS_RE = /JYSA.*Legends/i;
-  const matches: Match[] = [];
-
-  const trPattern = /<tr[\s\S]*?<\/tr>/g;
-  let trMatch: RegExpExecArray | null;
-
-  while ((trMatch = trPattern.exec(html)) !== null) {
-    const cells: string[] = [];
-    const tdPattern = /<td[^>]*>([\s\S]*?)<\/td>/g;
-    let tdMatch: RegExpExecArray | null;
-    while ((tdMatch = tdPattern.exec(trMatch[0])) !== null) {
-      cells.push(cellText(tdMatch[1]));
-    }
-
-    if (cells.length < 6) continue;
-
-    // Cell 0 must be a bare match number
-    if (!/^\d+$/.test(cells[0].trim())) continue;
-
-    const kickoffIso = parseCentralToISO(cells[1]);
-    if (!kickoffIso) continue;
-
-    const homeTeam = cells[2];
-    const scoreStr = cells[3].trim();
-    const awayTeam = cells[4];
-    const locationRaw = cells[5];
-
-    const isHome = LEGENDS_RE.test(homeTeam);
-    const isAway = LEGENDS_RE.test(awayTeam);
-    if (!isHome && !isAway) continue;
-
-    const homeAway = isHome ? ("home" as const) : ("away" as const);
-    const opponentRaw = isHome ? awayTeam : homeTeam;
-
-    // Default arrival = kickoff − 30 min (SportsYou may override below)
-    const kickoffMs = new Date(kickoffIso).getTime();
-    const arrivalIso = new Date(kickoffMs - 30 * 60 * 1000).toISOString();
-
-    let goalsFor: number | null = null;
-    let goalsAgainst: number | null = null;
-    let result: "W" | "L" | "D" | null = null;
-
-    const scoreParsed = scoreStr.match(/(\d+)\s*-\s*(\d+)/);
-    if (scoreParsed) {
-      const a = parseInt(scoreParsed[1]);
-      const b = parseInt(scoreParsed[2]);
-      goalsFor = isHome ? a : b;
-      goalsAgainst = isHome ? b : a;
-      result = goalsFor > goalsAgainst ? "W" : goalsFor < goalsAgainst ? "L" : "D";
-    }
-
-    const location = gotsportLocationName(locationRaw);
-
-    matches.push({
-      id: `gs-${team}-${cells[0].trim()}`,
-      date: kickoffIso,
-      arrivalDate: arrivalIso,
-      opponent: canonicalOpponent(opponentRaw),
-      location,
-      locationAddress: LOCATION_ADDRESSES[location],
-      homeAway,
-      goalsFor,
-      goalsAgainst,
-      result,
-    });
-  }
-
-  return matches.sort((a, b) => a.date.localeCompare(b.date));
-}
-
 // --- Fallback static data ---
 
 const U11_STANDINGS: StandingRow[] = [
-  { rank: 1, team: "JYSA North Legends FC",        gp: 7, w: 6, l: 1, t: 0, gf: 19, ga: 8,  pts: 18, isNorthLegends: true  },
-  { rank: 2, team: "Elgin United (Ramirez)",       gp: 7, w: 5, l: 1, t: 1, gf: 20, ga: 10, pts: 16, isNorthLegends: false },
-  { rank: 3, team: "T&C Soccer Inter Milan",       gp: 4, w: 2, l: 1, t: 1, gf: 11, ga: 8,  pts: 7,  isNorthLegends: false },
-  { rank: 4, team: "WBSA United",                  gp: 5, w: 2, l: 3, t: 0, gf: 9,  ga: 12, pts: 6,  isNorthLegends: false },
-  { rank: 5, team: "Elgin United (Hernandez)",     gp: 4, w: 0, l: 4, t: 0, gf: 1,  ga: 12, pts: 0,  isNorthLegends: false },
-  { rank: 6, team: "Storm 16B Black",              gp: 5, w: 0, l: 5, t: 0, gf: 5,  ga: 15, pts: 0,  isNorthLegends: false },
+  { rank: 1, team: "Elgin United (Ramirez)",       gp: 9, w: 7, l: 1, t: 1, gf: 26, ga: 11, pts: 22, isNorthLegends: false },
+  { rank: 2, team: "JYSA North Legends FC",        gp: 8, w: 7, l: 1, t: 0, gf: 22, ga: 8,  pts: 21, isNorthLegends: true  },
+  { rank: 3, team: "T&C Soccer Inter Milan",       gp: 7, w: 4, l: 2, t: 1, gf: 17, ga: 11, pts: 13, isNorthLegends: false },
+  { rank: 4, team: "WBSA United",                  gp: 7, w: 3, l: 4, t: 0, gf: 12, ga: 18, pts: 9,  isNorthLegends: false },
+  { rank: 5, team: "Elgin United (Hernandez)",     gp: 6, w: 0, l: 6, t: 0, gf: 4,  ga: 18, pts: 0,  isNorthLegends: false },
+  { rank: 6, team: "Storm 16B Black",              gp: 7, w: 0, l: 7, t: 0, gf: 6,  ga: 21, pts: 0,  isNorthLegends: false },
 ];
 
 const U12_STANDINGS: StandingRow[] = [
-  { rank: 1, team: "JYSA North Legends FC",       gp: 5, w: 5, l: 0, t: 0, gf: 15, ga: 6,  pts: 15, isNorthLegends: true  },
-  { rank: 2, team: "FC Westlake North Hooligans", gp: 6, w: 5, l: 1, t: 0, gf: 17, ga: 11, pts: 15, isNorthLegends: false },
-  { rank: 3, team: "Elgin United (Castro)",       gp: 5, w: 2, l: 2, t: 1, gf: 8,  ga: 9,  pts: 7,  isNorthLegends: false },
-  { rank: 4, team: "BYSO Inferno",                gp: 3, w: 2, l: 1, t: 0, gf: 9,  ga: 6,  pts: 6,  isNorthLegends: false },
-  { rank: 5, team: "Leander FC Rattlers",         gp: 5, w: 1, l: 3, t: 1, gf: 11, ga: 13, pts: 4,  isNorthLegends: false },
-  { rank: 6, team: "LC United",                   gp: 5, w: 1, l: 4, t: 0, gf: 10, ga: 15, pts: 3,  isNorthLegends: false },
-  { rank: 7, team: "Liberty United",              gp: 5, w: 0, l: 5, t: 0, gf: 5,  ga: 15, pts: 0,  isNorthLegends: false },
+  { rank: 1, team: "JYSA North Legends FC",       gp: 7, w: 7, l: 0, t: 0, gf: 21, ga: 9,  pts: 21, isNorthLegends: true  },
+  { rank: 2, team: "FC Westlake North Hooligans", gp: 8, w: 6, l: 2, t: 0, gf: 23, ga: 17, pts: 18, isNorthLegends: false },
+  { rank: 3, team: "BYSO Inferno",                gp: 6, w: 4, l: 2, t: 0, gf: 16, ga: 12, pts: 12, isNorthLegends: false },
+  { rank: 4, team: "Elgin United (Castro)",       gp: 7, w: 3, l: 3, t: 1, gf: 13, ga: 14, pts: 10, isNorthLegends: false },
+  { rank: 5, team: "Leander FC Rattlers",         gp: 8, w: 3, l: 4, t: 1, gf: 19, ga: 20, pts: 10, isNorthLegends: false },
+  { rank: 6, team: "LC United",                   gp: 7, w: 1, l: 6, t: 0, gf: 15, ga: 21, pts: 3,  isNorthLegends: false },
+  { rank: 7, team: "Liberty United",              gp: 7, w: 0, l: 7, t: 0, gf: 7,  ga: 21, pts: 0,  isNorthLegends: false },
 ];
 
-// Fallback results keyed by SportsYou UID — used only when GotSport scraping fails
+// Fallback results keyed by SportsYou UID — used only when GotSport results page is unavailable
 const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; result: "W" | "L" | "D" }> = {
   "3bd5311d": { goalsFor: 1,  goalsAgainst: 2, result: "L" }, // Sep 12 vs Elgin United (Ramirez)
   "9183d02e": { goalsFor: 15, goalsAgainst: 0, result: "W" }, // Sep 19 vs Elgin United (Hernandez)
@@ -257,9 +212,10 @@ const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
   "3ed13cc0": { goalsFor: 4,  goalsAgainst: 3, result: "W" }, // Oct 10 vs Elgin United (Ramirez)
   "6e6fb4f1": { goalsFor: 10, goalsAgainst: 1, result: "W" }, // Oct 17 vs Storm 16B Black
   "3c773b63": { goalsFor: 8,  goalsAgainst: 0, result: "W" }, // Oct 18 vs Elgin United (Hernandez)
+  "62f317dc": { goalsFor: 3,  goalsAgainst: 0, result: "W" }, // recent vs T&C Soccer Inter Milan (3-0)
 };
 
-// SportsYou has Ramirez/Hernandez swapped for the first two games — override with GotSport-verified names.
+// SportsYou has Ramirez/Hernandez swapped for the first two games — fix with GotSport-verified names
 const U11_OPPONENT_OVERRIDES: Record<string, string> = {
   "3bd5311d": "Elgin United (Ramirez)",
   "9183d02e": "Elgin United (Hernandez)",
@@ -271,6 +227,8 @@ const U12_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
   "1eb066e3": { goalsFor: 5,  goalsAgainst: 2, result: "W" }, // Sep 26 vs FC Westlake Hooligans
   "fc775168": { goalsFor: 15, goalsAgainst: 0, result: "W" }, // Oct 10 vs Liberty United
   "6747a6ad": { goalsFor: 4,  goalsAgainst: 1, result: "W" }, // Oct 17 vs LC United
+  "a2e2a1fd": { goalsFor: 7,  goalsAgainst: 2, result: "W" }, // Oct 24 vs Leander FC Rattlers
+  "05b2c84f": { goalsFor: 6,  goalsAgainst: 1, result: "W" }, // Oct 25 vs BYSO Inferno
 };
 
 let u12Id = 0;
@@ -281,8 +239,8 @@ const U12_MATCHES: Match[] = [
   { id: `gs-u12-${++u12Id}`, date: "2026-09-26T08:30:00-05:00", opponent: "FC Westlake Hooligans", location: "Riverwalk #3",         homeAway: "away", goalsFor: 5,  goalsAgainst: 2,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-10T10:00:00-05:00", opponent: "Liberty United",        location: "WCRP South",           homeAway: "home", goalsFor: 15, goalsAgainst: 0,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-17T15:00:00-05:00", opponent: "LC United",             location: "Shenandoah Field 2",   homeAway: "away", goalsFor: 4,  goalsAgainst: 1,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-10-24T09:30:00-05:00", opponent: "Leander FC Rattlers",   location: "Serna Athletic Fields",homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
-  { id: `gs-u12-${++u12Id}`, date: "2026-10-25T10:00:00-05:00", opponent: "BYSO Inferno",          location: "WCRP South",           homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-10-24T09:30:00-05:00", opponent: "Leander FC Rattlers",   location: "Serna Athletic Fields",homeAway: "away", goalsFor: 7,    goalsAgainst: 2,    result: "W"  },
+  { id: `gs-u12-${++u12Id}`, date: "2026-10-25T10:00:00-05:00", opponent: "BYSO Inferno",          location: "WCRP South",           homeAway: "home", goalsFor: 6,    goalsAgainst: 1,    result: "W"  },
   { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",          location: "Bastrop Youth Soccer", homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
 ];
 
@@ -321,16 +279,24 @@ function withAddress(matches: Match[]): Match[] {
   }));
 }
 
-// --- Main export ---
+// --- Redis cache ---
 
-export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
+const CACHE_KEY = (team: TeamSlug) => `gotsport:cache:${team}`;
+const CACHE_TTL_S = 24 * 60 * 60;
+
+interface CachedGotSportData extends GotSportData {
+  cachedAt: number;
+}
+
+// --- Core fetch + assemble ---
+
+async function fetchAndAssemble(team: TeamSlug): Promise<GotSportData> {
+  const resultsUrl = GOTSPORT_RESULTS_URLS[team];
   const fallbackStandings = team === "u12" ? U12_STANDINGS : U11_STANDINGS;
-  const url = GOTSPORT_SCHEDULE_URLS[team];
 
-  // Fetch GotSport page and SportsYou calendar in parallel (single GotSport request covers both standings + schedule)
   const [html, sportsyouGames] = await Promise.all([
-    url
-      ? fetch(url, { cache: "no-store" })
+    resultsUrl
+      ? fetch(resultsUrl, { cache: "no-store" })
           .then((r) => (r.ok ? r.text() : ""))
           .catch(() => "")
       : Promise.resolve(""),
@@ -338,23 +304,45 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
   ]);
 
   const liveStandings = html ? parseStandings(html) : [];
-  const gotsportMatches = html ? parseSchedule(html, team) : [];
+  const matrixScores = html ? parseResultsMatrix(html) : [];
 
+  const overrides = team === "u11" ? U11_OPPONENT_OVERRIDES : ({} as Record<string, string>);
   let matches: Match[];
 
-  if (gotsportMatches.length > 0) {
-    // GotSport is the source of truth. Enrich with SportsYou arrival times where available.
-    matches = gotsportMatches.map((m) => {
-      const kickoffMs = new Date(m.date).getTime();
-      const sy = sportsyouGames.find(
-        (g) => Math.abs(new Date(g.iso).getTime() - kickoffMs) < 2 * 60 * 60 * 1000,
-      );
-      return sy ? { ...m, arrivalDate: sy.arrivalIso } : m;
-    });
+  if (matrixScores.length > 0 && sportsyouGames.length > 0) {
+    // Merge live scores (by opponent) with SportsYou schedule (dates + locations).
+    // Games vs the same opponent are assigned in chronological order.
+    const byOpponent = new Map<string, MatrixScore[]>();
+    for (const s of matrixScores) {
+      const list = byOpponent.get(s.opponent) ?? [];
+      list.push(s);
+      byOpponent.set(s.opponent, list);
+    }
+    const usedCount = new Map<string, number>();
+
+    matches = [...sportsyouGames]
+      .sort((a, b) => a.iso.localeCompare(b.iso))
+      .map((g) => {
+        const opponent = overrides[g.uid] ?? g.opponent;
+        const scores = byOpponent.get(opponent) ?? [];
+        const idx = usedCount.get(opponent) ?? 0;
+        const score = scores[idx];
+        if (score) usedCount.set(opponent, idx + 1);
+        return {
+          id: `sy-${team}-${g.uid}`,
+          date: g.iso,
+          arrivalDate: g.arrivalIso,
+          opponent,
+          location: g.locationName,
+          locationAddress: g.locationAddress,
+          homeAway: g.homeAway,
+          goalsFor: score?.goalsFor ?? null,
+          goalsAgainst: score?.goalsAgainst ?? null,
+          result: score?.result ?? null,
+        };
+      });
   } else if (sportsyouGames.length > 0) {
-    // GotSport scraping failed — fall back to SportsYou
     const resultsMap = team === "u11" ? U11_RESULTS : U12_RESULTS;
-    const overrides = team === "u11" ? U11_OPPONENT_OVERRIDES : ({} as Record<string, string>);
     matches = sportsyouGames.map((g) => ({
       id: `sy-${team}-${g.uid}`,
       date: g.iso,
@@ -366,10 +354,50 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
       ...(resultsMap[g.uid] ?? { goalsFor: null, goalsAgainst: null, result: null }),
     }));
   } else {
-    // Both failed — last resort hardcoded list (u12 only)
     matches = team === "u12" ? withAddress(U12_MATCHES) : [];
   }
 
   const standings = liveStandings.length > 0 ? liveStandings : fallbackStandings;
   return { standings, matches };
+}
+
+// --- Main exports ---
+
+export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
+  try {
+    const redis = getRedis();
+    if (redis) {
+      const cached = await redis.get<CachedGotSportData>(CACHE_KEY(team));
+      if (cached?.matches && cached?.standings) {
+        return { standings: cached.standings, matches: cached.matches };
+      }
+    }
+  } catch {
+    // cache miss or error — fall through to live fetch
+  }
+
+  return fetchAndAssemble(team);
+}
+
+export async function refreshGotSportCache(
+  team: TeamSlug,
+): Promise<{ standings: StandingRow[]; matches: Match[]; source: string }> {
+  const { standings, matches } = await fetchAndAssemble(team);
+
+  try {
+    const redis = getRedis();
+    if (redis) {
+      const payload: CachedGotSportData = { standings, matches, cachedAt: Date.now() };
+      await redis.set(CACHE_KEY(team), payload, { ex: CACHE_TTL_S });
+      console.log(`[refresh-team] Cached ${team} (${matches.length} matches)`);
+    }
+  } catch (err) {
+    console.error(`[refresh-team] Redis write failed for ${team}:`, err);
+  }
+
+  return {
+    standings,
+    matches,
+    source: GOTSPORT_RESULTS_URLS[team] ? "results-matrix" : "sportsyou+static",
+  };
 }

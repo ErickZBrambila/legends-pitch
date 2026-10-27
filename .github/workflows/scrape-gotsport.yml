@@ -1,0 +1,37 @@
+name: Update GotSport results cache
+
+on:
+  schedule:
+    # Sun 01:00 UTC = Sat 8pm CDT — catches Saturday game results
+    - cron: "0 1 * * 0"
+    # Mon 01:00 UTC = Sun 8pm CDT — catches Sunday game results
+    - cron: "0 1 * * 1"
+  workflow_dispatch: # allow manual trigger from GitHub Actions UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Scrape GotSport results
+        run: node scripts/scrape-gotsport.mjs
+
+      - name: Commit updated cache
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/data/gotsport-cache.json
+          if git diff --staged --quiet; then
+            echo "No changes — results already up to date."
+          else
+            git commit -m "chore: update GotSport results cache [skip ci]"
+            git push
+          fi

@@ -1,0 +1,261 @@
+{
+  "updatedAt": "2026-10-27T03:37:46.145Z",
+  "u11": {
+    "standings": [
+      {
+        "rank": 1,
+        "team": "Elgin United (Ramirez)",
+        "gp": 9,
+        "w": 7,
+        "l": 1,
+        "t": 1,
+        "gf": 26,
+        "ga": 11,
+        "pts": 22,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 2,
+        "team": "JYSA North Legends FC - Castellanos",
+        "gp": 8,
+        "w": 7,
+        "l": 1,
+        "t": 0,
+        "gf": 22,
+        "ga": 8,
+        "pts": 21,
+        "isNorthLegends": true
+      },
+      {
+        "rank": 3,
+        "team": "T&C Soccer Inter Milan",
+        "gp": 7,
+        "w": 4,
+        "l": 2,
+        "t": 1,
+        "gf": 17,
+        "ga": 11,
+        "pts": 13,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 4,
+        "team": "WBSA United",
+        "gp": 7,
+        "w": 3,
+        "l": 4,
+        "t": 0,
+        "gf": 12,
+        "ga": 18,
+        "pts": 9,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 5,
+        "team": "Elgin United (Hernandez)",
+        "gp": 6,
+        "w": 0,
+        "l": 6,
+        "t": 0,
+        "gf": 4,
+        "ga": 18,
+        "pts": 0,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 6,
+        "team": "Storm 16B Black",
+        "gp": 7,
+        "w": 0,
+        "l": 7,
+        "t": 0,
+        "gf": 6,
+        "ga": 21,
+        "pts": 0,
+        "isNorthLegends": false
+      }
+    ],
+    "matrixScores": [
+      {
+        "opponent": "Storm 16B Black",
+        "goalsFor": 10,
+        "goalsAgainst": 1,
+        "result": "W"
+      },
+      {
+        "opponent": "Storm 16B Black",
+        "goalsFor": 7,
+        "goalsAgainst": 0,
+        "result": "W"
+      },
+      {
+        "opponent": "Elgin United (Hernandez)",
+        "goalsFor": 8,
+        "goalsAgainst": 0,
+        "result": "W"
+      },
+      {
+        "opponent": "Elgin United (Hernandez)",
+        "goalsFor": 15,
+        "goalsAgainst": 0,
+        "result": "W"
+      },
+      {
+        "opponent": "Elgin United (Ramirez)",
+        "goalsFor": 1,
+        "goalsAgainst": 2,
+        "result": "L"
+      },
+      {
+        "opponent": "Elgin United (Ramirez)",
+        "goalsFor": 4,
+        "goalsAgainst": 3,
+        "result": "W"
+      },
+      {
+        "opponent": "T&C Soccer Inter Milan",
+        "goalsFor": 3,
+        "goalsAgainst": 0,
+        "result": "W"
+      },
+      {
+        "opponent": "T&C Soccer Inter Milan",
+        "goalsFor": 4,
+        "goalsAgainst": 2,
+        "result": "W"
+      }
+    ]
+  },
+  "u12": {
+    "standings": [
+      {
+        "rank": 1,
+        "team": "JYSA North Legends FC - Rosado",
+        "gp": 7,
+        "w": 7,
+        "l": 0,
+        "t": 0,
+        "gf": 21,
+        "ga": 9,
+        "pts": 21,
+        "isNorthLegends": true
+      },
+      {
+        "rank": 2,
+        "team": "FC Westlake Hooligans",
+        "gp": 8,
+        "w": 6,
+        "l": 2,
+        "t": 0,
+        "gf": 23,
+        "ga": 17,
+        "pts": 18,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 3,
+        "team": "BYSO Inferno",
+        "gp": 6,
+        "w": 4,
+        "l": 2,
+        "t": 0,
+        "gf": 16,
+        "ga": 12,
+        "pts": 12,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 4,
+        "team": "Elgin United (Castro)",
+        "gp": 7,
+        "w": 3,
+        "l": 3,
+        "t": 1,
+        "gf": 13,
+        "ga": 14,
+        "pts": 10,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 5,
+        "team": "Leander FC Rattlers",
+        "gp": 8,
+        "w": 3,
+        "l": 4,
+        "t": 1,
+        "gf": 19,
+        "ga": 20,
+        "pts": 10,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 6,
+        "team": "LC United",
+        "gp": 7,
+        "w": 1,
+        "l": 6,
+        "t": 0,
+        "gf": 15,
+        "ga": 21,
+        "pts": 3,
+        "isNorthLegends": false
+      },
+      {
+        "rank": 7,
+        "team": "Liberty United",
+        "gp": 7,
+        "w": 0,
+        "l": 7,
+        "t": 0,
+        "gf": 7,
+        "ga": 21,
+        "pts": 0,
+        "isNorthLegends": false
+      }
+    ],
+    "matrixScores": [
+      {
+        "opponent": "BYSO Inferno",
+        "goalsFor": 6,
+        "goalsAgainst": 1,
+        "result": "W"
+      },
+      {
+        "opponent": "Elgin United (Castro)",
+        "goalsFor": 13,
+        "goalsAgainst": 1,
+        "result": "W"
+      },
+      {
+        "opponent": "FC Westlake Hooligans",
+        "goalsFor": 5,
+        "goalsAgainst": 2,
+        "result": "W"
+      },
+      {
+        "opponent": "Leander FC Rattlers",
+        "goalsFor": 7,
+        "goalsAgainst": 2,
+        "result": "W"
+      },
+      {
+        "opponent": "Leander FC Rattlers",
+        "goalsFor": 7,
+        "goalsAgainst": 2,
+        "result": "W"
+      },
+      {
+        "opponent": "LC United",
+        "goalsFor": 4,
+        "goalsAgainst": 1,
+        "result": "W"
+      },
+      {
+        "opponent": "Liberty United",
+        "goalsFor": 15,
+        "goalsAgainst": 0,
+        "result": "W"
+      }
+    ]
+  }
+}

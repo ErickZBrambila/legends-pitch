@@ -24,12 +24,15 @@ jobs:
           node-version: 20
 
       - name: Scrape GotSport results
-        id: scrape
+        run: node scripts/scrape-gotsport.mjs
+
+      - name: Check if cache changed
+        id: diff
         run: |
-          node scripts/scrape-gotsport.mjs && echo "changed=true" >> "$GITHUB_OUTPUT" || echo "changed=false" >> "$GITHUB_OUTPUT"
+          git diff --quiet lib/data/gotsport-cache.json && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Open self-merging PR
-        if: steps.scrape.outputs.changed == 'true'
+        if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

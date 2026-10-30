@@ -281,6 +281,24 @@
     "android_5_title": "Allow notifications",
     "android_5_desc": "Tap \"Allow\" when the browser asks for notification permission. Done!"
   },
+  "Championship": {
+    "badge": "Fall Championship",
+    "year": "2026 Season",
+    "rank": "Currently #1",
+    "seasonRecord": "Season Record",
+    "wins": "Wins",
+    "draws": "Draws",
+    "losses": "Losses",
+    "goalsFor": "Goals For",
+    "goalsAgainst": "Goals Against",
+    "cta": "Let's Go! →",
+    "nextGame": "Next championship game",
+    "champBegins": "Championship Begins",
+    "watchAgain": "Watch again",
+    "watchIntro": "Watch intro",
+    "dismiss": "dismiss",
+    "viewStandings": "View Full Standings"
+  },
   "WhatsNew": {
     "badge": "What's New",
     "skip": "Skip",

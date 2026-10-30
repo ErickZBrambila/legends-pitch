@@ -281,6 +281,24 @@
     "android_5_title": "Permite las notificaciones",
     "android_5_desc": "Toca \"Permitir\" cuando el navegador te pida permiso para notificaciones. ¡Listo!"
   },
+  "Championship": {
+    "badge": "Campeonato de Otoño",
+    "year": "Temporada 2026",
+    "rank": "Actualmente #1",
+    "seasonRecord": "Récord de Temporada",
+    "wins": "Victorias",
+    "draws": "Empates",
+    "losses": "Derrotas",
+    "goalsFor": "Goles a Favor",
+    "goalsAgainst": "Goles en Contra",
+    "cta": "¡Vamos! →",
+    "nextGame": "Próximo partido de campeonato",
+    "champBegins": "Comienza el Campeonato",
+    "watchAgain": "Ver de nuevo",
+    "watchIntro": "Ver intro",
+    "dismiss": "cerrar",
+    "viewStandings": "Ver Tabla Completa"
+  },
   "WhatsNew": {
     "badge": "Novedades",
     "skip": "Saltar",

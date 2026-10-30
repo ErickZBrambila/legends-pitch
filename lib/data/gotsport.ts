@@ -150,6 +150,21 @@ function withAddress(matches: Match[]): Match[] {
   }));
 }
 
+// --- Championship standings ---
+
+export interface ChampionshipCache {
+  u11: { standings: StandingRow[] };
+  u12: { standings: StandingRow[] };
+}
+
+export function getChampionshipStandings(): { u11: StandingRow[]; u12: StandingRow[] } {
+  const champ = (cache as unknown as { championship?: ChampionshipCache }).championship;
+  return {
+    u11: champ?.u11?.standings ?? [],
+    u12: champ?.u12?.standings ?? [],
+  };
+}
+
 // --- Main export ---
 
 export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {

@@ -10,10 +10,12 @@ import TrackedAnchor from "@/components/TrackedAnchor";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import { getPostsByTeam, getLatestAnnouncement, getLatestSessionWithReel } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
-import { getGotSportData, LOCATION_COORDS } from "@/lib/data/gotsport";
+import { getGotSportData, getChampionshipStandings, LOCATION_COORDS } from "@/lib/data/gotsport";
 import GameWeather from "@/components/GameWeather";
 import ChampionshipSplash from "@/components/ChampionshipSplash";
 import ChampionshipSection from "@/components/ChampionshipSection";
+import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
+import cache from "@/lib/data/gotsport-cache.json";
 
 const withinForecastWindow = (iso: string) => {
   const diff = (new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
@@ -165,6 +167,18 @@ export default async function Home({
         rank={legendsRank}
         team={team}
       />
+
+      {/* Championship group stage standings */}
+      {(() => {
+        const champStandings = getChampionshipStandings();
+        return (
+          <ChampionshipStandingsSection
+            u11={champStandings.u11}
+            u12={champStandings.u12}
+            updatedAt={(cache as { updatedAt?: string }).updatedAt ?? null}
+          />
+        );
+      })()}
 
       {/* Next match countdown */}
       {nextMatch && (

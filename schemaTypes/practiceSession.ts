@@ -52,7 +52,8 @@ export default defineType({
                 {
                   type: "object",
                   fields: [
-                    defineField({ name: "r2Url", title: "Clip URL (R2)", type: "url" }),
+                    defineField({ name: "r2Url", title: "Clip URL (YouTube)", type: "url" }),
+                    defineField({ name: "downloadUrl", title: "Download URL (R2)", type: "url" }),
                     defineField({ name: "startSeconds", title: "Start (s)", type: "number" }),
                     defineField({ name: "endSeconds", title: "End (s)", type: "number" }),
                     defineField({ name: "label", title: "Label", type: "string" }),

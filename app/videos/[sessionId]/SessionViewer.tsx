@@ -697,7 +697,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                   />
 
                   <a
-                    href={`/api/clip-download?url=${encodeURIComponent(clip.r2Url)}&filename=${encodeURIComponent(clip.label + ".mp4")}`}
+                    href={`/api/clip-download?url=${encodeURIComponent(clip.downloadUrl ?? clip.r2Url)}&filename=${encodeURIComponent(clip.label + ".mp4")}`}
                     download={clip.label + ".mp4"}
                     onClick={(e) => { e.stopPropagation(); guardDownload(e); }}
                     className="flex items-center justify-center gap-1 py-1.5 border-t border-gray-100 text-[10px] font-semibold text-gray-500 hover:bg-gray-50 transition-colors"

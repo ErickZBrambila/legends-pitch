@@ -10,8 +10,12 @@ import TrackedAnchor from "@/components/TrackedAnchor";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import { getPostsByTeam, getLatestAnnouncement, getLatestSessionWithReel } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
-import { getGotSportData, LOCATION_COORDS } from "@/lib/data/gotsport";
+import { getGotSportData, getChampionshipStandings, LOCATION_COORDS } from "@/lib/data/gotsport";
 import GameWeather from "@/components/GameWeather";
+import ChampionshipSplash from "@/components/ChampionshipSplash";
+import ChampionshipSection from "@/components/ChampionshipSection";
+import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
+import cache from "@/lib/data/gotsport-cache.json";
 
 const withinForecastWindow = (iso: string) => {
   const diff = (new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
@@ -46,6 +50,7 @@ export default async function Home({
 }) {
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
+  const teamExplicitlySelected = teamParam === "u11" || teamParam === "u12";
 
   const t = await getTranslations("Home");
   const ts = await getTranslations("Sponsors");
@@ -57,7 +62,8 @@ export default async function Home({
     getLatestSessionWithReel(team),
   ]);
 
-  const { matches } = await getGotSportData(team);
+  const { standings, matches } = await getGotSportData(team);
+  const legendsRank = standings.find((s) => s.isNorthLegends)?.rank ?? null;
   const now = new Date();
   const played = matches.filter((m) => m.result !== null);
   const stats = {
@@ -80,6 +86,15 @@ export default async function Home({
   return (
     <>
       <ScrollDepthTracker page="home" />
+      {teamExplicitlySelected && (
+        <ChampionshipSplash
+          wins={stats.wins}
+          losses={stats.losses}
+          draws={stats.draws}
+          rank={legendsRank}
+          team={team}
+        />
+      )}
       {/* Hero */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
         <HeroCarousel />
@@ -142,6 +157,29 @@ export default async function Home({
         </Link>
       )}
 
+      {/* Fall Championship section */}
+      <ChampionshipSection
+        wins={stats.wins}
+        losses={stats.losses}
+        draws={stats.draws}
+        goalsFor={stats.goalsFor}
+        goalsAgainst={stats.goalsAgainst}
+        rank={legendsRank}
+        team={team}
+      />
+
+      {/* Championship group stage standings */}
+      {(() => {
+        const champStandings = getChampionshipStandings();
+        return (
+          <ChampionshipStandingsSection
+            u11={champStandings.u11}
+            u12={champStandings.u12}
+            updatedAt={(cache as { updatedAt?: string }).updatedAt ?? null}
+          />
+        );
+      })()}
+
       {/* Next match countdown */}
       {nextMatch && (
         <section
@@ -199,34 +237,8 @@ export default async function Home({
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Season Stats */}
+        {/* Recent Results */}
         <section className="lg:col-span-1">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">{t("seasonRecord")}</h2>
-          <div className="bg-[var(--color-navy)] text-white rounded-xl p-5 shadow-md">
-            <div className="grid grid-cols-3 gap-3 text-center mb-5">
-              {[
-                { label: t("wins"), value: stats.wins, color: "text-green-400" },
-                { label: t("draws"), value: stats.draws, color: "text-yellow-400" },
-                { label: t("losses"), value: stats.losses, color: "text-red-400" },
-              ].map(({ label, value, color }) => (
-                <div key={label}>
-                  <p className={`text-3xl font-black ${color}`}>{value}</p>
-                  <p className="text-xs text-red-300 uppercase tracking-wide">{label}</p>
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-red-900/40 pt-4 grid grid-cols-2 gap-3 text-center">
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.goalsFor}</p>
-                <p className="text-xs text-red-300">{t("goalsScored")}</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.goalsAgainst}</p>
-                <p className="text-xs text-red-300">{t("goalsConceded")}</p>
-              </div>
-            </div>
-          </div>
-
           <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mt-6 mb-3">
             {t("recentResults")}
           </h3>

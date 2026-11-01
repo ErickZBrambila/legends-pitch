@@ -50,4 +50,4 @@ jobs:
             --base main --head "$BRANCH")
 
           echo "PR: $PR_URL"
-          gh pr merge "$PR_URL" --squash --delete-branch --auto
+          gh pr merge "$PR_URL" --squash --delete-branch

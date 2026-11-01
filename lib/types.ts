@@ -102,6 +102,7 @@ export interface VideoMarker {
 export interface VideoClip {
   id: string;
   r2Url: string;
+  downloadUrl?: string;
   startSeconds: number;
   endSeconds: number;
   label: string;

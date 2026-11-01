@@ -468,7 +468,7 @@ type RawSessionVideo = {
   durationSeconds: number;
   resolution: string;
   markers: Array<{ _key: string; timeSeconds: number; label: string }>;
-  clips: Array<{ _key: string; r2Url: string; startSeconds: number; endSeconds: number; label: string; clipType?: string; saveCount?: number; archived?: boolean }>;
+  clips: Array<{ _key: string; r2Url: string; downloadUrl?: string; startSeconds: number; endSeconds: number; label: string; clipType?: string; saveCount?: number; archived?: boolean }>;
   analytics?: RawAnalytics;
 };
 
@@ -487,7 +487,7 @@ const SESSION_PROJECTION = `
   videos[]{
     _key, fileName, r2Url, driveUrl, thumbnailUrl, durationSeconds, resolution,
     markers[]{ _key, timeSeconds, label },
-    clips[]{ _key, r2Url, startSeconds, endSeconds, label, clipType, saveCount, archived },
+    clips[]{ _key, r2Url, downloadUrl, startSeconds, endSeconds, label, clipType, saveCount, archived },
     analytics{
       fieldZones, fieldZonesFirstHalf, fieldZonesSecondHalf,
       goalPressureLeft, goalPressureRight,
@@ -518,6 +518,7 @@ function mapSession(s: RawSession): PracticeSession {
       clips: (v.clips ?? []).map((c) => ({
         id: c._key,
         r2Url: c.r2Url,
+        downloadUrl: c.downloadUrl,
         startSeconds: c.startSeconds,
         endSeconds: c.endSeconds,
         label: c.label,

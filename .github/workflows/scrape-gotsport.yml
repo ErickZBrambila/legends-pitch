@@ -31,11 +31,23 @@ jobs:
         run: |
           git diff --quiet lib/data/gotsport-cache.json && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Commit to main
+      - name: Open self-merging PR
         if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          BRANCH="chore/gotsport-cache-$(date +%Y%m%d-%H%M)"
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add lib/data/gotsport-cache.json
           git commit -m "chore: update GotSport results cache [skip ci]"
-          git push origin main
+          git push origin "$BRANCH"
+
+          PR_URL=$(gh pr create \
+            --title "chore: update GotSport results cache" \
+            --body "Automated results update — $(date -u '+%b %d %Y')" \
+            --base main --head "$BRANCH")
+
+          echo "PR: $PR_URL"
+          gh pr merge "$PR_URL" --squash --delete-branch --auto

@@ -38,6 +38,36 @@ const TYPE_BADGE_KEY: Record<string, string> = {
   highlight:      "",
 };
 
+// ── YouTube helpers ───────────────────────────────────────────────────────────
+
+function ytVideoId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes("youtube.com")) return u.searchParams.get("v");
+    if (u.hostname === "youtu.be") return u.pathname.slice(1).split("?")[0];
+  } catch {}
+  return null;
+}
+
+function isYouTubeUrl(url: string): boolean {
+  return url.includes("youtube.com") || url.includes("youtu.be");
+}
+
+function ytEmbedUrl(watchUrl: string, autoplay: boolean): string {
+  const id = ytVideoId(watchUrl);
+  if (!id) return "";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const params = new URLSearchParams({
+    autoplay: autoplay ? "1" : "0",
+    rel: "0",
+    enablejsapi: "1",
+    ...(origin ? { origin } : {}),
+  });
+  return `https://www.youtube.com/embed/${id}?${params}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function SaveButton({
   clip,
   sessionId,
@@ -118,14 +148,23 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     () => compilationUrl ?? getFirstClip(session.videos[0])?.r2Url ?? null
   );
   const [isCompilationActive, setIsCompilationActive] = useState(!!compilationUrl);
-  const [isLoading, setIsLoading] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [savedClips, setSavedClips] = useState<Set<string>>(new Set());
   const [isParent, setIsParent] = useState<boolean | null>(null);
   const [showGandalf, setShowGandalf] = useState(false);
+
+  // Legacy HTML5 video refs (used only for non-YouTube direct-URL clips)
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<HTMLDivElement>(null);
   const pendingPlay = useRef(false);
+
   const goalsModeRef = useRef(false);
+  const playerRef = useRef<HTMLDivElement>(null);
+
+  // Refs so the YouTube postMessage handler never reads stale state
+  const activeClipUrlRef = useRef<string | null>(activeClipUrl);
+  const activeVideoRef = useRef<SessionVideo>(activeVideo);
+  useEffect(() => { activeClipUrlRef.current = activeClipUrl; }, [activeClipUrl]);
+  useEffect(() => { activeVideoRef.current = activeVideo; }, [activeVideo]);
 
   // Load saved clips from localStorage on mount
   useEffect(() => {
@@ -149,77 +188,64 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     }
   }
 
-  // On mount: if compilation exists load it (no autoplay). On video-tab change: load first goal.
+  // YouTube IFrame API: listen for "video ended" via postMessage to chain goals
   useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
-
-    // First mount with compilation — preload only, no autoplay
-    if (compilationUrl && isCompilationActive) {
-      vid.pause();
-      vid.src = compilationUrl;
-      vid.load();
-      pendingPlay.current = false;
-      return;
+    function onMessage(e: MessageEvent) {
+      if (typeof e.data !== "string") return;
+      try {
+        const data = JSON.parse(e.data);
+        // YouTube sends state=0 (ENDED) via postMessage when enablejsapi=1
+        if (data.event === "onStateChange" && data.info === 0 && goalsModeRef.current) {
+          const clips = activeVideoRef.current.clips;
+          const goals = clips.filter((c) => c.clipType === "goal" && !c.archived);
+          const idx = goals.findIndex((c) => c.r2Url === activeClipUrlRef.current);
+          const nextGoal = goals[idx + 1];
+          if (nextGoal) {
+            goalsModeRef.current = true;
+            setIsCompilationActive(false);
+            setActiveClipUrl(nextGoal.r2Url);
+            activeClipUrlRef.current = nextGoal.r2Url;
+            setHasInteracted(true);
+          } else {
+            goalsModeRef.current = false;
+          }
+        }
+      } catch {}
     }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // On video-tab change: reset to first goal/clip of the new video
+  useEffect(() => {
     const goals = activeVideo.clips.filter((c) => c.clipType === "goal" && !c.archived);
     const firstGoal = goals[0] ?? null;
     const firstClip = getFirstClip(activeVideo);
+    const target = firstGoal ?? firstClip;
 
-    if (firstGoal) {
-      goalsModeRef.current = true;
-      setActiveClipUrl(firstGoal.r2Url);
-      setIsCompilationActive(false);
-      vid.pause();
-      vid.src = firstGoal.r2Url;
-      vid.load();
-      pendingPlay.current = true;
-    } else if (firstClip) {
-      goalsModeRef.current = false;
-      setActiveClipUrl(firstClip.r2Url);
-      setIsCompilationActive(false);
-      vid.pause();
-      vid.src = firstClip.r2Url;
-      vid.load();
-    } else {
+    goalsModeRef.current = !!firstGoal;
+    setIsCompilationActive(false);
+    setHasInteracted(false);
+
+    if (!target) {
       setActiveClipUrl(null);
-      vid.removeAttribute("src");
-      vid.load();
+      const vid = videoRef.current;
+      if (vid) { vid.removeAttribute("src"); vid.load(); }
+      return;
+    }
+
+    setActiveClipUrl(target.r2Url);
+
+    if (!isYouTubeUrl(target.r2Url)) {
+      const vid = videoRef.current;
+      if (vid) {
+        vid.pause();
+        vid.src = target.r2Url;
+        vid.load();
+        pendingPlay.current = false;
+      }
     }
   }, [activeVideo.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Update iOS/Android media session metadata so lock screen shows North Legends branding
-  useEffect(() => {
-    if (!activeClipUrl || typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
-    const clip = activeVideo.clips.find((c) => c.r2Url === activeClipUrl);
-    if (!clip) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: clip.label,
-      artist: session.sessionName,
-      album: "North Legends FC · KickReel",
-      artwork: [
-        { src: "/logo.jpg", sizes: "512x512", type: "image/jpeg" },
-      ],
-    });
-  }, [activeClipUrl, activeVideo.clips, session.sessionName]);
-
-  // Prefetch next 2 non-archived clips while current one plays
-  useEffect(() => {
-    if (!activeClipUrl) return;
-    const playable = activeVideo.clips.filter((c) => !c.archived);
-    const idx = playable.findIndex((c) => c.r2Url === activeClipUrl);
-    const upcoming = playable.slice(idx + 1, idx + 3);
-    const injected: HTMLLinkElement[] = upcoming.map((clip) => {
-      const link = document.createElement("link");
-      link.rel = "prefetch";
-      link.href = clip.r2Url;
-      link.as = "video";
-      document.head.appendChild(link);
-      return link;
-    });
-    return () => injected.forEach((l) => l.remove());
-  }, [activeClipUrl, activeVideo.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = useCallback((clipId: string) => {
     setSavedClips((prev) => {
@@ -234,7 +260,7 @@ export default function SessionViewer({ session }: { session: PracticeSession })
 
   function seekTo(seconds: number) {
     const clip = activeVideo.clips.reduce((best, c) => {
-      const dist = (t: typeof c) => Math.abs((t.startSeconds + t.endSeconds) / 2 - seconds);
+      const dist = (x: typeof c) => Math.abs((x.startSeconds + x.endSeconds) / 2 - seconds);
       return dist(c) < dist(best) ? c : best;
     }, activeVideo.clips[0]);
     if (clip) playClip(clip.r2Url, clip.clipType === "goal");
@@ -245,15 +271,17 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     goalsModeRef.current = false;
     setIsCompilationActive(true);
     setActiveClipUrl(compilationUrl);
-    setIsLoading(true);
-    pendingPlay.current = true;
-    const vid = videoRef.current;
-    if (vid) {
-      vid.pause();
-      vid.removeAttribute("src");
-      vid.load();
-      vid.src = compilationUrl;
-      vid.load();
+    setHasInteracted(true);
+    if (!isYouTubeUrl(compilationUrl)) {
+      const vid = videoRef.current;
+      if (vid) {
+        vid.pause();
+        vid.removeAttribute("src");
+        vid.load();
+        vid.src = compilationUrl;
+        vid.load();
+        pendingPlay.current = true;
+      }
     }
     playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -262,26 +290,22 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     goalsModeRef.current = isGoal;
     setIsCompilationActive(false);
     setActiveClipUrl(url);
-    setIsLoading(true);
-    pendingPlay.current = true;
-    const vid = videoRef.current;
-    if (vid) {
-      vid.pause();
-      vid.removeAttribute("src");
-      vid.load();
-      vid.src = url;
-      vid.load();
+    setHasInteracted(true);
+    if (!isYouTubeUrl(url)) {
+      pendingPlay.current = true;
+      const vid = videoRef.current;
+      if (vid) {
+        vid.pause();
+        vid.removeAttribute("src");
+        vid.load();
+        vid.src = url;
+        vid.load();
+      }
     }
     playerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  if (!activeVideo) return null;
-
-  const playableClips = activeVideo.clips.filter((c) => !c.archived);
-  const currentClipIdx = playableClips.findIndex((c) => c.r2Url === activeClipUrl);
-  const currentClip = playableClips[currentClipIdx] ?? null;
-
-  function handleEnded() {
+  function handleDirectEnded() {
     if (!goalsModeRef.current) return;
     const goals = activeVideo.clips.filter((c) => c.clipType === "goal" && !c.archived);
     const idx = goals.findIndex((c) => c.r2Url === activeClipUrl);
@@ -289,9 +313,15 @@ export default function SessionViewer({ session }: { session: PracticeSession })
     if (nextGoal) {
       playClip(nextGoal.r2Url);
     } else {
-      goalsModeRef.current = false; // all goals played — stop chaining
+      goalsModeRef.current = false;
     }
   }
+
+  if (!activeVideo) return null;
+
+  const playableClips = activeVideo.clips.filter((c) => !c.archived);
+  const currentClipIdx = playableClips.findIndex((c) => c.r2Url === activeClipUrl);
+  const currentClip = playableClips[currentClipIdx] ?? null;
 
   const sections = (["first", "second", "celebration", "saves"] as const).map((key) => ({
     key,
@@ -304,6 +334,10 @@ export default function SessionViewer({ session }: { session: PracticeSession })
   const goals = activeVideo.clips.filter((c) => c.clipType === "goal");
   const rivalGoals = activeVideo.clips.filter((c) => (c.clipType as string) === "rival_goal");
   const driveUrl = session.videos.find((v) => v.driveUrl)?.driveUrl;
+
+  const activeIsYT = !!activeClipUrl && isYouTubeUrl(activeClipUrl);
+  const ytEmbed = activeIsYT ? ytEmbedUrl(activeClipUrl!, hasInteracted) : null;
+  const compilationIsYT = !!compilationUrl && isYouTubeUrl(compilationUrl);
 
   return (
     <>
@@ -389,20 +423,34 @@ export default function SessionViewer({ session }: { session: PracticeSession })
               </span>
               <h3 className="text-lg font-black text-gray-900 leading-snug">{compilationTitle}</h3>
             </div>
-            <a
-              href={`/api/clip-download?url=${encodeURIComponent(compilationUrl!)}&filename=${encodeURIComponent(compilationTitle + ".mp4")}`}
-              download={compilationTitle + ".mp4"}
-              onClick={guardDownload}
-              className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-[var(--color-navy)] text-xs font-bold hover:bg-[var(--color-accent)]/20 transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Download
-            </a>
+            {compilationIsYT ? (
+              <a
+                href={compilationUrl!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-bold hover:bg-red-100 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                </svg>
+                Watch on YouTube
+              </a>
+            ) : (
+              <a
+                href={`/api/clip-download?url=${encodeURIComponent(compilationUrl!)}&filename=${encodeURIComponent(compilationTitle + ".mp4")}`}
+                download={compilationTitle + ".mp4"}
+                onClick={guardDownload}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-[var(--color-navy)] text-xs font-bold hover:bg-[var(--color-accent)]/20 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download
+              </a>
+            )}
           </div>
         ) : currentClip ? (
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
             <div>
               <p className="text-[11px] font-black uppercase tracking-widest text-gray-400">
                 {t("clipIndex", { current: currentClipIdx + 1, total: playableClips.length })}
@@ -411,50 +459,38 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                 {currentClip.label}
               </h3>
             </div>
-            {isLoading && (
-              <span className="shrink-0 text-[11px] text-gray-400 mt-1">{t("loadingClip")}</span>
-            )}
           </div>
         ) : null}
       </div>
 
       {/* Player */}
       <div ref={playerRef} className="relative rounded-2xl overflow-hidden bg-black shadow-xl">
-        <video
-          ref={videoRef}
-          controls
-          playsInline
-          poster={activeVideo.thumbnailUrl || undefined}
-          className="w-full max-h-[70vh]"
-          preload="auto"
-          onCanPlay={() => {
-            setIsLoading(false);
-            if (pendingPlay.current) {
-              pendingPlay.current = false;
-              videoRef.current?.play().catch(() => {});
-            }
-          }}
-          onPlaying={() => setIsLoading(false)}
-          onWaiting={() => setIsLoading(true)}
-          onStalled={() => setIsLoading(true)}
-          onEnded={handleEnded}
-        />
-        {isLoading && activeClipUrl && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-              <span className="text-white text-sm font-semibold">{t("loadingClip")}</span>
-            </div>
-          </div>
+        {activeIsYT && ytEmbed ? (
+          <iframe
+            key={activeClipUrl}
+            src={ytEmbed}
+            className="w-full aspect-video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            title={isCompilationActive ? compilationTitle : (currentClip?.label ?? "")}
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            controls
+            playsInline
+            poster={activeVideo.thumbnailUrl || undefined}
+            className="w-full max-h-[70vh]"
+            preload="auto"
+            onCanPlay={() => {
+              if (pendingPlay.current) {
+                pendingPlay.current = false;
+                videoRef.current?.play().catch(() => {});
+              }
+            }}
+            onEnded={handleDirectEnded}
+          />
         )}
-      </div>
-
-      {/* Known bug notice — video slowness */}
-      <div className="fold-hide mt-3 mb-6 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-        <span className="shrink-0 font-black mt-0.5">⚠</span>
-        <p>
-          <span className="font-black">Videos loading slowly?</span> We&apos;re waiting on a CDN fix (northlegensfc.com domain) — clips currently load direct from storage. Thanks for your patience!
-        </p>
       </div>
     </div>
     {/* ── RIGHT PANEL (goals, clips, analytics) on foldable ── */}
@@ -625,7 +661,6 @@ export default function SessionViewer({ session }: { session: PracticeSession })
               const typeBadge = typeBadgeKey ? t(typeBadgeKey) : "";
               const isSaved = savedClips.has(clip.id);
 
-              // Archived clip — greyed out card
               if (clip.archived) {
                 return (
                   <div key={clip.id} className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 opacity-60">
@@ -687,7 +722,6 @@ export default function SessionViewer({ session }: { session: PracticeSession })
                     </div>
                   </button>
 
-                  {/* Save button row */}
                   <SaveButton
                     clip={clip}
                     sessionId={session.id}

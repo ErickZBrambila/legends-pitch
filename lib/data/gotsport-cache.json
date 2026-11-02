@@ -52,25 +52,25 @@
       {
         "rank": 5,
         "team": "Elgin United (Hernandez)",
-        "gp": 6,
+        "gp": 7,
         "w": 0,
         "l": 6,
-        "t": 0,
-        "gf": 4,
-        "ga": 18,
-        "pts": 0,
+        "t": 1,
+        "gf": 7,
+        "ga": 21,
+        "pts": 1,
         "isNorthLegends": false
       },
       {
         "rank": 6,
         "team": "Storm 16B Black",
-        "gp": 7,
+        "gp": 8,
         "w": 0,
         "l": 7,
-        "t": 0,
-        "gf": 6,
-        "ga": 21,
-        "pts": 0,
+        "t": 1,
+        "gf": 9,
+        "ga": 24,
+        "pts": 1,
         "isNorthLegends": false
       }
     ],
@@ -263,5 +263,5 @@
       }
     ]
   },
-  "updatedAt": "2026-11-01T06:40:06.391Z"
+  "updatedAt": "2026-11-02T07:26:26.063Z"
 }

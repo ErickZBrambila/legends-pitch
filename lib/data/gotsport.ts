@@ -85,6 +85,7 @@ const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
   "6e6fb4f1": { goalsFor: 10, goalsAgainst: 1, result: "W" }, // Oct 17 vs Storm 16B Black
   "3c773b63": { goalsFor: 8,  goalsAgainst: 0, result: "W" }, // Oct 18 vs Elgin United (Hernandez)
   "62f317dc": { goalsFor: 3,  goalsAgainst: 0, result: "W" }, // Oct 24 vs T&C Soccer Inter Milan
+  "5cd7f150": { goalsFor: 4,  goalsAgainst: 0, result: "W" }, // Oct 31 vs WBSA United
 };
 
 const U11_OPPONENT_OVERRIDES: Record<string, string> = {
@@ -175,6 +176,7 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
       byOpponent.set(s.opponent, list);
     }
     const usedCount = new Map<string, number>();
+    const resultsMap = team === "u11" ? U11_RESULTS : U12_RESULTS;
 
     matches = [...sportsyouGames]
       .sort((a, b) => a.iso.localeCompare(b.iso))
@@ -184,6 +186,8 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
         const idx = usedCount.get(opponent) ?? 0;
         const score = scores[idx];
         if (score) usedCount.set(opponent, idx + 1);
+        // When matrix runs out of scores for this opponent, fall back to UID-keyed results
+        const finalScore = score ?? resultsMap[g.uid] ?? null;
         return {
           id: `sy-${team}-${g.uid}`,
           date: g.iso,
@@ -192,9 +196,9 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
           location: g.locationName,
           locationAddress: g.locationAddress,
           homeAway: g.homeAway,
-          goalsFor: score?.goalsFor ?? null,
-          goalsAgainst: score?.goalsAgainst ?? null,
-          result: score?.result ?? null,
+          goalsFor: finalScore?.goalsFor ?? null,
+          goalsAgainst: finalScore?.goalsAgainst ?? null,
+          result: finalScore?.result ?? null,
         };
       });
   } else if (sportsyouGames.length > 0) {

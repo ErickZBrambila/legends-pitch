@@ -41,7 +41,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add lib/data/gotsport-cache.json
-          git commit -m "chore: update GotSport results cache [skip ci]"
+          git commit -m "chore: update GotSport results cache"
           git push origin "$BRANCH"
 
           PR_URL=$(gh pr create \

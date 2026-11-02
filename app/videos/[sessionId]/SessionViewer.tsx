@@ -61,6 +61,7 @@ function ytEmbedUrl(watchUrl: string, autoplay: boolean): string {
     autoplay: autoplay ? "1" : "0",
     rel: "0",
     enablejsapi: "1",
+    vq: "hd1080",
     ...(origin ? { origin } : {}),
   });
   return `https://www.youtube.com/embed/${id}?${params}`;

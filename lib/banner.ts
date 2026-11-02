@@ -6,6 +6,7 @@ export type BannerType = "maintenance" | "incident" | "info";
 
 export interface SiteBanner {
   message: string;
+  messageEs?: string;
   type: BannerType;
   createdAt: string;
 }
@@ -16,10 +17,10 @@ export async function getBanner(): Promise<SiteBanner | null> {
   return redis.get<SiteBanner>(KEY);
 }
 
-export async function setBanner(message: string, type: BannerType): Promise<void> {
+export async function setBanner(message: string, type: BannerType, messageEs?: string): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
-  await redis.set(KEY, { message, type, createdAt: new Date().toISOString() });
+  await redis.set(KEY, { message, messageEs, type, createdAt: new Date().toISOString() });
 }
 
 export async function clearBanner(): Promise<void> {

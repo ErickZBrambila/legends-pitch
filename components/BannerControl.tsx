@@ -9,9 +9,10 @@ const TYPES: { value: BannerType; label: string; color: string }[] = [
   { value: "info",        label: "ℹ️ Info",         color: "bg-blue-100 text-blue-800 border-blue-300" },
 ];
 
-export default function BannerControl({ active }: { active: { message: string; type: BannerType } | null }) {
+export default function BannerControl({ active }: { active: { message: string; messageEs?: string; type: BannerType } | null }) {
   const [currentActive, setCurrentActive] = useState(active);
   const [message, setMessage] = useState(active?.message ?? "");
+  const [messageEs, setMessageEs] = useState(active?.messageEs ?? "");
   const [type, setType] = useState<BannerType>(active?.type ?? "maintenance");
   const [status, setStatus] = useState<"idle" | "saving" | "clearing" | "ok" | "error">("idle");
   const [sent, setSent] = useState<number | null>(null);
@@ -29,8 +30,8 @@ export default function BannerControl({ active }: { active: { message: string; t
   async function handlePost() {
     if (!message.trim()) return;
     setStatus("saving");
-    const { ok, sent: s } = await post({ message, type });
-    if (ok) setCurrentActive({ message, type });
+    const { ok, sent: s } = await post({ message, messageEs: messageEs.trim() || undefined, type });
+    if (ok) setCurrentActive({ message, messageEs: messageEs.trim() || undefined, type });
     setSent(ok ? s : null);
     setStatus(ok ? "ok" : "error");
     setTimeout(() => setStatus("idle"), 3000);
@@ -81,8 +82,13 @@ export default function BannerControl({ active }: { active: { message: string; t
         <input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="e.g. Scheduled maintenance tonight 10pm–11pm CT"
-          maxLength={200}
+          placeholder="English — e.g. Scheduled maintenance tonight 10pm–11pm CT"
+          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-200"
+        />
+        <input
+          value={messageEs}
+          onChange={(e) => setMessageEs(e.target.value)}
+          placeholder="Español (opcional) — ej. Mantenimiento programado esta noche"
           className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-200"
         />
 

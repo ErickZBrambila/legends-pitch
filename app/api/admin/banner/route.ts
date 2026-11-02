@@ -22,11 +22,12 @@ export async function POST(req: NextRequest) {
   }
 
   const message = typeof body.message === "string" ? body.message.trim() : "";
+  const messageEs = typeof body.messageEs === "string" ? body.messageEs.trim() : undefined;
   const type: BannerType = VALID_TYPES.has(body.type) ? body.type : "info";
 
   if (!message) return NextResponse.json({ error: "message required" }, { status: 400 });
 
-  await setBanner(message, type);
+  await setBanner(message, type, messageEs || undefined);
   const sent = await broadcastPush(`📢 ${message}`, "Tap to view the site for details.", "/").catch(() => 0);
   return NextResponse.json({ ok: true, sent });
 }

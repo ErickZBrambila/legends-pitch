@@ -34,10 +34,12 @@ export default function SiteBannerClient() {
   if (!banner) return null;
 
   const { bar, icon } = styles[banner.type] ?? styles.info;
+  const isSpanish = navigator.language.startsWith("es");
+  const text = (isSpanish && banner.messageEs) ? banner.messageEs : banner.message;
   return (
     <div className={`${bar} px-4 py-2.5 text-sm font-semibold text-center flex items-center justify-center gap-2`}>
       <span>{icon}</span>
-      <span>{banner.message}</span>
+      <span>{text}</span>
     </div>
   );
 }

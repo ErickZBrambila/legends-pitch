@@ -34,7 +34,8 @@ export default function SiteBannerClient() {
   if (!banner) return null;
 
   const { bar, icon } = styles[banner.type] ?? styles.info;
-  const isSpanish = navigator.language.startsWith("es");
+  const locale = document.cookie.split(";").find(c => c.trim().startsWith("NEXT_LOCALE="))?.split("=")[1]?.trim();
+  const isSpanish = locale === "es";
   const text = (isSpanish && banner.messageEs) ? banner.messageEs : banner.message;
   return (
     <div className={`${bar} px-4 py-2.5 text-sm font-semibold text-center flex items-center justify-center gap-2`}>

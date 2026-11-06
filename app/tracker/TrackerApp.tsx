@@ -168,6 +168,37 @@ export default function TrackerApp({ teams }: Props) {
   const [codeCopied, setCodeCopied] = useState(false);
   const syncQueueRef = useRef<TrackerEvent[]>([]);
   const syncingRef = useRef(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  // Keep screen awake during live tracking
+  useEffect(() => {
+    if (state.phase !== "live" || typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+
+    let released = false;
+
+    const acquire = async () => {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
+        wakeLockRef.current.addEventListener("release", () => {
+          if (!released) wakeLockRef.current = null;
+        });
+      } catch {}
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") acquire();
+    };
+
+    acquire();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      released = true;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+    };
+  }, [state.phase]);
 
   // Clock tick
   useEffect(() => {

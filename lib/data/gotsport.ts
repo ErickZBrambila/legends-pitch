@@ -86,6 +86,7 @@ const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
   "3c773b63": { goalsFor: 8,  goalsAgainst: 0, result: "W" }, // Oct 18 vs Elgin United (Hernandez)
   "62f317dc": { goalsFor: 3,  goalsAgainst: 0, result: "W" }, // Oct 24 vs T&C Soccer Inter Milan
   "5cd7f150": { goalsFor: 4,  goalsAgainst: 0, result: "W" }, // Oct 31 vs WBSA United
+  "a4f050a6": { goalsFor: 3,  goalsAgainst: 1, result: "W" }, // Nov 7 vs WBSA United
 };
 
 const U11_OPPONENT_OVERRIDES: Record<string, string> = {
@@ -135,7 +136,7 @@ const LOCATION_ADDRESSES: Record<string, string> = {
   "WCRP North":               "3005 Co Rd 175, Leander, TX 78641",
   "WCRP South":               "3005 Co Rd 175, Leander, TX 78641",
   "Shenandoah Field 2":       "1490 N Avenue C, Elgin, TX 78621",
-  "Crossroads Park":          "1020 Research Pkwy, Temple, TX 76502",
+  "Crossroads Park":          "6600 Research Loop, Temple, TX 76502",
   "Town & Country Field 23W": "9100 Meadowheath Dr, Austin, TX 78729",
   "Wells Branch Soccer":      "3908 Shoreline Dr, Austin, TX 78728",
   "Serna Athletic Fields":    "601 S Bagdad Rd, Leander, TX 78641",

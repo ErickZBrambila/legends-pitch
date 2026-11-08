@@ -114,7 +114,11 @@ const U12_MATCHES: Match[] = [
   { id: `gs-u12-${++u12Id}`, date: "2026-10-17T15:00:00-05:00", opponent: "LC United",             location: "Shenandoah Field 2",    homeAway: "away", goalsFor: 4,  goalsAgainst: 1,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-24T09:30:00-05:00", opponent: "Leander FC Rattlers",   location: "Serna Athletic Fields", homeAway: "away", goalsFor: 7,  goalsAgainst: 2,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-25T10:00:00-05:00", opponent: "BYSO Inferno",          location: "WCRP South",            homeAway: "home", goalsFor: 6,  goalsAgainst: 1,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",          location: "Bastrop Youth Soccer",  homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",             location: "Bastrop Youth Soccer",  homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  // Fall Championship — Crossroads Park, Temple TX (Nov 14-15 2026)
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-14T13:00:00-06:00", opponent: "La Manada U12/11",        location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-14T16:00:00-06:00", opponent: "FC Westlake Hooligans",   location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-15T10:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
 ];
 
 export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
@@ -217,6 +221,16 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
     }));
   } else {
     matches = team === "u12" ? withAddress(U12_MATCHES) : [];
+  }
+
+  // For U12, append any static matches whose date isn't already covered by SportsYou
+  // (e.g. championship games not yet added to the SportsYou calendar)
+  if (team === "u12") {
+    const coveredDates = new Set(matches.map((m) => m.date.slice(0, 10)));
+    const extra = withAddress(U12_MATCHES).filter((m) => !coveredDates.has(m.date.slice(0, 10)));
+    if (extra.length > 0) {
+      matches = [...matches, ...extra].sort((a, b) => a.date.localeCompare(b.date));
+    }
   }
 
   const standings = cachedStandings.length > 0 ? cachedStandings : fallbackStandings;

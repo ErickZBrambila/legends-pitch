@@ -181,14 +181,50 @@ export default async function ChampionshipPage({
         <TeamTabs activeTeam={team} />
       </div>
 
-      {/* PHOTO STRIP */}
-      {PHOTOS.length > 0 && (
-        <section className="bg-[var(--color-navy)]">
-          <div className="max-w-4xl mx-auto px-6 py-10">
+      {/* PHOTO / GOAL CLIPS STRIP */}
+      <section className="bg-[var(--color-navy)]">
+        <div className="max-w-4xl mx-auto px-6 py-10">
+          {team === "u11" && PHOTOS.length > 0 ? (
             <ChampionshipPhotoCarousel photos={PHOTOS} heading={t("photosHeading")} />
-          </div>
-        </section>
-      )}
+          ) : team === "u12" ? (
+            <>
+              <h2 className="text-[var(--color-accent)] font-black uppercase tracking-widest text-sm mb-6">
+                {t("photosHeading")}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { id: "N7wVKQVpnLI", label: "vs BYSO Inferno · Oct 25" },
+                  { id: "s0RzxId44ec", label: "vs Rattlers Gray · Oct 24 · Goal 5" },
+                  { id: "f4IPZ3F3Mok", label: "vs Rattlers Gray · Oct 24 · Goal 9" },
+                ].map(({ id, label }) => (
+                  <a
+                    key={id}
+                    href={`https://www.youtube.com/watch?v=${id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex flex-col gap-2"
+                  >
+                    <div className="relative w-full overflow-hidden rounded-xl" style={{ paddingBottom: "56.25%" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`}
+                        alt={label}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
+                          <span className="text-white text-lg ml-1">▶</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-white/40 text-xs text-center group-hover:text-white/70 transition-colors">{label}</p>
+                  </a>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      </section>
 
       {/* Group Stage Standings */}
       {(() => {

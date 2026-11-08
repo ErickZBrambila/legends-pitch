@@ -10,12 +10,10 @@ import TrackedAnchor from "@/components/TrackedAnchor";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import { getPostsByTeam, getLatestAnnouncement, getLatestSessionWithReel } from "@/lib/sanity/queries";
 import type { TeamSlug } from "@/lib/sanity/queries";
-import { getGotSportData, getChampionshipStandings, LOCATION_COORDS } from "@/lib/data/gotsport";
+import { getGotSportData, LOCATION_COORDS } from "@/lib/data/gotsport";
 import GameWeather from "@/components/GameWeather";
 import { redirect } from "next/navigation";
 import ChampionshipSplash from "@/components/ChampionshipSplash";
-import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
-import cache from "@/lib/data/gotsport-cache.json";
 import { getRedis } from "@/lib/redis";
 import { SPLASH_ENABLED_KEY } from "@/app/api/admin/championship/route";
 
@@ -105,19 +103,6 @@ export default async function Home({
           team={team}
         />
       )}
-
-      {/* Championship group stage standings */}
-      {(() => {
-        const champStandings = getChampionshipStandings();
-        return (
-          <ChampionshipStandingsSection
-            u11={champStandings.u11}
-            u12={champStandings.u12}
-            updatedAt={(cache as { updatedAt?: string }).updatedAt ?? null}
-            activeTeam={team}
-          />
-        );
-      })()}
 
       {/* Hero */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">

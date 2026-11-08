@@ -123,15 +123,7 @@ export default async function Home({
             {t("tagline")}
           </p>
           <div className="flex gap-3 mt-2 flex-wrap justify-center">
-            <TrackedLink
-              href="/championship"
-              eventName="hero_cta_click"
-              eventProps={{ button: "championship_hub", team }}
-              className="px-5 py-2.5 bg-[var(--color-accent)] text-[#1c1c1e] font-bold rounded-lg hover:bg-[var(--color-accent-light)] transition-colors shadow-md"
-            >
-              🏆 {t("champCta")}
-            </TrackedLink>
-            <TrackedLink
+<TrackedLink
               href={`/schedule?team=${team}`}
               eventName="hero_cta_click"
               eventProps={{ button: "view_schedule", team }}

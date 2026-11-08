@@ -2,15 +2,45 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
 import CountdownTimerClient from "@/components/CountdownTimerClient";
-import { getGotSportData } from "@/lib/data/gotsport";
+import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
+import ChampionshipPhotoCarousel from "@/components/ChampionshipPhotoCarousel";
+import { getGotSportData, getChampionshipStandings } from "@/lib/data/gotsport";
+import cache from "@/lib/data/gotsport-cache.json";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
 // First U11 kickoff: Nov 14 noon CST = 18:00 UTC
 const CHAMPIONSHIP_FIRST_KICKOFF = "2026-11-14T18:00:00Z";
 const CHAMPIONSHIP_DATES = new Set(["2026-11-14", "2026-11-15"]);
 
-// Drop championship photos in /public/championship/ and push filenames here
-const PHOTOS: string[] = [];
+const PHOTOS = [
+  "IMG_3344.jpg",
+  "IMG_3342.jpg",
+  "IMG_3339.jpg",
+  "IMG_3337.jpg",
+  "IMG_3336.jpg",
+  "IMG_3334.jpg",
+  "IMG_3331.jpg",
+  "IMG_3330.jpg",
+  "IMG_3328.jpg",
+  "IMG_3325.jpg",
+  "IMG_3323.jpg",
+  "IMG_3321.jpg",
+  "IMG_3318.jpg",
+  "IMG_3315.jpg",
+  "IMG_3313.jpg",
+  "IMG_3309.jpg",
+  "IMG_3305.jpg",
+  "IMG_3304.jpg",
+  "IMG_3303.jpg",
+  "IMG_3302.jpg",
+  "IMG_3300.jpg",
+  "IMG_3299.jpg",
+  "IMG_3298.jpg",
+  "IMG_3297.jpg",
+  "IMG_3296.jpg",
+  "IMG_3295.jpg",
+  "IMG_3294.jpg",
+];
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Championship");
@@ -55,12 +85,25 @@ export default async function ChampionshipPage({
     <>
       {/* HERO */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
+        {/* U11 video backdrop */}
+        {team === "u11" && (
+          <video
+            src="/championship/IMG_3287.mov"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            aria-hidden
+          />
+        )}
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.2) 0%, transparent 70%)",
+            background: team === "u11"
+              ? "linear-gradient(to bottom, rgba(10,15,40,0.75) 0%, rgba(10,15,40,0.65) 60%, rgba(10,15,40,0.9) 100%)"
+              : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.2) 0%, transparent 70%)",
           }}
         />
         <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center gap-4">
@@ -90,12 +133,35 @@ export default async function ChampionshipPage({
         </div>
       </section>
 
+      {/* Single team selector — drives the whole page via URL */}
+      <div className="bg-[var(--color-navy)] flex justify-center pb-6 pt-2">
+        <TeamTabs activeTeam={team} />
+      </div>
+
+      {/* PHOTO STRIP — moved up: best emotional content before Nov 14 */}
+      {PHOTOS.length > 0 && (
+        <section className="bg-[var(--color-navy)]">
+          <div className="max-w-4xl mx-auto px-6 py-10">
+            <ChampionshipPhotoCarousel photos={PHOTOS} heading={t("photosHeading")} />
+          </div>
+        </section>
+      )}
+
+      {/* Group Stage Standings — right below the hero */}
+      {(() => {
+        const champStandings = getChampionshipStandings();
+        return (
+          <ChampionshipStandingsSection
+            u11={champStandings.u11}
+            u12={champStandings.u12}
+            updatedAt={(cache as { updatedAt?: string }).updatedAt ?? null}
+            activeTeam={team}
+          />
+        );
+      })()}
+
       {/* CHAMPIONSHIP CONTENT */}
       <section className="max-w-4xl mx-auto px-4 py-10">
-        <div className="flex justify-center mb-8">
-          <TeamTabs activeTeam={team} />
-        </div>
-
         {/* Schedule */}
         <h2 className="text-xl font-black text-gray-900 mb-5">{t("gamesHeading")}</h2>
         <div className="flex flex-col gap-3 mb-10">
@@ -198,35 +264,6 @@ export default async function ChampionshipPage({
         </div>
       </section>
 
-      {/* PHOTO STRIP */}
-      {/* Add photos: drop files in /public/championship/ and push filenames into the PHOTOS array above */}
-      <section className="bg-[var(--color-navy)] mt-4">
-        <div className="max-w-4xl mx-auto px-4 py-10">
-          <h2 className="text-xl font-black text-white mb-6">{t("photosHeading")}</h2>
-          <div className="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-hide">
-            {PHOTOS.length > 0
-              ? PHOTOS.map((src, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={i}
-                    src={`/championship/${src}`}
-                    alt={`Championship photo ${i + 1}`}
-                    className="shrink-0 w-56 h-40 object-cover rounded-xl snap-start"
-                  />
-                ))
-              : Array.from({ length: 10 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="shrink-0 w-56 h-40 rounded-xl snap-start flex items-center justify-center"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
-                  >
-                    <span className="text-3xl opacity-20">📷</span>
-                  </div>
-                ))}
-          </div>
-          <p className="text-white/25 text-xs mt-3">{t("photosHint")}</p>
-        </div>
-      </section>
     </>
   );
 }

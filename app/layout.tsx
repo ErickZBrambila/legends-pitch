@@ -12,7 +12,6 @@ import LanguagePickerModal from "@/components/LanguagePickerModal";
 import TeamPreferenceRedirect from "@/components/TeamPreferenceRedirect";
 import SiteBannerClient from "@/components/SiteBannerClient";
 import PageViewTracker from "@/components/PageViewTracker";
-import WhatsNewModal from "@/components/WhatsNewModal";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { headers } from "next/headers";
@@ -51,7 +50,6 @@ export default async function RootLayout({
           {!isAdminRoute && <Footer />}
           {!isAdminRoute && <AddToHomeScreen />}
           {!isAdminRoute && <PushPermission />}
-          {!isAdminRoute && <WhatsNewModal />}
           {!isAdminRoute && <PageViewTracker />}
         </NextIntlClientProvider>
         <Analytics />

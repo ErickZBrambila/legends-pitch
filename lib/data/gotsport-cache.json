@@ -1,4 +1,8 @@
 {
+  "championship": {
+    "u11": { "standings": [] },
+    "u12": { "standings": [] }
+  },
   "u11": {
     "standings": [
       {

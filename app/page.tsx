@@ -16,6 +16,8 @@ import { redirect } from "next/navigation";
 import ChampionshipSplash from "@/components/ChampionshipSplash";
 import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
 import cache from "@/lib/data/gotsport-cache.json";
+import { getRedis } from "@/lib/redis";
+import { SPLASH_ENABLED_KEY } from "@/app/api/admin/championship/route";
 
 const withinForecastWindow = (iso: string) => {
   const diff = (new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
@@ -52,8 +54,11 @@ export default async function Home({
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
   const teamExplicitlySelected = teamParam === "u11" || teamParam === "u12";
 
-  // Championship window: redirect home to /championship until Nov 16
-  if (Date.now() < new Date("2026-11-16T06:00:00Z").getTime()) {
+  // Championship landing: redirect home → /championship when the splash toggle is on
+  const redis = getRedis();
+  const splashEnabledRaw = redis ? await redis.get<string>(SPLASH_ENABLED_KEY) : null;
+  const champLandingEnabled = splashEnabledRaw !== "false";
+  if (champLandingEnabled) {
     redirect(`/championship?team=${team}`);
   }
 

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import TeamTabs from "@/components/TeamTabs";
@@ -94,7 +96,7 @@ export default async function ChampionshipPage({
         redis.get<SplashVideo>(SPLASH_VIDEO_KEY),
       ])
     : [null, null];
-  const splashEnabled = splashEnabledRaw === "true";
+  const splashEnabled = splashEnabledRaw === true || splashEnabledRaw === "true";
   const splashVideo: SplashVideo = splashVideoRaw ?? "goal";
 
   return (

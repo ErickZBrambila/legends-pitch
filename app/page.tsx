@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -55,7 +57,7 @@ export default async function Home({
   // Championship landing: redirect home → /championship when the splash toggle is on
   const redis = getRedis();
   const splashEnabledRaw = redis ? await redis.get<string>(SPLASH_ENABLED_KEY) : null;
-  const champLandingEnabled = splashEnabledRaw === "true";
+  const champLandingEnabled = splashEnabledRaw === true || splashEnabledRaw === "true";
   if (champLandingEnabled) {
     redirect(`/championship?team=${team}`);
   }

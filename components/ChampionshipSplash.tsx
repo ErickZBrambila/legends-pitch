@@ -121,16 +121,6 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
             <source src={VIDEO_DESKTOP} type="video/mp4" />
           </video>
 
-          {/* Mute toggle */}
-          <button
-            onClick={toggleMute}
-            className="absolute bottom-6 right-6 z-10 w-10 h-10 rounded-full flex items-center justify-center text-lg transition-opacity"
-            style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.2)" }}
-            aria-label={muted ? "Unmute" : "Mute"}
-          >
-            {muted ? "🔇" : "🔊"}
-          </button>
-
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
           <div className="absolute top-6 inset-x-0 flex justify-center pointer-events-none">
@@ -145,6 +135,24 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
             >
               {t("badge")} · {t("year")}
             </div>
+          </div>
+
+          {/* Centered unmute pill */}
+          <div className="absolute bottom-20 inset-x-0 flex justify-center">
+            <button
+              onClick={toggleMute}
+              className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-bold transition-all active:scale-95"
+              style={{
+                background: muted ? "rgba(0,0,0,0.65)" : "rgba(212,175,55,0.2)",
+                border: muted ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(212,175,55,0.6)",
+                color: muted ? "rgba(255,255,255,0.8)" : "#d4af37",
+                backdropFilter: "blur(12px)",
+              }}
+              aria-label={muted ? "Unmute" : "Mute"}
+            >
+              <span className="text-base">{muted ? "🔇" : "🔊"}</span>
+              <span>{muted ? "Tap to unmute" : "Mute"}</span>
+            </button>
           </div>
 
           <button

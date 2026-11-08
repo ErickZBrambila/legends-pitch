@@ -19,9 +19,7 @@ const CHAMPIONSHIP_FIRST_KICKOFF = "2026-11-14T18:00:00Z";
 const CHAMPIONSHIP_DATES = new Set(["2026-11-14", "2026-11-15"]);
 
 const PHOTOS = [
-  "IMG_3344.jpg",
   "IMG_3342.jpg",
-  "IMG_3339.jpg",
   "IMG_3337.jpg",
   "IMG_3336.jpg",
   "IMG_3334.jpg",

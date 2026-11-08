@@ -94,7 +94,7 @@ export default async function ChampionshipPage({
         redis.get<SplashVideo>(SPLASH_VIDEO_KEY),
       ])
     : [null, null];
-  const splashEnabled = splashEnabledRaw !== "false";
+  const splashEnabled = splashEnabledRaw === "true";
   const splashVideo: SplashVideo = splashVideoRaw ?? "goal";
 
   return (

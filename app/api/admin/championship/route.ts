@@ -18,7 +18,7 @@ export async function GET() {
     : [null, null];
 
   return NextResponse.json({
-    splashEnabled: enabled !== "false",
+    splashEnabled: enabled === "true",
     splashVideo: video ?? "goal",
   });
 }

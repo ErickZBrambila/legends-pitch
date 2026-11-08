@@ -143,10 +143,11 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
               onClick={toggleMute}
               className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-bold transition-all active:scale-95"
               style={{
-                background: muted ? "rgba(0,0,0,0.65)" : "rgba(212,175,55,0.2)",
-                border: muted ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(212,175,55,0.6)",
-                color: muted ? "rgba(255,255,255,0.8)" : "#d4af37",
+                background: muted ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.2)",
+                border: muted ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(255,255,255,0.1)",
+                color: muted ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)",
                 backdropFilter: "blur(12px)",
+                transition: "all 0.3s ease",
               }}
               aria-label={muted ? "Unmute" : "Mute"}
             >

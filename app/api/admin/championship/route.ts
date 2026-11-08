@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getRedis } from "@/lib/redis";
 
-export const runtime = "edge";
-
 export type SplashVideo = "goal" | "reel";
 export const SPLASH_ENABLED_KEY = "championship:splash_enabled";
 export const SPLASH_VIDEO_KEY = "championship:splash_video";

@@ -61,7 +61,11 @@
     "latestNews": "Últimas Noticias",
     "readMore": "Leer más →",
     "noPosts": "Aún no hay publicaciones — agrégalas en el Studio.",
-    "allAnnouncements": "Todos los anuncios →"
+    "allAnnouncements": "Todos los anuncios →",
+    "champEyebrow": "Campeonato de Otoño 2026",
+    "champHeadline": "Ambos equipos clasificados.",
+    "champSubheadline": "14–15 de nov · Crossroads Park, Temple TX · Sub-11 y Sub-12",
+    "champCta": "Ir al Campeonato →"
   },
   "Schedule": {
     "metaTitle": "Calendario",
@@ -280,6 +284,21 @@
     "android_4_desc": "Abre North Legends FC desde tu pantalla de inicio — se abrirá como una app a pantalla completa.",
     "android_5_title": "Permite las notificaciones",
     "android_5_desc": "Toca \"Permitir\" cuando el navegador te pida permiso para notificaciones. ¡Listo!"
+  },
+  "Championship": {
+    "metaTitle": "Campeonato de Otoño 2026",
+    "eyebrow": "Campeonato de Otoño 2026",
+    "headline": "CAMPEONES",
+    "subheadline": "Ambos equipos clasificados · 14–15 de nov · Crossroads Park, Temple TX",
+    "countdownLabel": "Faltan para el primer partido",
+    "gamesHeading": "Calendario del Campeonato",
+    "standingsHeading": "Tabla de la Temporada Regular",
+    "vsLabel": "vs",
+    "homeLabel": "Local",
+    "awayLabel": "Visitante",
+    "colTeam": "Equipo",
+    "photosHeading": "Recuerdos del Campeonato",
+    "photosHint": "Fotos próximamente — vuelve después del fin de semana del campeonato"
   },
   "WhatsNew": {
     "badge": "Novedades",

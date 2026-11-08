@@ -315,8 +315,41 @@ export default async function Home({
           </Link>
         </section>
       </div>
+      {/* Championship CTA */}
+      <section className="relative bg-[var(--color-navy)] mt-8 overflow-hidden">
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(212,175,55,0.1) 0%, transparent 70%)",
+          }}
+        />
+        <div className="relative max-w-6xl mx-auto px-4 py-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div>
+            <p className="text-[var(--color-accent)] text-xs uppercase tracking-[0.25em] font-bold mb-1">
+              {t("champEyebrow")}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">
+              {t("champHeadline")}
+            </h2>
+            <p className="text-white/50 text-sm mt-1 max-w-sm">
+              {t("champSubheadline")}
+            </p>
+          </div>
+          <TrackedLink
+            href="/championship"
+            eventName="championship_cta_click"
+            eventProps={{ source: "home" }}
+            className="shrink-0 px-7 py-3.5 bg-[var(--color-accent)] text-[var(--color-navy)] font-black rounded-xl hover:bg-[var(--color-accent-light)] transition-colors shadow-lg text-sm"
+          >
+            {t("champCta")}
+          </TrackedLink>
+        </div>
+      </section>
+
       {/* Sponsors */}
-      <section className="bg-[var(--color-navy)] mt-8">
+      <section className="bg-[var(--color-navy)]">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <p className="text-xs text-red-400 uppercase tracking-widest font-semibold text-center mb-1">{ts("poweredBy")}</p>
           <h2 className="text-2xl font-black text-white text-center mb-2">{ts("heading")}</h2>

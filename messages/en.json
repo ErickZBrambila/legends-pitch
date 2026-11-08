@@ -61,7 +61,11 @@
     "latestNews": "Latest News",
     "readMore": "Read more →",
     "noPosts": "No posts yet — add them in the Studio.",
-    "allAnnouncements": "All announcements →"
+    "allAnnouncements": "All announcements →",
+    "champEyebrow": "Fall Championship 2026",
+    "champHeadline": "Both teams qualified.",
+    "champSubheadline": "Nov 14–15 · Crossroads Park, Temple TX · U11 & U12",
+    "champCta": "Championship Hub →"
   },
   "Schedule": {
     "metaTitle": "Schedule",
@@ -280,6 +284,21 @@
     "android_4_desc": "Open North Legends FC from your home screen — it will open as a full-screen app.",
     "android_5_title": "Allow notifications",
     "android_5_desc": "Tap \"Allow\" when the browser asks for notification permission. Done!"
+  },
+  "Championship": {
+    "metaTitle": "Fall Championship 2026",
+    "eyebrow": "Fall Championship 2026",
+    "headline": "CAMPEONES",
+    "subheadline": "Both teams qualified · Nov 14–15 · Crossroads Park, Temple TX",
+    "countdownLabel": "Until first kickoff",
+    "gamesHeading": "Championship Schedule",
+    "standingsHeading": "Regular Season Standings",
+    "vsLabel": "vs",
+    "homeLabel": "Home",
+    "awayLabel": "Away",
+    "colTeam": "Team",
+    "photosHeading": "Championship Memories",
+    "photosHint": "Photos coming soon — check back after the championship weekend"
   },
   "WhatsNew": {
     "badge": "What's New",

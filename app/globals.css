@@ -28,6 +28,27 @@ body {
   font-family: var(--font-sans);
 }
 
+@keyframes gold-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.campeones-shimmer {
+  background: linear-gradient(90deg, #d4af37 0%, #f5cc5c 25%, #fff9e0 50%, #f5cc5c 75%, #d4af37 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gold-shimmer 3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campeones-shimmer {
+    animation: none;
+    background-position: center;
+  }
+}
+
 /* ── iPhone Duo / foldable device support ───────────────────────────────────
    horizontal-viewport-segments: 2 fires when the screen is unfolded book-style
    (two side-by-side panels). env() variables give exact panel dimensions.     */

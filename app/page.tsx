@@ -56,7 +56,7 @@ export default async function Home({
 
   // Championship landing: redirect home → /championship when the splash toggle is on
   const redis = getRedis();
-  const splashEnabledRaw = redis ? await redis.get<string>(SPLASH_ENABLED_KEY) : null;
+  const splashEnabledRaw = redis ? await redis.get<string | boolean>(SPLASH_ENABLED_KEY) : null;
   const champLandingEnabled = splashEnabledRaw === true || splashEnabledRaw === "true";
   if (champLandingEnabled) {
     redirect(`/championship?team=${team}`);

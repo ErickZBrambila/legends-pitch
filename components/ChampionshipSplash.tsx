@@ -50,6 +50,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   const VIDEO_MOBILE  = VIDEOS[splashVideo].mobile;
   const t = useTranslations("Championship");
   const [phase, setPhase] = useState<Phase>("gone");
+  const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoStartRef = useRef<number>(0);
   const key = `champ_splash_${VERSION}_${team}`;
@@ -67,6 +68,8 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   useEffect(() => {
     function replay() {
       videoStartRef.current = Date.now();
+      setMuted(true);
+      if (videoRef.current) videoRef.current.muted = true;
       setPhase("video");
     }
     window.addEventListener("watch-champ-intro", replay);
@@ -85,6 +88,13 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   function close() {
     sessionStorage.setItem(key, "seen");
     setPhase("gone");
+  }
+
+  function toggleMute() {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setMuted(videoRef.current.muted);
+    }
   }
 
   if (phase === "gone") return null;
@@ -110,6 +120,16 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
             <source src={VIDEO_MOBILE}  media="(max-width: 767px)" type="video/mp4" />
             <source src={VIDEO_DESKTOP} type="video/mp4" />
           </video>
+
+          {/* Mute toggle */}
+          <button
+            onClick={toggleMute}
+            className="absolute bottom-6 right-6 z-10 w-10 h-10 rounded-full flex items-center justify-center text-lg transition-opacity"
+            style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.2)" }}
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 

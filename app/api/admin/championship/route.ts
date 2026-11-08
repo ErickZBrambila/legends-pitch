@@ -10,7 +10,7 @@ export async function GET() {
   const redis = getRedis();
   const [enabled, video] = redis
     ? await Promise.all([
-        redis.get<string>(SPLASH_ENABLED_KEY),
+        redis.get<string | boolean>(SPLASH_ENABLED_KEY),
         redis.get<SplashVideo>(SPLASH_VIDEO_KEY),
       ])
     : [null, null];

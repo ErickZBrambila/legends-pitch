@@ -7,6 +7,6 @@ export function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
-  _redis = new Redis({ url, token, fetchOptions: { cache: "no-store" } });
+  _redis = new Redis({ url, token });
   return _redis;
 }

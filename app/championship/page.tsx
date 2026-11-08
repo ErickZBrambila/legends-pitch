@@ -90,7 +90,7 @@ export default async function ChampionshipPage({
   const redis = getRedis();
   const [splashEnabledRaw, splashVideoRaw] = redis
     ? await Promise.all([
-        redis.get<string>(SPLASH_ENABLED_KEY),
+        redis.get<string | boolean>(SPLASH_ENABLED_KEY),
         redis.get<SplashVideo>(SPLASH_VIDEO_KEY),
       ])
     : [null, null];
@@ -115,7 +115,7 @@ export default async function ChampionshipPage({
         {/* U11 video backdrop */}
         {team === "u11" && (
           <video
-            src="/championship/IMG_3287.mov"
+            src="https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship-hero-bg.mp4"
             autoPlay
             muted
             loop

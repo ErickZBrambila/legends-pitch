@@ -48,6 +48,12 @@ const CONTENT = {
         badge: "New",
       },
       {
+        href: "/admin/championship",
+        title: "Championship Splash",
+        description: "Enable or disable the intro video on the championship page. Switch between the short Higgsfield intro and the full squad reel — no deploy needed.",
+        badge: "New",
+      },
+      {
         href: "/admin/kickreel",
         title: "KickReel Stats",
         description: "Review submitted game tracking sessions. Download JSON, apply score to match, or delete entries.",
@@ -102,6 +108,12 @@ const CONTENT = {
         href: "/admin/photos",
         title: "Cola de Fotos",
         description: "Revisa las fotos de jugadores enviadas por los padres desde la página de alineación. Aprueba para publicar o rechaza.",
+        badge: "Nuevo",
+      },
+      {
+        href: "/admin/championship",
+        title: "Splash Campeonato",
+        description: "Activa o desactiva el video de bienvenida en la página del campeonato. Cambia entre el intro corto y el squad reel — sin necesidad de deploy.",
         badge: "Nuevo",
       },
       {

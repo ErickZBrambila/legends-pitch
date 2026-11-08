@@ -4,7 +4,11 @@ import TeamTabs from "@/components/TeamTabs";
 import CountdownTimerClient from "@/components/CountdownTimerClient";
 import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
 import ChampionshipPhotoCarousel from "@/components/ChampionshipPhotoCarousel";
+import ChampionshipSplash from "@/components/ChampionshipSplash";
+import WatchIntroButton from "@/components/WatchIntroButton";
 import { getGotSportData, getChampionshipStandings } from "@/lib/data/gotsport";
+import { getRedis } from "@/lib/redis";
+import { SPLASH_ENABLED_KEY, SPLASH_VIDEO_KEY, type SplashVideo } from "@/app/api/admin/championship/route";
 import cache from "@/lib/data/gotsport-cache.json";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
@@ -81,8 +85,31 @@ export default async function ChampionshipPage({
 
   const champOver = Date.now() > new Date("2026-11-16T00:00:00Z").getTime();
 
+  const northLegends = standings.find((r) => r.isNorthLegends);
+
+  const redis = getRedis();
+  const [splashEnabledRaw, splashVideoRaw] = redis
+    ? await Promise.all([
+        redis.get<string>(SPLASH_ENABLED_KEY),
+        redis.get<SplashVideo>(SPLASH_VIDEO_KEY),
+      ])
+    : [null, null];
+  const splashEnabled = splashEnabledRaw !== "false";
+  const splashVideo: SplashVideo = splashVideoRaw ?? "goal";
+
   return (
     <>
+      {splashEnabled && (
+        <ChampionshipSplash
+          wins={northLegends?.w ?? 0}
+          losses={northLegends?.l ?? 0}
+          draws={northLegends?.t ?? 0}
+          rank={northLegends?.rank ?? null}
+          team={team}
+          splashVideo={splashVideo}
+        />
+      )}
+
       {/* HERO */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
         {/* U11 video backdrop */}
@@ -101,9 +128,10 @@ export default async function ChampionshipPage({
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: team === "u11"
-              ? "linear-gradient(to bottom, rgba(10,15,40,0.75) 0%, rgba(10,15,40,0.65) 60%, rgba(10,15,40,0.9) 100%)"
-              : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.2) 0%, transparent 70%)",
+            background:
+              team === "u11"
+                ? "linear-gradient(to bottom, rgba(10,15,40,0.75) 0%, rgba(10,15,40,0.65) 60%, rgba(10,15,40,0.9) 100%)"
+                : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.2) 0%, transparent 70%)",
           }}
         />
         <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center gap-4">
@@ -119,6 +147,18 @@ export default async function ChampionshipPage({
           >
             {t("headline")}
           </h1>
+          <p
+            className="font-black uppercase tracking-[0.15em]"
+            style={{ color: "#d4af37", fontSize: "clamp(1.25rem, 5vw, 2rem)" }}
+          >
+            {t("heroRank")}
+          </p>
+          <p
+            className="text-xs uppercase tracking-[0.25em] font-semibold -mt-2"
+            style={{ color: "#d4af37", opacity: 0.7 }}
+          >
+            {t("heroBracket")}
+          </p>
           <p className="text-white/60 text-sm md:text-base max-w-xs">
             {t("subheadline")}
           </p>
@@ -128,6 +168,7 @@ export default async function ChampionshipPage({
                 {t("countdownLabel")}
               </p>
               <CountdownTimerClient targetDate={CHAMPIONSHIP_FIRST_KICKOFF} />
+              <WatchIntroButton />
             </div>
           )}
         </div>
@@ -138,7 +179,7 @@ export default async function ChampionshipPage({
         <TeamTabs activeTeam={team} />
       </div>
 
-      {/* PHOTO STRIP — moved up: best emotional content before Nov 14 */}
+      {/* PHOTO STRIP */}
       {PHOTOS.length > 0 && (
         <section className="bg-[var(--color-navy)]">
           <div className="max-w-4xl mx-auto px-6 py-10">
@@ -147,7 +188,7 @@ export default async function ChampionshipPage({
         </section>
       )}
 
-      {/* Group Stage Standings — right below the hero */}
+      {/* Group Stage Standings */}
       {(() => {
         const champStandings = getChampionshipStandings();
         return (
@@ -204,8 +245,8 @@ export default async function ChampionshipPage({
                         m.result === "W"
                           ? "bg-green-500/20 text-green-400 border border-green-500/30"
                           : m.result === "L"
-                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                          : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                            ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                            : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
                       }`}
                     >
                       {m.result}
@@ -263,7 +304,6 @@ export default async function ChampionshipPage({
           </table>
         </div>
       </section>
-
     </>
   );
 }

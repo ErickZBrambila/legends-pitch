@@ -6,8 +6,17 @@ import { useTranslations } from "next-intl";
 import ChampionshipCountdown from "./ChampionshipCountdown";
 
 const VERSION = "fall-2024-v1";
-const VIDEO_DESKTOP = "/championship-goal.mp4";
-const VIDEO_MOBILE  = "/championship-goal-mobile.mp4";
+
+const VIDEOS = {
+  goal: {
+    desktop: "https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship-goal.mp4",
+    mobile:  "https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship-goal.mp4",
+  },
+  reel: {
+    desktop: "https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship-squad-reel-web.mp4",
+    mobile:  "https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship-squad-reel-mobile.mp4",
+  },
+};
 
 interface Props {
   wins: number;
@@ -15,6 +24,7 @@ interface Props {
   draws: number;
   rank: number | null;
   team: string;
+  splashVideo?: "goal" | "reel";
 }
 
 function rankLabel(rank: number | null): string {
@@ -35,7 +45,9 @@ const PARTICLES = [
 
 type Phase = "video" | "flash" | "card" | "gone";
 
-export default function ChampionshipSplash({ wins, losses, draws, rank, team }: Props) {
+export default function ChampionshipSplash({ wins, losses, draws, rank, team, splashVideo = "goal" }: Props) {
+  const VIDEO_DESKTOP = VIDEOS[splashVideo].desktop;
+  const VIDEO_MOBILE  = VIDEOS[splashVideo].mobile;
   const t = useTranslations("Championship");
   const [phase, setPhase] = useState<Phase>("gone");
   const videoRef = useRef<HTMLVideoElement>(null);

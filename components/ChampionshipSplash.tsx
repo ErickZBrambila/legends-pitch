@@ -206,24 +206,44 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
             )}
           </div>
 
-          {/* Centered unmute pill */}
-          <div className="absolute bottom-20 inset-x-0 flex justify-center">
-            <button
-              onClick={toggleMute}
-              className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-bold transition-all active:scale-95"
-              style={{
-                background: muted ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.2)",
-                border: muted ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(255,255,255,0.1)",
-                color: muted ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)",
-                backdropFilter: "blur(12px)",
-                transition: "all 0.3s ease",
-              }}
-              aria-label={muted ? "Unmute" : "Mute"}
-            >
-              <span className="text-base">{muted ? "🔇" : "🔊"}</span>
-              <span>{muted ? "Tap to unmute" : "Mute"}</span>
-            </button>
-          </div>
+          {/* Unmute pill — centered when muted, fades to tiny top-right icon after */}
+          <button
+            onClick={toggleMute}
+            className="absolute transition-all duration-500 active:scale-95"
+            style={muted ? {
+              bottom: "5rem",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.75rem 1.25rem",
+              borderRadius: "9999px",
+              fontSize: "0.875rem",
+              fontWeight: 700,
+              background: "rgba(0,0,0,0.65)",
+              border: "1px solid rgba(255,255,255,0.3)",
+              color: "rgba(255,255,255,0.8)",
+              backdropFilter: "blur(12px)",
+            } : {
+              top: "1.25rem",
+              right: "1rem",
+              display: "flex",
+              alignItems: "center",
+              padding: "0.35rem 0.6rem",
+              borderRadius: "9999px",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.25)",
+              backdropFilter: "none",
+            }}
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            <span>{muted ? "🔇" : "🔊"}</span>
+            {muted && <span>Tap to unmute</span>}
+          </button>
 
           <div className="absolute bottom-8 right-6 flex items-center gap-2">
             {!isWebView && (

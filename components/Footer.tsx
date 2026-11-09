@@ -27,7 +27,6 @@ export default function Footer() {
             <Link href="/gallery" className="hover:text-white transition-colors">{t("gallery")}</Link>
             <Link href="/announcements" className="hover:text-white transition-colors">{t("announcements")}</Link>
             <Link href="/contact" className="hover:text-white transition-colors">{t("contact")}</Link>
-            <Link href="/roadmap" className="hover:text-white transition-colors">{t("roadmap")}</Link>
           </nav>
 
           <div className="flex flex-col items-center md:items-end gap-3">

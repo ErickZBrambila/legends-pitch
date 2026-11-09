@@ -132,6 +132,12 @@
         "goalsFor": 4,
         "goalsAgainst": 0,
         "result": "W"
+      },
+      {
+        "opponent": "WBSA United",
+        "goalsFor": 7,
+        "goalsAgainst": 1,
+        "result": "W"
       }
     ]
   },
@@ -140,84 +146,84 @@
       {
         "rank": 1,
         "team": "JYSA North Legends FC - Rosado",
-        "gp": 7,
-        "w": 7,
+        "gp": 5,
+        "w": 5,
         "l": 0,
         "t": 0,
-        "gf": 21,
-        "ga": 9,
-        "pts": 21,
+        "gf": 15,
+        "ga": 6,
+        "pts": 15,
         "isNorthLegends": true
       },
       {
         "rank": 2,
         "team": "FC Westlake Hooligans",
-        "gp": 8,
-        "w": 6,
-        "l": 2,
+        "gp": 6,
+        "w": 5,
+        "l": 1,
         "t": 0,
-        "gf": 23,
-        "ga": 17,
-        "pts": 18,
+        "gf": 17,
+        "ga": 11,
+        "pts": 15,
         "isNorthLegends": false
       },
       {
         "rank": 3,
         "team": "BYSO Inferno",
-        "gp": 6,
+        "gp": 5,
         "w": 4,
-        "l": 2,
+        "l": 1,
         "t": 0,
-        "gf": 16,
-        "ga": 12,
+        "gf": 15,
+        "ga": 9,
         "pts": 12,
         "isNorthLegends": false
       },
       {
         "rank": 4,
-        "team": "Elgin United (Castro)",
-        "gp": 7,
-        "w": 3,
+        "team": "Leander FC Rattlers",
+        "gp": 6,
+        "w": 2,
         "l": 3,
         "t": 1,
-        "gf": 13,
+        "gf": 14,
         "ga": 14,
-        "pts": 10,
+        "pts": 7,
         "isNorthLegends": false
       },
       {
         "rank": 5,
-        "team": "Leander FC Rattlers",
-        "gp": 8,
-        "w": 3,
-        "l": 4,
+        "team": "Elgin United (Castro)",
+        "gp": 6,
+        "w": 2,
+        "l": 3,
         "t": 1,
-        "gf": 19,
-        "ga": 20,
-        "pts": 10,
+        "gf": 10,
+        "ga": 12,
+        "pts": 7,
         "isNorthLegends": false
       },
       {
         "rank": 6,
         "team": "LC United",
-        "gp": 7,
+        "gp": 6,
         "w": 1,
-        "l": 6,
+        "l": 5,
         "t": 0,
-        "gf": 15,
-        "ga": 21,
+        "gf": 11,
+        "ga": 18,
         "pts": 3,
         "isNorthLegends": false
       },
       {
         "rank": 7,
         "team": "Liberty United",
-        "gp": 7,
+        "gp": 6,
         "w": 0,
-        "l": 7,
+        "l": 6,
         "t": 0,
-        "gf": 7,
-        "ga": 21,
+        "gf": 6,
+        "ga": 18,
         "pts": 0,
         "isNorthLegends": false
       }
@@ -267,5 +273,5 @@
       }
     ]
   },
-  "updatedAt": "2026-11-07T00:00:00.000Z"
+  "updatedAt": "2026-11-08T06:49:46.455Z"
 }

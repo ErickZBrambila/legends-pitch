@@ -127,9 +127,17 @@ export default async function Home({
               href={`/schedule?team=${team}`}
               eventName="hero_cta_click"
               eventProps={{ button: "view_schedule", team }}
-              className="px-5 py-2.5 bg-white/10 border border-white/20 text-white font-bold rounded-lg hover:bg-white/20 transition-colors"
+              className="px-5 py-2.5 bg-[var(--color-accent)] text-[var(--color-navy)] font-bold rounded-lg hover:opacity-90 transition-opacity shadow-md"
             >
               {t("viewSchedule")}
+            </TrackedLink>
+            <TrackedLink
+              href={`/roster?team=${team}`}
+              eventName="hero_cta_click"
+              eventProps={{ button: "meet_the_team", team }}
+              className="px-5 py-2.5 bg-[var(--color-accent)] text-[var(--color-navy)] font-bold rounded-lg hover:opacity-90 transition-opacity shadow-md"
+            >
+              {t("meetTheTeam")}
             </TrackedLink>
           </div>
         </div>
@@ -212,6 +220,7 @@ export default async function Home({
       )}
 
       {/* Team tabs + content */}
+      <section className="bg-gray-50 border-y border-gray-100">
       <div className="max-w-6xl mx-auto px-4 pt-8 pb-2">
         <TeamTabs activeTeam={team} />
       </div>
@@ -249,7 +258,7 @@ export default async function Home({
 
           <Link
             href={`/schedule?team=${team}`}
-            className="block text-center mt-4 text-sm text-[var(--color-primary)] font-medium hover:underline"
+            className="block text-center mt-4 text-sm text-[var(--color-primary)] font-semibold hover:underline"
           >
             {t("fullSchedule")}
           </Link>
@@ -261,17 +270,7 @@ export default async function Home({
             <div className="mb-6">
               <AnnouncementBanner announcement={latestAnnouncement} locale={locale} team={team} showAllLink />
             </div>
-          ) : (
-            <div className="mb-6">
-              <Link
-                href={`/announcements?team=${team}`}
-                className="inline-flex items-center gap-1.5 text-xs text-amber-700 font-semibold hover:underline"
-              >
-                <span aria-hidden>📣</span>
-                {locale === "es" ? "Ver anuncios anteriores →" : "View past announcements →"}
-              </Link>
-            </div>
-          )}
+          ) : null}
           <h2 className="text-lg font-bold text-gray-800 mb-4">{t("latestNews")}</h2>
           <div className="flex flex-col gap-4">
             {topNews.map((post) => (
@@ -301,12 +300,13 @@ export default async function Home({
           </div>
           <Link
             href={`/news?team=${team}`}
-            className="block text-center mt-4 text-sm text-[var(--color-primary)] font-medium hover:underline"
+            className="block text-center mt-4 text-sm text-[var(--color-primary)] font-semibold hover:underline"
           >
             {t("allAnnouncements")}
           </Link>
         </section>
       </div>
+      </section>
       {/* Sponsors */}
       <section className="bg-[var(--color-navy)]">
         <div className="max-w-6xl mx-auto px-4 py-12">
@@ -364,7 +364,7 @@ export default async function Home({
             <TrackedAnchor
               href="mailto:legendsfcnorth@gmail.com?subject=Sponsorship%20Inquiry%20—%20North%20Legends%20FC"
               eventName="sponsor_cta_click"
-              className="shrink-0 px-6 py-3 bg-[var(--color-accent)] text-[var(--color-navy)] font-black rounded-xl hover:opacity-90 transition-opacity text-sm whitespace-nowrap"
+              className="shrink-0 px-5 py-2.5 bg-[var(--color-accent)] text-[var(--color-navy)] font-bold rounded-lg hover:opacity-90 transition-opacity text-sm whitespace-nowrap shadow-md"
             >
               {ts("becomeButton")}
             </TrackedAnchor>

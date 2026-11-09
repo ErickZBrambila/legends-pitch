@@ -67,12 +67,18 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
 
   useEffect(() => {
     const ua = navigator.userAgent;
-    const inWebView =
-      /wv/.test(ua) ||                                              // Android WebView
-      (/iPhone|iPad/.test(ua) && !/Safari/.test(ua)
-        && !/CriOS/.test(ua) && !/FxiOS/.test(ua)) ||              // iOS WebView (no browser token)
-      /SportsYou/i.test(ua);                                        // SportsYou explicit
-    setIsWebView(inWebView);
+    const isIOS     = /iPhone|iPad|iPod/.test(ua);
+    const isAndroid = /Android/.test(ua);
+
+    // iOS: fullscreenEnabled is always false in iOS, so use UA instead
+    // Real iOS browsers always carry Safari, CriOS (Chrome), FxiOS (Firefox), or EdgiOS (Edge)
+    const isIOSWebView = isIOS &&
+      !/Safari/.test(ua) && !/CriOS/.test(ua) && !/FxiOS/.test(ua) && !/EdgiOS/.test(ua);
+
+    // Android: real browsers support fullscreen; in-app WebViews don't
+    const isAndroidWebView = isAndroid && !document.fullscreenEnabled;
+
+    setIsWebView(isIOSWebView || isAndroidWebView || /SportsYou/i.test(ua));
   }, []);
 
   function enterFullscreen() {

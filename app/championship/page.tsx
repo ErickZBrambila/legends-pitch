@@ -22,7 +22,6 @@ const PHOTOS = [
   "IMG_3342.jpg",
   "IMG_3337.jpg",
   "IMG_3336.jpg",
-  "IMG_3334.jpg",
   "IMG_3331.jpg",
   "IMG_3330.jpg",
   "IMG_3328.jpg",

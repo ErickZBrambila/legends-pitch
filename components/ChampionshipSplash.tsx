@@ -53,6 +53,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   const [muted, setMuted] = useState(true);
   const [isPortrait, setIsPortrait] = useState(false);
   const [isWebView, setIsWebView] = useState(false);
+  const [webViewDismissed, setWebViewDismissed] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoStartRef = useRef<number>(0);
   const key = `champ_splash_${VERSION}_${team}`;
@@ -67,10 +68,11 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   useEffect(() => {
     const ua = navigator.userAgent;
     const inWebView =
-      /wv/.test(ua) ||                                      // Android WebView
-      (/iPhone|iPad/.test(ua) && !/Safari/.test(ua)) ||    // iOS WebView (no Safari token)
-      /SportsYou/i.test(ua);                                // SportsYou explicit
-    setIsWebView(inWebView || !document.fullscreenEnabled);
+      /wv/.test(ua) ||                                              // Android WebView
+      (/iPhone|iPad/.test(ua) && !/Safari/.test(ua)
+        && !/CriOS/.test(ua) && !/FxiOS/.test(ua)) ||              // iOS WebView (no browser token)
+      /SportsYou/i.test(ua);                                        // SportsYou explicit
+    setIsWebView(inWebView);
   }, []);
 
   function enterFullscreen() {
@@ -164,22 +166,34 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
             </div>
 
             {/* WebView: open in real browser */}
-            {isWebView && (
-              <a
-                href={typeof window !== "undefined" ? window.location.href : "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold pointer-events-auto active:opacity-70 transition-opacity"
-                style={{
-                  background: "rgba(212,175,55,0.15)",
-                  border: "1px solid rgba(212,175,55,0.5)",
-                  color: "#d4af37",
-                  backdropFilter: "blur(8px)",
-                }}
-              >
-                <span>⛶</span>
-                <span>Open in browser for full screen</span>
-              </a>
+            {isWebView && !webViewDismissed && (
+              <>
+                <style>{`
+                  @keyframes phoneRotate {
+                    0%, 25%  { transform: rotate(0deg); }
+                    50%, 75% { transform: rotate(-90deg); }
+                    100%     { transform: rotate(0deg); }
+                  }
+                `}</style>
+                <a
+                  href={typeof window !== "undefined" ? window.location.href : "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setWebViewDismissed(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-bold pointer-events-auto active:scale-95 transition-transform"
+                  style={{
+                    background: "rgba(212,175,55,0.15)",
+                    border: "1px solid rgba(212,175,55,0.5)",
+                    color: "#d4af37",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <span style={{ display: "inline-block", animation: "phoneRotate 2.5s ease-in-out infinite" }}>
+                    📱
+                  </span>
+                  <span>Open in browser for full screen</span>
+                </a>
+              </>
             )}
 
             {/* Portrait rotate hint — real browser only */}

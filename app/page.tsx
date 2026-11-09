@@ -96,7 +96,7 @@ export default async function Home({
   return (
     <>
       <ScrollDepthTracker page="home" />
-      {teamExplicitlySelected && (
+      {teamExplicitlySelected && champLandingEnabled && (
         <ChampionshipSplash
           wins={stats.wins}
           losses={stats.losses}

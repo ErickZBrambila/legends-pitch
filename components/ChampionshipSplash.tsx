@@ -52,6 +52,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   const [phase, setPhase] = useState<Phase>("gone");
   const [muted, setMuted] = useState(true);
   const [isPortrait, setIsPortrait] = useState(false);
+  const [isWebView, setIsWebView] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoStartRef = useRef<number>(0);
   const key = `champ_splash_${VERSION}_${team}`;
@@ -61,6 +62,15 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const inWebView =
+      /wv/.test(ua) ||                                      // Android WebView
+      (/iPhone|iPad/.test(ua) && !/Safari/.test(ua)) ||    // iOS WebView (no Safari token)
+      /SportsYou/i.test(ua);                                // SportsYou explicit
+    setIsWebView(inWebView || !document.fullscreenEnabled);
   }, []);
 
   function enterFullscreen() {
@@ -153,8 +163,27 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
               {t("badge")} · {t("year")}
             </div>
 
-            {/* Portrait rotate hint — mobile only */}
-            {isPortrait && (
+            {/* WebView: open in real browser */}
+            {isWebView && (
+              <a
+                href={typeof window !== "undefined" ? window.location.href : "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold pointer-events-auto active:opacity-70 transition-opacity"
+                style={{
+                  background: "rgba(212,175,55,0.15)",
+                  border: "1px solid rgba(212,175,55,0.5)",
+                  color: "#d4af37",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <span>⛶</span>
+                <span>Open in browser for full screen</span>
+              </a>
+            )}
+
+            {/* Portrait rotate hint — real browser only */}
+            {isPortrait && !isWebView && (
               <div
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold pointer-events-auto"
                 style={{
@@ -197,14 +226,16 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
           </div>
 
           <div className="absolute bottom-8 right-6 flex items-center gap-2">
-            <button
-              onClick={enterFullscreen}
-              className="px-3 py-2 rounded-xl text-xs font-bold text-white/50 hover:text-white transition-colors"
-              style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
-              aria-label="Fullscreen"
-            >
-              ⛶
-            </button>
+            {!isWebView && (
+              <button
+                onClick={enterFullscreen}
+                className="px-3 py-2 rounded-xl text-xs font-bold text-white/50 hover:text-white transition-colors"
+                style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
+                aria-label="Fullscreen"
+              >
+                ⛶
+              </button>
+            )}
             <button
               onClick={goToCard}
               className="px-4 py-2 rounded-xl text-xs font-bold text-white/60 hover:text-white transition-colors"

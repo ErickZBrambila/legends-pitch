@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import ChampionshipCountdown from "./ChampionshipCountdown";
 
-const VERSION = "fall-2024-v1";
+const VERSION = "fall-2024-v2";
 
 const VIDEOS = {
   goal: {

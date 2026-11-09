@@ -51,9 +51,36 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   const t = useTranslations("Championship");
   const [phase, setPhase] = useState<Phase>("gone");
   const [muted, setMuted] = useState(true);
+  const [isPortrait, setIsPortrait] = useState(false);
+  const [isWebView, setIsWebView] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoStartRef = useRef<number>(0);
   const key = `champ_splash_${VERSION}_${team}`;
+
+  useEffect(() => {
+    function check() { setIsPortrait(window.innerHeight > window.innerWidth); }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const inWebView =
+      /wv/.test(ua) ||                                      // Android WebView
+      (/iPhone|iPad/.test(ua) && !/Safari/.test(ua)) ||    // iOS WebView (no Safari token)
+      /SportsYou/i.test(ua);                                // SportsYou explicit
+    setIsWebView(inWebView || !document.fullscreenEnabled);
+  }, []);
+
+  function enterFullscreen() {
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.requestFullscreen) el.requestFullscreen();
+    // iOS Safari
+    else if ((el as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen)
+      (el as HTMLVideoElement & { webkitEnterFullscreen: () => void }).webkitEnterFullscreen();
+  }
 
   useEffect(() => {
     if (!sessionStorage.getItem(key)) {
@@ -123,7 +150,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
-          <div className="absolute top-6 inset-x-0 flex justify-center pointer-events-none">
+          <div className="absolute top-6 inset-x-0 flex flex-col items-center gap-2 pointer-events-none">
             <div
               className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em]"
               style={{
@@ -135,34 +162,108 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
             >
               {t("badge")} · {t("year")}
             </div>
+
+            {/* WebView: open in real browser */}
+            {isWebView && (
+              <a
+                href={typeof window !== "undefined" ? window.location.href : "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold pointer-events-auto active:opacity-70 transition-opacity"
+                style={{
+                  background: "rgba(212,175,55,0.15)",
+                  border: "1px solid rgba(212,175,55,0.5)",
+                  color: "#d4af37",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <span>⛶</span>
+                <span>Open in browser for full screen</span>
+              </a>
+            )}
+
+            {/* Portrait rotate hint — real browser only */}
+            {isPortrait && !isWebView && (
+              <div
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold pointer-events-auto"
+                style={{
+                  background: "rgba(0,0,0,0.5)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  color: "rgba(255,255,255,0.6)",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <span style={{ display: "inline-block", transform: "rotate(90deg)" }}>📱</span>
+                <span>Rotate for best experience</span>
+                <button
+                  onClick={enterFullscreen}
+                  className="ml-1 font-bold"
+                  style={{ color: "#d4af37" }}
+                >
+                  or go fullscreen ⛶
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Centered unmute pill */}
-          <div className="absolute bottom-20 inset-x-0 flex justify-center">
+          {/* Unmute pill — centered when muted, fades to tiny top-right icon after */}
+          <button
+            onClick={toggleMute}
+            className="absolute transition-all duration-500 active:scale-95"
+            style={muted ? {
+              bottom: "5rem",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.75rem 1.25rem",
+              borderRadius: "9999px",
+              fontSize: "0.875rem",
+              fontWeight: 700,
+              background: "rgba(0,0,0,0.65)",
+              border: "1px solid rgba(255,255,255,0.3)",
+              color: "rgba(255,255,255,0.8)",
+              backdropFilter: "blur(12px)",
+            } : {
+              top: "1.25rem",
+              right: "1rem",
+              display: "flex",
+              alignItems: "center",
+              padding: "0.35rem 0.6rem",
+              borderRadius: "9999px",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.25)",
+              backdropFilter: "none",
+            }}
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            <span>{muted ? "🔇" : "🔊"}</span>
+            {muted && <span>Tap to unmute</span>}
+          </button>
+
+          <div className="absolute bottom-8 right-6 flex items-center gap-2">
+            {!isWebView && (
+              <button
+                onClick={enterFullscreen}
+                className="px-3 py-2 rounded-xl text-xs font-bold text-white/50 hover:text-white transition-colors"
+                style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
+                aria-label="Fullscreen"
+              >
+                ⛶
+              </button>
+            )}
             <button
-              onClick={toggleMute}
-              className="flex items-center gap-2 px-5 py-3 rounded-full text-sm font-bold transition-all active:scale-95"
-              style={{
-                background: muted ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.2)",
-                border: muted ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(255,255,255,0.1)",
-                color: muted ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)",
-                backdropFilter: "blur(12px)",
-                transition: "all 0.3s ease",
-              }}
-              aria-label={muted ? "Unmute" : "Mute"}
+              onClick={goToCard}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white/60 hover:text-white transition-colors"
+              style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
             >
-              <span className="text-base">{muted ? "🔇" : "🔊"}</span>
-              <span>{muted ? "Tap to unmute" : "Mute"}</span>
+              Skip →
             </button>
           </div>
-
-          <button
-            onClick={goToCard}
-            className="absolute bottom-8 right-6 px-4 py-2 rounded-xl text-xs font-bold text-white/60 hover:text-white transition-colors"
-            style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
-          >
-            Skip →
-          </button>
         </div>
       )}
 

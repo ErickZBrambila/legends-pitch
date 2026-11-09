@@ -51,9 +51,26 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   const t = useTranslations("Championship");
   const [phase, setPhase] = useState<Phase>("gone");
   const [muted, setMuted] = useState(true);
+  const [isPortrait, setIsPortrait] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoStartRef = useRef<number>(0);
   const key = `champ_splash_${VERSION}_${team}`;
+
+  useEffect(() => {
+    function check() { setIsPortrait(window.innerHeight > window.innerWidth); }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  function enterFullscreen() {
+    const el = videoRef.current;
+    if (!el) return;
+    if (el.requestFullscreen) el.requestFullscreen();
+    // iOS Safari
+    else if ((el as HTMLVideoElement & { webkitEnterFullscreen?: () => void }).webkitEnterFullscreen)
+      (el as HTMLVideoElement & { webkitEnterFullscreen: () => void }).webkitEnterFullscreen();
+  }
 
   useEffect(() => {
     if (!sessionStorage.getItem(key)) {
@@ -123,7 +140,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
-          <div className="absolute top-6 inset-x-0 flex justify-center pointer-events-none">
+          <div className="absolute top-6 inset-x-0 flex flex-col items-center gap-2 pointer-events-none">
             <div
               className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em]"
               style={{
@@ -135,6 +152,29 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
             >
               {t("badge")} · {t("year")}
             </div>
+
+            {/* Portrait rotate hint — mobile only */}
+            {isPortrait && (
+              <div
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold pointer-events-auto"
+                style={{
+                  background: "rgba(0,0,0,0.5)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  color: "rgba(255,255,255,0.6)",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <span style={{ display: "inline-block", transform: "rotate(90deg)" }}>📱</span>
+                <span>Rotate for best experience</span>
+                <button
+                  onClick={enterFullscreen}
+                  className="ml-1 font-bold"
+                  style={{ color: "#d4af37" }}
+                >
+                  or go fullscreen ⛶
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Centered unmute pill */}
@@ -156,13 +196,23 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
             </button>
           </div>
 
-          <button
-            onClick={goToCard}
-            className="absolute bottom-8 right-6 px-4 py-2 rounded-xl text-xs font-bold text-white/60 hover:text-white transition-colors"
-            style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
-          >
-            Skip →
-          </button>
+          <div className="absolute bottom-8 right-6 flex items-center gap-2">
+            <button
+              onClick={enterFullscreen}
+              className="px-3 py-2 rounded-xl text-xs font-bold text-white/50 hover:text-white transition-colors"
+              style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
+              aria-label="Fullscreen"
+            >
+              ⛶
+            </button>
+            <button
+              onClick={goToCard}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white/60 hover:text-white transition-colors"
+              style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
+            >
+              Skip →
+            </button>
+          </div>
         </div>
       )}
 

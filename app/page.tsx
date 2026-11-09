@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import Image from "next/image";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -12,6 +14,10 @@ import { getPostsByTeam, getLatestAnnouncement, getLatestSessionWithReel } from 
 import type { TeamSlug } from "@/lib/sanity/queries";
 import { getGotSportData, LOCATION_COORDS } from "@/lib/data/gotsport";
 import GameWeather from "@/components/GameWeather";
+import { redirect } from "next/navigation";
+import ChampionshipSplash from "@/components/ChampionshipSplash";
+import { getRedis } from "@/lib/redis";
+import { SPLASH_ENABLED_KEY } from "@/app/api/admin/championship/route";
 
 const withinForecastWindow = (iso: string) => {
   const diff = (new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
@@ -46,6 +52,15 @@ export default async function Home({
 }) {
   const { team: teamParam } = await searchParams;
   const team: TeamSlug = teamParam === "u12" ? "u12" : "u11";
+  const teamExplicitlySelected = teamParam === "u11" || teamParam === "u12";
+
+  // Championship landing: redirect home → /championship when the splash toggle is on
+  const redis = getRedis();
+  const splashEnabledRaw = redis ? await redis.get<string | boolean>(SPLASH_ENABLED_KEY) : null;
+  const champLandingEnabled = splashEnabledRaw === true || splashEnabledRaw === "true";
+  if (champLandingEnabled) {
+    redirect(`/championship?team=${team}`);
+  }
 
   const t = await getTranslations("Home");
   const ts = await getTranslations("Sponsors");
@@ -57,7 +72,8 @@ export default async function Home({
     getLatestSessionWithReel(team),
   ]);
 
-  const { matches } = await getGotSportData(team);
+  const { standings, matches } = await getGotSportData(team);
+  const legendsRank = standings.find((s) => s.isNorthLegends)?.rank ?? null;
   const now = new Date();
   const played = matches.filter((m) => m.result !== null);
   const stats = {
@@ -80,6 +96,16 @@ export default async function Home({
   return (
     <>
       <ScrollDepthTracker page="home" />
+      {teamExplicitlySelected && (
+        <ChampionshipSplash
+          wins={stats.wins}
+          losses={stats.losses}
+          draws={stats.draws}
+          rank={legendsRank}
+          team={team}
+        />
+      )}
+
       {/* Hero */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
         <HeroCarousel />
@@ -96,8 +122,8 @@ export default async function Home({
           <p className="text-[var(--color-accent-light)] text-base md:text-lg max-w-md italic font-medium">
             {t("tagline")}
           </p>
-          <div className="flex gap-3 mt-2">
-            <TrackedLink
+          <div className="flex gap-3 mt-2 flex-wrap justify-center">
+<TrackedLink
               href={`/schedule?team=${team}`}
               eventName="hero_cta_click"
               eventProps={{ button: "view_schedule", team }}
@@ -200,34 +226,8 @@ export default async function Home({
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Season Stats */}
+        {/* Recent Results */}
         <section className="lg:col-span-1">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">{t("seasonRecord")}</h2>
-          <div className="bg-[var(--color-navy)] text-white rounded-xl p-5 shadow-md">
-            <div className="grid grid-cols-3 gap-3 text-center mb-5">
-              {[
-                { label: t("wins"), value: stats.wins, color: "text-green-400" },
-                { label: t("draws"), value: stats.draws, color: "text-yellow-400" },
-                { label: t("losses"), value: stats.losses, color: "text-red-400" },
-              ].map(({ label, value, color }) => (
-                <div key={label}>
-                  <p className={`text-3xl font-black ${color}`}>{value}</p>
-                  <p className="text-xs text-red-300 uppercase tracking-wide">{label}</p>
-                </div>
-              ))}
-            </div>
-            <div className="border-t border-red-900/40 pt-4 grid grid-cols-2 gap-3 text-center">
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.goalsFor}</p>
-                <p className="text-xs text-red-300">{t("goalsScored")}</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{stats.goalsAgainst}</p>
-                <p className="text-xs text-red-300">{t("goalsConceded")}</p>
-              </div>
-            </div>
-          </div>
-
           <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mt-6 mb-3">
             {t("recentResults")}
           </h3>
@@ -308,7 +308,7 @@ export default async function Home({
       </div>
       </section>
       {/* Sponsors */}
-      <section className="bg-[var(--color-navy)] mt-8">
+      <section className="bg-[var(--color-navy)]">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <p className="text-xs text-red-400 uppercase tracking-widest font-semibold text-center mb-1">{ts("poweredBy")}</p>
           <h2 className="text-2xl font-black text-white text-center mb-2">{ts("heading")}</h2>

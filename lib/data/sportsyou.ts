@@ -21,6 +21,10 @@ const OPPONENT_NAMES: Record<string, string> = {
   "3c773b63": "Elgin United (Hernandez)",
   "62f317dc": "T&C Soccer Inter Milan",
   "5cd7f150": "WBSA United",
+  "a4f050a6": "WBSA United",
+  "b68b02f4": "BatCity U11",
+  "e5dfbf7b": "Elgin United (Ramirez)",
+  "f40fb991": "Surge 15/16B Elite Maroon",
   // U12
   "0114a6b0": "Centex Storm",
   "2eb98ca5": "Centex SC Black",
@@ -60,6 +64,10 @@ function parseIcal(text: string): Record<string, string>[] {
 function shortUid(uid: string): string {
   return uid.replace("@calendar.sportsyou.com", "").slice(-8);
 }
+
+const LOCATION_OVERRIDES: Record<string, string> = {
+  "e5dfbf7b": "6600 Research Loop Temple, TX 76502",
+};
 
 function fallbackOpponent(summary: string): string {
   return summary
@@ -125,7 +133,7 @@ export async function fetchSportsYouGames(team: string): Promise<SportsYouGame[]
       const kickoff = new Date(Date.UTC(y, mo, d, h, m + 30));
 
       const uid = shortUid(ev["UID"] ?? "");
-      const address = ev["LOCATION"] ?? "";
+      const address = ev["LOCATION"] ?? LOCATION_OVERRIDES[uid] ?? "";
 
       games.push({
         uid,

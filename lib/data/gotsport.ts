@@ -86,6 +86,7 @@ const U11_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
   "3c773b63": { goalsFor: 8,  goalsAgainst: 0, result: "W" }, // Oct 18 vs Elgin United (Hernandez)
   "62f317dc": { goalsFor: 3,  goalsAgainst: 0, result: "W" }, // Oct 24 vs T&C Soccer Inter Milan
   "5cd7f150": { goalsFor: 4,  goalsAgainst: 0, result: "W" }, // Oct 31 vs WBSA United
+  "a4f050a6": { goalsFor: 3,  goalsAgainst: 1, result: "W" }, // Nov 7 vs WBSA United
 };
 
 const U11_OPPONENT_OVERRIDES: Record<string, string> = {
@@ -113,7 +114,11 @@ const U12_MATCHES: Match[] = [
   { id: `gs-u12-${++u12Id}`, date: "2026-10-17T15:00:00-05:00", opponent: "LC United",             location: "Shenandoah Field 2",    homeAway: "away", goalsFor: 4,  goalsAgainst: 1,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-24T09:30:00-05:00", opponent: "Leander FC Rattlers",   location: "Serna Athletic Fields", homeAway: "away", goalsFor: 7,  goalsAgainst: 2,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-10-25T10:00:00-05:00", opponent: "BYSO Inferno",          location: "WCRP South",            homeAway: "home", goalsFor: 6,  goalsAgainst: 1,  result: "W" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",          location: "Bastrop Youth Soccer",  homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",             location: "Bastrop Youth Soccer",  homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  // Fall Championship — Crossroads Park, Temple TX (Nov 14-15 2026)
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-14T13:00:00-06:00", opponent: "La Manada U12/11",        location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-14T16:00:00-06:00", opponent: "FC Westlake Hooligans",   location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-15T10:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
 ];
 
 export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
@@ -135,7 +140,7 @@ const LOCATION_ADDRESSES: Record<string, string> = {
   "WCRP North":               "3005 Co Rd 175, Leander, TX 78641",
   "WCRP South":               "3005 Co Rd 175, Leander, TX 78641",
   "Shenandoah Field 2":       "1490 N Avenue C, Elgin, TX 78621",
-  "Crossroads Park":          "1020 Research Pkwy, Temple, TX 76502",
+  "Crossroads Park":          "6600 Research Loop, Temple, TX 76502",
   "Town & Country Field 23W": "9100 Meadowheath Dr, Austin, TX 78729",
   "Wells Branch Soccer":      "3908 Shoreline Dr, Austin, TX 78728",
   "Serna Athletic Fields":    "601 S Bagdad Rd, Leander, TX 78641",
@@ -149,6 +154,21 @@ function withAddress(matches: Match[]): Match[] {
     ...m,
     locationAddress: m.locationAddress ?? LOCATION_ADDRESSES[m.location],
   }));
+}
+
+// --- Championship standings ---
+
+export interface ChampionshipCache {
+  u11: { standings: StandingRow[] };
+  u12: { standings: StandingRow[] };
+}
+
+export function getChampionshipStandings(): { u11: StandingRow[]; u12: StandingRow[] } {
+  const champ = (cache as unknown as { championship?: ChampionshipCache }).championship;
+  return {
+    u11: champ?.u11?.standings ?? [],
+    u12: champ?.u12?.standings ?? [],
+  };
 }
 
 // --- Main export ---
@@ -216,6 +236,16 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
     }));
   } else {
     matches = team === "u12" ? withAddress(U12_MATCHES) : [];
+  }
+
+  // For U12, append any static matches whose date isn't already covered by SportsYou
+  // (e.g. championship games not yet added to the SportsYou calendar)
+  if (team === "u12") {
+    const coveredDates = new Set(matches.map((m) => m.date.slice(0, 10)));
+    const extra = withAddress(U12_MATCHES).filter((m) => !coveredDates.has(m.date.slice(0, 10)));
+    if (extra.length > 0) {
+      matches = [...matches, ...extra].sort((a, b) => a.date.localeCompare(b.date));
+    }
   }
 
   const standings = cachedStandings.length > 0 ? cachedStandings : fallbackStandings;

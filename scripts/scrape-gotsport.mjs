@@ -18,6 +18,11 @@ const URLS = {
   u12: "https://system.gotsport.com/org_event/events/55587/results?group=510048",
 };
 
+const CHAMPIONSHIP_URLS = {
+  u11: "https://system.gotsport.com/org_event/events/59502/schedules?group=546263",
+  u12: "https://system.gotsport.com/org_event/events/59502/schedules?group=546267",
+};
+
 // Maps GotSport's raw team names to the canonical names used throughout the app
 const OPPONENT_MAP = {
   "Elgin United- Ramirez 2016 B":       "Elgin United (Ramirez)",
@@ -55,10 +60,22 @@ function canonicalOpponent(raw) {
 }
 
 function parseStandings(html) {
-  const start = html.indexOf("Bracket A");
+  // Try multiple section headers — championship pages may use "Group A", "Pool A", etc.
+  const SECTION_HEADERS = ["Bracket A", "Group A", "Pool A", "Bracket B", "Group B", "Bracket 1", "Group 1", "Standings"];
+  let start = -1;
+  for (const h of SECTION_HEADERS) {
+    const idx = html.indexOf(h);
+    if (idx !== -1) { start = idx; break; }
+  }
   if (start === -1) return [];
-  const endIdx = html.indexOf("tiebreaker", start);
-  const section = html.slice(start, endIdx > start ? endIdx : start + 12000);
+
+  const END_MARKERS = ["tiebreaker", "Tiebreaker", "Schedule", "Game Schedule", "Upcoming Games"];
+  let endIdx = -1;
+  for (const marker of END_MARKERS) {
+    const idx = html.indexOf(marker, start);
+    if (idx !== -1) { endIdx = idx; break; }
+  }
+  const section = html.slice(start, endIdx > start ? endIdx : start + 15000);
 
   const rows = [];
   const trPattern = /<tr[\s\S]*?<\/tr>/g;
@@ -174,6 +191,24 @@ async function scrapeTeam(team, url) {
   return { standings, matrixScores };
 }
 
+async function scrapeChampionship(team, url) {
+  console.log(`Fetching championship ${team}: ${url}`);
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    if (!res.ok) {
+      console.warn(`  WARNING: HTTP ${res.status} for ${url}`);
+      return { standings: [] };
+    }
+    const html = await res.text();
+    const standings = parseStandings(html);
+    console.log(`  championship standings: ${standings.length} rows`);
+    return { standings };
+  } catch (err) {
+    console.warn(`  WARNING: failed to fetch championship ${team}: ${err.message}`);
+    return { standings: [] };
+  }
+}
+
 const outPath = join(__dirname, "../lib/data/gotsport-cache.json");
 
 // Read existing cache to compare — only write if scores actually changed
@@ -200,6 +235,24 @@ for (const [team, url] of Object.entries(URLS)) {
     console.log(`  -> ${team} unchanged`);
   }
 }
+
+// Scrape championship group stage standings
+console.log("\n--- Championship group stage ---");
+const championship = {};
+for (const [team, url] of Object.entries(CHAMPIONSHIP_URLS)) {
+  const fresh = await scrapeChampionship(team, url);
+  championship[team] = fresh;
+
+  const oldChamp = JSON.stringify(existing.championship?.[team]?.standings ?? []);
+  const newChamp = JSON.stringify(fresh.standings);
+  if (oldChamp !== newChamp) {
+    changed = true;
+    console.log(`  -> championship ${team} changed`);
+  } else {
+    console.log(`  -> championship ${team} unchanged`);
+  }
+}
+result.championship = championship;
 
 if (!changed) {
   console.log("\nNo score or standings changes — skipping file write.");

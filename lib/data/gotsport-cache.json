@@ -1,13 +1,9 @@
 {
-  "championship": {
-    "u11": { "standings": [] },
-    "u12": { "standings": [] }
-  },
   "u11": {
     "standings": [
       {
         "rank": 1,
-        "team": "JYSA North Legends FC - Castellanos",
+        "team": "JYSA North Legends FC - Castellanos Qualified For Fall Championships 11/14-15",
         "gp": 10,
         "w": 9,
         "l": 1,
@@ -32,13 +28,13 @@
       {
         "rank": 3,
         "team": "T&C Soccer Inter Milan",
-        "gp": 7,
-        "w": 4,
+        "gp": 8,
+        "w": 5,
         "l": 2,
         "t": 1,
-        "gf": 17,
-        "ga": 11,
-        "pts": 13,
+        "gf": 20,
+        "ga": 12,
+        "pts": 16,
         "isNorthLegends": false
       },
       {
@@ -55,24 +51,24 @@
       },
       {
         "rank": 5,
-        "team": "Elgin United (Hernandez)",
-        "gp": 7,
-        "w": 0,
-        "l": 6,
+        "team": "Storm 16B Black",
+        "gp": 10,
+        "w": 1,
+        "l": 8,
         "t": 1,
-        "gf": 7,
-        "ga": 21,
-        "pts": 1,
+        "gf": 12,
+        "ga": 27,
+        "pts": 4,
         "isNorthLegends": false
       },
       {
         "rank": 6,
-        "team": "Storm 16B Black",
+        "team": "Elgin United (Hernandez)",
         "gp": 9,
         "w": 0,
         "l": 8,
         "t": 1,
-        "gf": 9,
+        "gf": 8,
         "ga": 27,
         "pts": 1,
         "isNorthLegends": false
@@ -145,7 +141,7 @@
     "standings": [
       {
         "rank": 1,
-        "team": "JYSA North Legends FC - Rosado",
+        "team": "JYSA North Legends FC - Rosado Qualified for CAYSA Fall Championships 11/14-15",
         "gp": 5,
         "w": 5,
         "l": 0,
@@ -273,5 +269,23 @@
       }
     ]
   },
-  "updatedAt": "2026-11-08T06:49:46.455Z"
+  "championship": {
+    "u11": {
+      "standings": [
+        { "rank": 1, "team": "Surge 15/16B Elite Maroon",           "gp": 2, "w": 2, "l": 0, "t": 0, "gf": 5, "ga": 1, "pts": 18, "isNorthLegends": false },
+        { "rank": 2, "team": "JYSA North Legends FC - Castellanos", "gp": 2, "w": 1, "l": 0, "t": 1, "gf": 2, "ga": 1, "pts": 12, "isNorthLegends": true  },
+        { "rank": 3, "team": "BatCity U11",                         "gp": 2, "w": 0, "l": 1, "t": 1, "gf": 1, "ga": 2, "pts": 5,  "isNorthLegends": false },
+        { "rank": 4, "team": "Elgin United (Ramirez)",              "gp": 2, "w": 0, "l": 2, "t": 0, "gf": 1, "ga": 5, "pts": 1,  "isNorthLegends": false }
+      ]
+    },
+    "u12": {
+      "standings": [
+        { "rank": 1, "team": "FC Westlake Hooligans",          "gp": 2, "w": 1, "l": 0, "t": 1, "gf": 2, "ga": 1, "pts": 12, "isNorthLegends": false },
+        { "rank": 2, "team": "JYSA North Legends FC - Rosado", "gp": 2, "w": 1, "l": 0, "t": 1, "gf": 3, "ga": 2, "pts": 12, "isNorthLegends": true  },
+        { "rank": 3, "team": "La Manada U12/11",               "gp": 2, "w": 1, "l": 1, "t": 0, "gf": 4, "ga": 4, "pts": 10, "isNorthLegends": false },
+        { "rank": 4, "team": "Nueva Generacion U12B",          "gp": 2, "w": 0, "l": 2, "t": 0, "gf": 2, "ga": 4, "pts": 2,  "isNorthLegends": false }
+      ]
+    }
+  },
+  "updatedAt": "2026-11-15T03:23:56.233Z"
 }

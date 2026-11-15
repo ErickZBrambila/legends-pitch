@@ -99,7 +99,7 @@ export default function Nav() {
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-[var(--color-navy)] shadow-lg">
+    <header className="sticky top-0 z-50 bg-[var(--color-navy)] shadow-lg" style={{ paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}>
       <div className={`max-w-6xl mx-auto px-4 flex items-center h-16 ${leftHanded ? "flex-row-reverse" : "justify-between"}`}>
         {/* Logo */}
         <Link href="/" className={`flex items-center gap-2.5 ${leftHanded ? "mr-auto" : ""}`}>

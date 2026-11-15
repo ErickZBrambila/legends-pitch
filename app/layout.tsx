@@ -19,6 +19,10 @@ import { headers } from "next/headers";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const anton = Anton({ subsets: ["latin"], weight: "400", variable: "--font-anton" });
 
+export const viewport = {
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   title: {
     default: "⚽ North Legends FC",

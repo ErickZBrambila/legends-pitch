@@ -241,15 +241,23 @@ console.log("\n--- Championship group stage ---");
 const championship = {};
 for (const [team, url] of Object.entries(CHAMPIONSHIP_URLS)) {
   const fresh = await scrapeChampionship(team, url);
-  championship[team] = fresh;
+  const existing_standings = existing.championship?.[team]?.standings ?? [];
 
-  const oldChamp = JSON.stringify(existing.championship?.[team]?.standings ?? []);
-  const newChamp = JSON.stringify(fresh.standings);
-  if (oldChamp !== newChamp) {
-    changed = true;
-    console.log(`  -> championship ${team} changed`);
+  // If the scraper got 0 rows (JS-rendered page can't be parsed via fetch),
+  // keep whatever was manually set rather than wiping it.
+  if (fresh.standings.length === 0 && existing_standings.length > 0) {
+    console.log(`  -> championship ${team}: scrape returned 0 rows, preserving existing ${existing_standings.length}-row standings`);
+    championship[team] = { standings: existing_standings };
   } else {
-    console.log(`  -> championship ${team} unchanged`);
+    championship[team] = fresh;
+    const oldChamp = JSON.stringify(existing_standings);
+    const newChamp = JSON.stringify(fresh.standings);
+    if (oldChamp !== newChamp) {
+      changed = true;
+      console.log(`  -> championship ${team} changed`);
+    } else {
+      console.log(`  -> championship ${team} unchanged`);
+    }
   }
 }
 result.championship = championship;

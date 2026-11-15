@@ -116,8 +116,8 @@ const U12_MATCHES: Match[] = [
   { id: `gs-u12-${++u12Id}`, date: "2026-10-25T10:00:00-05:00", opponent: "BYSO Inferno",          location: "WCRP South",            homeAway: "home", goalsFor: 6,  goalsAgainst: 1,  result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-11-08T10:30:00-06:00", opponent: "BYSO Inferno",             location: "Bastrop Youth Soccer",  homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
   // Fall Championship — Crossroads Park, Temple TX (Nov 14-15 2026)
-  { id: `gs-u12-${++u12Id}`, date: "2026-11-14T13:00:00-06:00", opponent: "La Manada U12/11",        location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
-  { id: `gs-u12-${++u12Id}`, date: "2026-11-14T16:00:00-06:00", opponent: "FC Westlake Hooligans",   location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-14T13:00:00-06:00", opponent: "La Manada U12/11",        location: "Crossroads Park",       homeAway: "home", goalsFor: 2,    goalsAgainst: 1,    result: "W" },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-14T16:00:00-06:00", opponent: "FC Westlake Hooligans",   location: "Crossroads Park",       homeAway: "away", goalsFor: 1,    goalsAgainst: 1,    result: "D" },
   { id: `gs-u12-${++u12Id}`, date: "2026-11-15T10:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
 ];
 

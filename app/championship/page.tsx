@@ -7,6 +7,7 @@ import CountdownTimerClient from "@/components/CountdownTimerClient";
 import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
 import ChampionshipPhotoCarousel from "@/components/ChampionshipPhotoCarousel";
 import ChampionshipSplash from "@/components/ChampionshipSplash";
+import ChampionshipDuoLayout from "@/components/ChampionshipDuoLayout";
 import WatchIntroButton from "@/components/WatchIntroButton";
 import { getGotSportData, getChampionshipStandings } from "@/lib/data/gotsport";
 import { getRedis } from "@/lib/redis";
@@ -76,11 +77,19 @@ export default async function ChampionshipPage({
   const t = await getTranslations("Championship");
   const locale = await getLocale();
 
-  const { matches, standings } = await getGotSportData(team);
+  const [{ matches, standings }, u11Data, u12Data] = await Promise.all([
+    getGotSportData(team),
+    getGotSportData("u11"),
+    getGotSportData("u12"),
+  ]);
 
   const champMatches = matches.filter((m) =>
     CHAMPIONSHIP_DATES.has(m.date.slice(0, 10))
   );
+
+  const champStandings = getChampionshipStandings();
+  const u11ChampMatches = u11Data.matches.filter((m) => CHAMPIONSHIP_DATES.has(m.date.slice(0, 10)));
+  const u12ChampMatches = u12Data.matches.filter((m) => CHAMPIONSHIP_DATES.has(m.date.slice(0, 10)));
 
   const champOver = Date.now() > new Date("2026-11-16T00:00:00Z").getTime();
 
@@ -173,8 +182,15 @@ export default async function ChampionshipPage({
         </div>
       </section>
 
-      {/* Single team selector — drives the whole page via URL */}
-      <div className="bg-[var(--color-navy)] flex justify-center pb-6 pt-2">
+      {/* iPhone Duo split-view — hidden on regular screens, shown when unfolded */}
+      <ChampionshipDuoLayout
+        u11={{ slug: "u11", label: "Castellanos", champStandings: champStandings.u11, champMatches: u11ChampMatches }}
+        u12={{ slug: "u12", label: "Rosado",      champStandings: champStandings.u12, champMatches: u12ChampMatches }}
+        locale={locale}
+      />
+
+      {/* Single team selector — hidden in fold mode */}
+      <div className="fold-hide bg-[var(--color-navy)] flex justify-center pb-6 pt-2">
         <TeamTabs activeTeam={team} />
       </div>
 
@@ -223,18 +239,15 @@ export default async function ChampionshipPage({
         </div>
       </section>
 
-      {/* Group Stage Standings */}
-      {(() => {
-        const champStandings = getChampionshipStandings();
-        return (
-          <ChampionshipStandingsSection
-            u11={champStandings.u11}
-            u12={champStandings.u12}
-            updatedAt={(cache as { updatedAt?: string }).updatedAt ?? null}
-            activeTeam={team}
-          />
-        );
-      })()}
+      {/* Group Stage Standings — hidden in fold mode (DuoLayout shows both) */}
+      <div className="fold-hide">
+        <ChampionshipStandingsSection
+          u11={champStandings.u11}
+          u12={champStandings.u12}
+          updatedAt={(cache as { updatedAt?: string }).updatedAt ?? null}
+          activeTeam={team}
+        />
+      </div>
 
       {/* CHAMPIONSHIP CONTENT */}
       <section className="max-w-4xl mx-auto px-4 py-10">
@@ -287,6 +300,13 @@ export default async function ChampionshipPage({
                       {m.result}
                     </span>
                   </div>
+                ) : m.postponed ? (
+                  <span
+                    className="text-xs font-bold px-2.5 py-1 rounded-full shrink-0"
+                    style={{ background: "rgba(96,165,250,0.12)", color: "#93c5fd", border: "1px solid rgba(96,165,250,0.25)" }}
+                  >
+                    🌧 Postponed
+                  </span>
                 ) : (
                   <span className="text-[var(--color-accent)] text-xs font-bold uppercase tracking-widest shrink-0">
                     {m.homeAway === "home" ? t("homeLabel") : t("awayLabel")}

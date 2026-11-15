@@ -26,6 +26,7 @@ export interface Match {
   goalsFor: number | null;
   goalsAgainst: number | null;
   result: MatchResult;
+  postponed?: boolean;
   coachNotes?: string;
 }
 

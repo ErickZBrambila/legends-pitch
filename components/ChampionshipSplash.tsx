@@ -85,7 +85,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   }
 
   useEffect(() => {
-    if (!sessionStorage.getItem(key)) {
+    if (!localStorage.getItem(key)) {
       const timer = setTimeout(() => {
         videoStartRef.current = Date.now();
         setPhase("video");
@@ -115,7 +115,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   }
 
   function close() {
-    sessionStorage.setItem(key, "seen");
+    localStorage.setItem(key, "seen");
     setPhase("gone");
   }
 

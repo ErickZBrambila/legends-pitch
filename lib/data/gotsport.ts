@@ -104,6 +104,13 @@ const U12_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
   "05b2c84f": { goalsFor: 6,  goalsAgainst: 1, result: "W" }, // Oct 25 vs BYSO Inferno
 };
 
+// Fall Championship — U11 static matches (Crossroads Park, Temple TX · Nov 14-15 2026)
+const U11_CHAMP_MATCHES: Match[] = [
+  { id: "gs-u11-champ-1", date: "2026-11-14T12:00:00-06:00", opponent: "BatCity U11",             location: "Crossroads Park", homeAway: "home", goalsFor: 0, goalsAgainst: 0, result: "D" },
+  { id: "gs-u11-champ-2", date: "2026-11-14T15:00:00-06:00", opponent: "Elgin United (Ramirez)",  location: "Crossroads Park", homeAway: "away", goalsFor: 2, goalsAgainst: 1, result: "W" },
+  { id: "gs-u11-champ-3", date: "2026-11-15T09:00:00-06:00", opponent: "Surge 15/16B Elite Maroon", location: "Crossroads Park", homeAway: "home", goalsFor: null, goalsAgainst: null, result: null, postponed: true },
+];
+
 let u12Id = 0;
 
 const U12_MATCHES: Match[] = [
@@ -118,7 +125,7 @@ const U12_MATCHES: Match[] = [
   // Fall Championship — Crossroads Park, Temple TX (Nov 14-15 2026)
   { id: `gs-u12-${++u12Id}`, date: "2026-11-14T13:00:00-06:00", opponent: "La Manada U12/11",        location: "Crossroads Park",       homeAway: "home", goalsFor: 2,    goalsAgainst: 1,    result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-11-14T16:00:00-06:00", opponent: "FC Westlake Hooligans",   location: "Crossroads Park",       homeAway: "away", goalsFor: 1,    goalsAgainst: 1,    result: "D" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-11-15T10:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "Crossroads Park",       homeAway: "away", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-15T10:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "Crossroads Park",       homeAway: "home", goalsFor: null, goalsAgainst: null, result: null, postponed: true },
 ];
 
 export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
@@ -238,14 +245,12 @@ export async function getGotSportData(team: TeamSlug): Promise<GotSportData> {
     matches = team === "u12" ? withAddress(U12_MATCHES) : [];
   }
 
-  // For U12, append any static matches whose date isn't already covered by SportsYou
-  // (e.g. championship games not yet added to the SportsYou calendar)
-  if (team === "u12") {
-    const coveredDates = new Set(matches.map((m) => m.date.slice(0, 10)));
-    const extra = withAddress(U12_MATCHES).filter((m) => !coveredDates.has(m.date.slice(0, 10)));
-    if (extra.length > 0) {
-      matches = [...matches, ...extra].sort((a, b) => a.date.localeCompare(b.date));
-    }
+  // Append static championship matches not already covered by SportsYou calendar
+  const staticChamp = team === "u12" ? withAddress(U12_MATCHES) : U11_CHAMP_MATCHES;
+  const coveredDates = new Set(matches.map((m) => m.date.slice(0, 10)));
+  const extra = staticChamp.filter((m) => !coveredDates.has(m.date.slice(0, 10)));
+  if (extra.length > 0) {
+    matches = [...matches, ...extra].sort((a, b) => a.date.localeCompare(b.date));
   }
 
   const standings = cachedStandings.length > 0 ? cachedStandings : fallbackStandings;

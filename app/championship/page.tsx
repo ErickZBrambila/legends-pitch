@@ -17,7 +17,7 @@ import type { TeamSlug } from "@/lib/sanity/queries";
 
 // First U11 kickoff: Nov 14 noon CST = 18:00 UTC
 const CHAMPIONSHIP_FIRST_KICKOFF = "2026-11-14T18:00:00Z";
-const CHAMPIONSHIP_DATES = new Set(["2026-11-14", "2026-11-15"]);
+const CHAMPIONSHIP_DATES = new Set(["2026-11-14", "2026-11-15", "2026-11-21"]);
 
 const PHOTOS = [
   "IMG_3342.jpg",

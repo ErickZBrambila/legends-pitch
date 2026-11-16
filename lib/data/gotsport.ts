@@ -108,7 +108,7 @@ const U12_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
 const U11_CHAMP_MATCHES: Match[] = [
   { id: "gs-u11-champ-1", date: "2026-11-14T12:00:00-06:00", opponent: "BatCity U11",             location: "Crossroads Park", homeAway: "home", goalsFor: 0, goalsAgainst: 0, result: "D" },
   { id: "gs-u11-champ-2", date: "2026-11-14T15:00:00-06:00", opponent: "Elgin United (Ramirez)",  location: "Crossroads Park", homeAway: "away", goalsFor: 2, goalsAgainst: 1, result: "W" },
-  { id: "gs-u11-champ-3", date: "2026-11-15T09:00:00-06:00", opponent: "Surge 15/16B Elite Maroon", location: "Crossroads Park", homeAway: "home", goalsFor: null, goalsAgainst: null, result: null, postponed: true },
+  { id: "gs-u11-champ-3", date: "2026-11-21T10:00:00-06:00", opponent: "Surge 15/16B Elite Maroon", location: "NEMP - 13N",      homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
 ];
 
 let u12Id = 0;
@@ -125,7 +125,7 @@ const U12_MATCHES: Match[] = [
   // Fall Championship — Crossroads Park, Temple TX (Nov 14-15 2026)
   { id: `gs-u12-${++u12Id}`, date: "2026-11-14T13:00:00-06:00", opponent: "La Manada U12/11",        location: "Crossroads Park",       homeAway: "home", goalsFor: 2,    goalsAgainst: 1,    result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-11-14T16:00:00-06:00", opponent: "FC Westlake Hooligans",   location: "Crossroads Park",       homeAway: "away", goalsFor: 1,    goalsAgainst: 1,    result: "D" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-11-15T10:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "Crossroads Park",       homeAway: "home", goalsFor: null, goalsAgainst: null, result: null, postponed: true },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-21T08:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "NEMP - 13S",            homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
 ];
 
 export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {

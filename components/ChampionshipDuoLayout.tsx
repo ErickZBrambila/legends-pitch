@@ -213,19 +213,6 @@ function Panel({ slug, label, champStandings, champMatches, locale }: TeamPanel)
           <p className="text-xs py-2" style={{ color: "rgba(255,255,255,0.3)" }}>No games yet</p>
         )}
 
-        {/* Rain-out notice */}
-        {champMatches.some((m) => m.postponed) && (
-          <div
-            className="mt-3 px-3 py-2.5 rounded-xl text-[10px] font-semibold"
-            style={{
-              background: "rgba(96,165,250,0.08)",
-              border: "1px solid rgba(96,165,250,0.2)",
-              color: "rgba(147,197,253,0.8)",
-            }}
-          >
-            🌧 Day 2 postponed due to rain. Reschedule TBD.
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { StandingRow } from "@/lib/data/gotsport";
 import type { Match } from "@/lib/types";
 
@@ -212,19 +213,6 @@ function Panel({ slug, label, champStandings, champMatches, locale }: TeamPanel)
           <p className="text-xs py-2" style={{ color: "rgba(255,255,255,0.3)" }}>No games yet</p>
         )}
 
-        {/* Rain-out notice */}
-        {champMatches.some((m) => m.postponed) && (
-          <div
-            className="mt-3 px-3 py-2.5 rounded-xl text-[10px] font-semibold"
-            style={{
-              background: "rgba(96,165,250,0.08)",
-              border: "1px solid rgba(96,165,250,0.2)",
-              color: "rgba(147,197,253,0.8)",
-            }}
-          >
-            🌧 Day 2 postponed due to rain. Reschedule TBD.
-          </div>
-        )}
       </div>
     </div>
   );
@@ -236,9 +224,42 @@ interface Props {
   locale: string;
 }
 
+function isDuoViewport(): boolean {
+  if (typeof window === "undefined") return false;
+  // CSS Folding Screen API (Chrome on Android foldables)
+  if (window.matchMedia("(horizontal-viewport-segments: 2)").matches) return true;
+  // URL override for testing: ?duo=1
+  if (new URLSearchParams(window.location.search).get("duo") === "1") return true;
+  // Heuristic: iPhone Duo unfolded in landscape is ~1178×390pt — very wide aspect ratio
+  const { innerWidth: w, innerHeight: h } = window;
+  return w > 700 && h > 0 && w / h > 2.4;
+}
+
 export default function ChampionshipDuoLayout({ u11, u12, locale }: Props) {
+  const [isDuo, setIsDuo] = useState(false);
+
+  useEffect(() => {
+    function check() {
+      const active = isDuoViewport();
+      setIsDuo(active);
+      // Also drive the CSS fold-hide / fold-show for server-rendered siblings
+      document.documentElement.classList.toggle("duo-active", active);
+    }
+    check();
+    window.addEventListener("resize", check);
+    // Also listen to the CSS segments API if supported
+    const mq = window.matchMedia("(horizontal-viewport-segments: 2)");
+    mq.addEventListener?.("change", check);
+    return () => {
+      window.removeEventListener("resize", check);
+      mq.removeEventListener?.("change", check);
+    };
+  }, []);
+
+  if (!isDuo) return null;
+
   return (
-    <div className="fold-show">
+    <div>
       {/* Fold-mode header */}
       <div
         className="px-6 py-3 flex items-center gap-3 shrink-0"
@@ -257,7 +278,13 @@ export default function ChampionshipDuoLayout({ u11, u12, locale }: Props) {
       </div>
 
       {/* Two-panel grid */}
-      <div className="fold-two-panel" style={{ minHeight: "calc(100dvh - 10rem)" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          minHeight: "calc(100dvh - 10rem)",
+        }}
+      >
         <Panel {...u11} locale={locale} />
         <Panel {...u12} locale={locale} />
       </div>

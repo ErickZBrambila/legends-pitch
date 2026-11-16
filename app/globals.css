@@ -90,13 +90,17 @@ body {
   to   { transform: rotateX(0deg); }
 }
 
-/* Hidden by default; block in fold mode */
+/* Hidden by default; shown in fold mode (CSS segments API or JS duo-active class) */
 .fold-show { display: none; }
 
 @media (horizontal-viewport-segments: 2) {
   .fold-show { display: block; }
   .fold-hide { display: none !important; }
 }
+
+/* JS-driven fallback for Safari / devices that don't support the segments API */
+html.duo-active .fold-hide { display: none !important; }
+
 
 @media (horizontal-viewport-segments: 2) {
   .fold-two-panel {

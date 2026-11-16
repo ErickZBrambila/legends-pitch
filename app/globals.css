@@ -101,6 +101,7 @@ body {
 /* JS-driven fallback for Safari / devices that don't support the segments API */
 html.duo-active .fold-hide { display: none !important; }
 
+
 @media (horizontal-viewport-segments: 2) {
   .fold-two-panel {
     display: grid;

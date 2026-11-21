@@ -108,7 +108,7 @@ const U12_RESULTS: Record<string, { goalsFor: number; goalsAgainst: number; resu
 const U11_CHAMP_MATCHES: Match[] = [
   { id: "gs-u11-champ-1", date: "2026-11-14T12:00:00-06:00", opponent: "BatCity U11",             location: "Crossroads Park", homeAway: "home", goalsFor: 0, goalsAgainst: 0, result: "D" },
   { id: "gs-u11-champ-2", date: "2026-11-14T15:00:00-06:00", opponent: "Elgin United (Ramirez)",  location: "Crossroads Park", homeAway: "away", goalsFor: 2, goalsAgainst: 1, result: "W" },
-  { id: "gs-u11-champ-3", date: "2026-11-21T10:00:00-06:00", opponent: "Surge 15/16B Elite Maroon", location: "NEMP - 13N",      homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
+  { id: "gs-u11-champ-3", date: "2026-11-21T10:00:00-06:00", opponent: "Surge 15/16B Elite Maroon", location: "NEMP - 13N",      homeAway: "home", goalsFor: 0, goalsAgainst: 1, result: "L" },
 ];
 
 let u12Id = 0;
@@ -125,7 +125,54 @@ const U12_MATCHES: Match[] = [
   // Fall Championship — Crossroads Park, Temple TX (Nov 14-15 2026)
   { id: `gs-u12-${++u12Id}`, date: "2026-11-14T13:00:00-06:00", opponent: "La Manada U12/11",        location: "Crossroads Park",       homeAway: "home", goalsFor: 2,    goalsAgainst: 1,    result: "W" },
   { id: `gs-u12-${++u12Id}`, date: "2026-11-14T16:00:00-06:00", opponent: "FC Westlake Hooligans",   location: "Crossroads Park",       homeAway: "away", goalsFor: 1,    goalsAgainst: 1,    result: "D" },
-  { id: `gs-u12-${++u12Id}`, date: "2026-11-21T08:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "NEMP - 13S",            homeAway: "home", goalsFor: null, goalsAgainst: null, result: null },
+  { id: `gs-u12-${++u12Id}`, date: "2026-11-21T08:30:00-06:00", opponent: "Nueva Generacion U12B",   location: "NEMP - 13S",            homeAway: "home", goalsFor: 3,    goalsAgainst: 1,    result: "W" },
+];
+
+// --- STX Soccer 2026 Fall Championships — U12 Rosado (Group D2 WD, event 59892, group 552010) ---
+
+// Our pool (Pool A, group 552020): Gregory Portland U12B, North Legends Rosado, AAYSA Team 1
+// Cross-pool opponents (Pool B): Urban Champions U12B, AAYSA Team 2, CAYSA Team 1
+export const STX_POOL_A = [
+  { name: "Gregory Portland FC",    raw: "Gregory Portland Futbol Club GPFC U12B Blue", isNorthLegends: false },
+  { name: "North Legends Rosado",   raw: "PH - CAYSA Team (2)",                         isNorthLegends: true  },
+  { name: "AAYSA Team 1",           raw: "PH - AAYSA Team (1)",                         isNorthLegends: false },
+];
+
+export const STX_POOL_B = [
+  { name: "Urban Champions Academy", raw: "Urban Champions Academy FC U12B",  isNorthLegends: false },
+  { name: "AAYSA Team 2",           raw: "PH - AAYSA Team (2)",               isNorthLegends: false },
+  { name: "CAYSA Team 1",           raw: "PH - CAYSA Team (1)",               isNorthLegends: false },
+];
+
+// Cross-pool round robin — Rosado plays all 3 teams from Pool B
+export const STX_SCHEDULE: Match[] = [
+  {
+    id: "stx-1",
+    date: "2026-12-05T12:30:00-06:00",
+    opponent: "AAYSA Team 2",
+    location: "Schertz Soccer Complex · Field 3B",
+    locationAddress: "2621 Schertz Pkwy, Schertz, TX 78154",
+    homeAway: "home",
+    goalsFor: null, goalsAgainst: null, result: null,
+  },
+  {
+    id: "stx-2",
+    date: "2026-12-05T18:30:00-06:00",
+    opponent: "Urban Champions Academy",
+    location: "Schertz Soccer Complex · Field 4B",
+    locationAddress: "2621 Schertz Pkwy, Schertz, TX 78154",
+    homeAway: "away",
+    goalsFor: null, goalsAgainst: null, result: null,
+  },
+  {
+    id: "stx-3",
+    date: "2026-12-06T11:00:00-06:00",
+    opponent: "CAYSA Team 1",
+    location: "Schertz Soccer Complex · Field 3B",
+    locationAddress: "2621 Schertz Pkwy, Schertz, TX 78154",
+    homeAway: "home",
+    goalsFor: null, goalsAgainst: null, result: null,
+  },
 ];
 
 export const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {

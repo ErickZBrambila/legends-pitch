@@ -7,11 +7,14 @@ import CountdownTimerClient from "@/components/CountdownTimerClient";
 import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
 import ChampionshipPhotoCarousel from "@/components/ChampionshipPhotoCarousel";
 import ChampionshipSplash from "@/components/ChampionshipSplash";
+import U11ThankYouSplash from "@/components/U11ThankYouSplash";
+import U12AdvancingSplash from "@/components/U12AdvancingSplash";
 import ChampionshipDuoLayout from "@/components/ChampionshipDuoLayout";
+import U12MediaCarousel from "@/components/U12MediaCarousel";
 import WatchIntroButton from "@/components/WatchIntroButton";
+import WatchU11Button from "@/components/WatchU11Button";
+import WatchU12Button from "@/components/WatchU12Button";
 import { getGotSportData, getChampionshipStandings } from "@/lib/data/gotsport";
-import { getRedis } from "@/lib/redis";
-import { SPLASH_ENABLED_KEY, SPLASH_VIDEO_KEY, type SplashVideo } from "@/app/api/admin/championship/route";
 import cache from "@/lib/data/gotsport-cache.json";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
@@ -94,27 +97,34 @@ export default async function ChampionshipPage({
   const champOver = Date.now() > new Date("2026-11-16T00:00:00Z").getTime();
 
   const northLegends = standings.find((r) => r.isNorthLegends);
-
-  const redis = getRedis();
-  const [splashEnabledRaw, splashVideoRaw] = redis
-    ? await Promise.all([
-        redis.get<string | boolean>(SPLASH_ENABLED_KEY),
-        redis.get<SplashVideo>(SPLASH_VIDEO_KEY),
-      ])
-    : [null, null];
-  const splashEnabled = splashEnabledRaw === true || splashEnabledRaw === "true";
-  const splashVideo: SplashVideo = splashVideoRaw ?? "goal";
+  const u11NorthLegends = u11Data.standings.find((r) => r.isNorthLegends);
+  const u12NorthLegends = u12Data.standings.find((r) => r.isNorthLegends);
 
   return (
     <>
-      {splashEnabled && (
-        <ChampionshipSplash
-          wins={northLegends?.w ?? 0}
-          losses={northLegends?.l ?? 0}
-          draws={northLegends?.t ?? 0}
-          rank={northLegends?.rank ?? null}
-          team={team}
-          splashVideo={splashVideo}
+      {/* Always mounted so the "Watch intro" button event listener is active */}
+      <ChampionshipSplash
+        wins={northLegends?.w ?? 0}
+        losses={northLegends?.l ?? 0}
+        draws={northLegends?.t ?? 0}
+        rank={northLegends?.rank ?? null}
+        team={team}
+        autoShow={false}
+      />
+
+      {team === "u11" && (
+        <U11ThankYouSplash
+          wins={u11NorthLegends?.w ?? 0}
+          losses={u11NorthLegends?.l ?? 0}
+          draws={u11NorthLegends?.t ?? 0}
+        />
+      )}
+
+      {team === "u12" && (
+        <U12AdvancingSplash
+          wins={u12NorthLegends?.w ?? 0}
+          losses={u12NorthLegends?.l ?? 0}
+          draws={u12NorthLegends?.t ?? 0}
         />
       )}
 
@@ -179,6 +189,16 @@ export default async function ChampionshipPage({
               <WatchIntroButton />
             </div>
           )}
+          {champOver && team === "u11" && (
+            <div className="mt-4">
+              <WatchU11Button />
+            </div>
+          )}
+          {champOver && team === "u12" && (
+            <div className="mt-4">
+              <WatchU12Button />
+            </div>
+          )}
         </div>
       </section>
 
@@ -200,41 +220,7 @@ export default async function ChampionshipPage({
           {team === "u11" && PHOTOS.length > 0 ? (
             <ChampionshipPhotoCarousel photos={PHOTOS} heading={t("photosHeading")} />
           ) : team === "u12" ? (
-            <>
-              <h2 className="text-[var(--color-accent)] font-black uppercase tracking-widest text-sm mb-6">
-                {t("photosHeading")}
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { id: "N7wVKQVpnLI", label: "vs BYSO Inferno · Oct 25" },
-                  { id: "s0RzxId44ec", label: "vs Rattlers Gray · Oct 24 · Goal 5" },
-                  { id: "f4IPZ3F3Mok", label: "vs Rattlers Gray · Oct 24 · Goal 9" },
-                ].map(({ id, label }) => (
-                  <a
-                    key={id}
-                    href={`https://www.youtube.com/watch?v=${id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex flex-col gap-2"
-                  >
-                    <div className="relative w-full overflow-hidden rounded-xl" style={{ paddingBottom: "56.25%" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`}
-                        alt={label}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
-                          <span className="text-white text-lg ml-1">▶</span>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-white/40 text-xs text-center group-hover:text-white/70 transition-colors">{label}</p>
-                  </a>
-                ))}
-              </div>
-            </>
+            <U12MediaCarousel heading={t("photosHeading")} />
           ) : null}
         </div>
       </section>

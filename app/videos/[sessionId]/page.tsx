@@ -51,7 +51,7 @@ export default async function SessionPage({ params, searchParams }: Props) {
       {/* Session header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
-          <h1 className="text-2xl font-black text-gray-900">{session.sessionName}</h1>
+          <h1 className="text-2xl font-black text-white">{session.sessionName}</h1>
           <span className={`text-xs font-black px-2 py-1 rounded-full ${
             session.sessionType === "GAME"
               ? "bg-[var(--color-primary)] text-white"
@@ -61,7 +61,7 @@ export default async function SessionPage({ params, searchParams }: Props) {
           </span>
         </div>
         {session.sessionDate && (
-          <p className="text-sm text-gray-400">{formatDate(session.sessionDate, locale)}</p>
+          <p className="text-sm text-gray-300">{formatDate(session.sessionDate, locale)}</p>
         )}
       </div>
 

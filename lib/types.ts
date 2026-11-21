@@ -159,6 +159,7 @@ export interface PracticeSession {
   videos: SessionVideo[];
   compilationUrl?: string;
   compilationTitle?: string;
+  youtubeGameUrl?: string;
 }
 
 // ─── Tracker ──────────────────────────────────────────────────────────────────

@@ -146,7 +146,7 @@ export default async function ChampionshipPage({
         {team === "u12" && (
           /* eslint-disable-next-line jsx-a11y/media-has-caption */
           <video
-            src="https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship/u12/celebration-main.mov"
+            src="https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship/u12/celebration-hero.mp4"
             autoPlay
             muted
             loop

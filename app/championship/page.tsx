@@ -225,6 +225,44 @@ export default async function ChampionshipPage({
         </div>
       </section>
 
+      {/* STX promo banner — U12 only */}
+      {team === "u12" && (
+        <section className="bg-[var(--color-navy)]">
+          <div className="max-w-4xl mx-auto px-6 pb-10">
+            <a
+              href="/championship/stx"
+              className="block rounded-2xl px-6 py-6 hover:opacity-90 active:opacity-80 transition-opacity"
+              style={{
+                background: "linear-gradient(135deg, rgba(10,15,40,0.9) 0%, rgba(20,30,70,0.9) 100%)",
+                border: "1px solid rgba(212,175,55,0.45)",
+                boxShadow: "0 0 40px rgba(212,175,55,0.08)",
+              }}
+            >
+              <p className="text-[var(--color-accent)] text-[10px] font-black uppercase tracking-[0.35em] mb-1">
+                {t("stxPromoEyebrow")}
+              </p>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h3
+                    className="text-white font-black text-xl leading-tight mb-1"
+                    style={{ fontFamily: "var(--font-anton), sans-serif" }}
+                  >
+                    {t("stxPromoHeadline")}
+                  </h3>
+                  <p className="text-white/50 text-xs">{t("stxPromoDates")}</p>
+                </div>
+                <span
+                  className="text-sm font-black shrink-0"
+                  style={{ color: "#d4af37" }}
+                >
+                  {t("stxPromoCta")}
+                </span>
+              </div>
+            </a>
+          </div>
+        </section>
+      )}
+
       {/* Group Stage Standings — hidden in fold mode (DuoLayout shows both) */}
       <div className="fold-hide">
         <ChampionshipStandingsSection

@@ -479,11 +479,12 @@ type RawSession = {
   sessionDate: string;
   compilationUrl?: string;
   compilationTitle?: string;
+  youtubeGameUrl?: string;
   videos: RawSessionVideo[];
 };
 
 const SESSION_PROJECTION = `
-  _id, sessionName, sessionType, sessionDate, compilationUrl, compilationTitle,
+  _id, sessionName, sessionType, sessionDate, compilationUrl, compilationTitle, youtubeGameUrl,
   videos[]{
     _key, fileName, r2Url, driveUrl, thumbnailUrl, durationSeconds, resolution,
     markers[]{ _key, timeSeconds, label },
@@ -506,6 +507,7 @@ function mapSession(s: RawSession): PracticeSession {
     sessionDate: s.sessionDate,
     compilationUrl: s.compilationUrl,
     compilationTitle: s.compilationTitle,
+    youtubeGameUrl: s.youtubeGameUrl,
     videos: (s.videos ?? []).map((v) => ({
       id: v._key,
       fileName: v.fileName ?? "",

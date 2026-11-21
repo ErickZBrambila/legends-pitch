@@ -142,6 +142,7 @@ function getFirstClip(video: SessionVideo) {
 export default function SessionViewer({ session }: { session: PracticeSession }) {
   const t = useTranslations("Session");
   const compilationUrl = session.compilationUrl ?? null;
+  const youtubeGameUrl = session.youtubeGameUrl ?? null;
   const compilationTitle = session.compilationTitle ?? "Full Goals Reel";
 
   const [activeVideo, setActiveVideo] = useState<SessionVideo>(session.videos[0]);
@@ -391,6 +392,29 @@ export default function SessionViewer({ session }: { session: PracticeSession })
               {t("open")}
             </span>
           </div>
+        </a>
+      )}
+
+      {/* Full-game YouTube link */}
+      {youtubeGameUrl && (
+        <a
+          href={youtubeGameUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-4 mb-4 p-4 rounded-2xl bg-gradient-to-r from-[#ff0000] to-[#cc0000] text-white shadow-lg hover:shadow-xl hover:brightness-110 transition-all group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition-colors">
+            <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-black text-base leading-tight">Watch Full Game on YouTube</p>
+            <p className="text-white/75 text-sm mt-0.5">Complete match — live stream recording</p>
+          </div>
+          <span className="text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full flex-shrink-0 group-hover:bg-white/30 transition-colors">
+            Watch
+          </span>
         </a>
       )}
 

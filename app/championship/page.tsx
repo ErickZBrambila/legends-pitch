@@ -200,6 +200,23 @@ export default async function ChampionshipPage({
             </div>
           )}
         </div>
+
+        {/* U12 trophy photo strip inside hero */}
+        {team === "u12" && (
+          <div className="relative flex gap-2 overflow-x-auto px-4 pb-8 scrollbar-hide">
+            {["u12-champ-1", "u12-champ-2", "u12-champ-3", "u12-champ-4", "u12-champ-5"].map((name) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={name}
+                src={`/championship/u12/${name}.jpg`}
+                alt=""
+                className="shrink-0 rounded-xl object-cover"
+                style={{ height: 180 }}
+                loading="lazy"
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* iPhone Duo split-view — hidden on regular screens, shown when unfolded */}

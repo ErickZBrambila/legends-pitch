@@ -10,12 +10,6 @@ type MediaItem =
 
 const MEDIA: MediaItem[] = [
   { type: "video", src: `${CDN}/championship/u12/celebration-main.mov` },
-  { type: "photo", src: "/championship/u12/u12-champ-1.jpg" },
-  { type: "photo", src: "/championship/u12/u12-champ-2.jpg" },
-  { type: "photo", src: "/championship/u12/u12-champ-3.jpg" },
-  { type: "photo", src: "/championship/u12/u12-champ-4.jpg" },
-  { type: "photo", src: "/championship/u12/u12-champ-5.jpg" },
-  { type: "video", src: `${CDN}/championship/u12/celebration.mov` },
 ];
 
 const PHOTOS = MEDIA.filter((m): m is { type: "photo"; src: string } => m.type === "photo");

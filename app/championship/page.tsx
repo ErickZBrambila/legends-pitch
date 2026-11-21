@@ -130,10 +130,23 @@ export default async function ChampionshipPage({
 
       {/* HERO */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
-        {/* U11 video backdrop */}
+        {/* Video backdrops */}
         {team === "u11" && (
+          /* eslint-disable-next-line jsx-a11y/media-has-caption */
           <video
             src="https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship-hero-bg.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            aria-hidden
+          />
+        )}
+        {team === "u12" && (
+          /* eslint-disable-next-line jsx-a11y/media-has-caption */
+          <video
+            src="https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship/u12/celebration-main.mov"
             autoPlay
             muted
             loop
@@ -146,10 +159,7 @@ export default async function ChampionshipPage({
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              team === "u11"
-                ? "linear-gradient(to bottom, rgba(10,15,40,0.75) 0%, rgba(10,15,40,0.65) 60%, rgba(10,15,40,0.9) 100%)"
-                : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.2) 0%, transparent 70%)",
+            background: "linear-gradient(to bottom, rgba(10,15,40,0.75) 0%, rgba(10,15,40,0.65) 60%, rgba(10,15,40,0.9) 100%)",
           }}
         />
         <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center gap-4">
@@ -201,22 +211,6 @@ export default async function ChampionshipPage({
           )}
         </div>
 
-        {/* U12 trophy photo strip inside hero */}
-        {team === "u12" && (
-          <div className="relative flex gap-2 overflow-x-auto px-4 pb-8 scrollbar-hide">
-            {["u12-champ-1", "u12-champ-2", "u12-champ-3", "u12-champ-4", "u12-champ-5"].map((name) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={name}
-                src={`/championship/u12/${name}.jpg`}
-                alt=""
-                className="shrink-0 rounded-xl object-cover"
-                style={{ height: 180 }}
-                loading="lazy"
-              />
-            ))}
-          </div>
-        )}
       </section>
 
       {/* iPhone Duo split-view — hidden on regular screens, shown when unfolded */}

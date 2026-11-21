@@ -7,11 +7,14 @@ import CountdownTimerClient from "@/components/CountdownTimerClient";
 import ChampionshipStandingsSection from "@/components/ChampionshipStandingsSection";
 import ChampionshipPhotoCarousel from "@/components/ChampionshipPhotoCarousel";
 import ChampionshipSplash from "@/components/ChampionshipSplash";
+import U11ThankYouSplash from "@/components/U11ThankYouSplash";
+import U12AdvancingSplash from "@/components/U12AdvancingSplash";
 import ChampionshipDuoLayout from "@/components/ChampionshipDuoLayout";
+import U12MediaCarousel from "@/components/U12MediaCarousel";
 import WatchIntroButton from "@/components/WatchIntroButton";
+import WatchU11Button from "@/components/WatchU11Button";
+import WatchU12Button from "@/components/WatchU12Button";
 import { getGotSportData, getChampionshipStandings } from "@/lib/data/gotsport";
-import { getRedis } from "@/lib/redis";
-import { SPLASH_ENABLED_KEY, SPLASH_VIDEO_KEY, type SplashVideo } from "@/app/api/admin/championship/route";
 import cache from "@/lib/data/gotsport-cache.json";
 import type { TeamSlug } from "@/lib/sanity/queries";
 
@@ -94,34 +97,42 @@ export default async function ChampionshipPage({
   const champOver = Date.now() > new Date("2026-11-16T00:00:00Z").getTime();
 
   const northLegends = standings.find((r) => r.isNorthLegends);
-
-  const redis = getRedis();
-  const [splashEnabledRaw, splashVideoRaw] = redis
-    ? await Promise.all([
-        redis.get<string | boolean>(SPLASH_ENABLED_KEY),
-        redis.get<SplashVideo>(SPLASH_VIDEO_KEY),
-      ])
-    : [null, null];
-  const splashEnabled = splashEnabledRaw === true || splashEnabledRaw === "true";
-  const splashVideo: SplashVideo = splashVideoRaw ?? "goal";
+  const u11NorthLegends = u11Data.standings.find((r) => r.isNorthLegends);
+  const u12NorthLegends = u12Data.standings.find((r) => r.isNorthLegends);
 
   return (
     <>
-      {splashEnabled && (
-        <ChampionshipSplash
-          wins={northLegends?.w ?? 0}
-          losses={northLegends?.l ?? 0}
-          draws={northLegends?.t ?? 0}
-          rank={northLegends?.rank ?? null}
-          team={team}
-          splashVideo={splashVideo}
+      {/* Always mounted so the "Watch intro" button event listener is active */}
+      <ChampionshipSplash
+        wins={northLegends?.w ?? 0}
+        losses={northLegends?.l ?? 0}
+        draws={northLegends?.t ?? 0}
+        rank={northLegends?.rank ?? null}
+        team={team}
+        autoShow={false}
+      />
+
+      {team === "u11" && (
+        <U11ThankYouSplash
+          wins={u11NorthLegends?.w ?? 0}
+          losses={u11NorthLegends?.l ?? 0}
+          draws={u11NorthLegends?.t ?? 0}
+        />
+      )}
+
+      {team === "u12" && (
+        <U12AdvancingSplash
+          wins={u12NorthLegends?.w ?? 0}
+          losses={u12NorthLegends?.l ?? 0}
+          draws={u12NorthLegends?.t ?? 0}
         />
       )}
 
       {/* HERO */}
       <section className="relative bg-[var(--color-navy)] overflow-hidden">
-        {/* U11 video backdrop */}
+        {/* Video backdrops */}
         {team === "u11" && (
+          /* eslint-disable-next-line jsx-a11y/media-has-caption */
           <video
             src="https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship-hero-bg.mp4"
             autoPlay
@@ -132,14 +143,23 @@ export default async function ChampionshipPage({
             aria-hidden
           />
         )}
+        {team === "u12" && (
+          /* eslint-disable-next-line jsx-a11y/media-has-caption */
+          <video
+            src="https://pub-ec6efd6486724c999de33694e15dd4dc.r2.dev/championship/u12/celebration-hero.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover object-top"
+            aria-hidden
+          />
+        )}
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              team === "u11"
-                ? "linear-gradient(to bottom, rgba(10,15,40,0.75) 0%, rgba(10,15,40,0.65) 60%, rgba(10,15,40,0.9) 100%)"
-                : "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(212,175,55,0.2) 0%, transparent 70%)",
+            background: "linear-gradient(to bottom, rgba(10,15,40,0.75) 0%, rgba(10,15,40,0.65) 60%, rgba(10,15,40,0.9) 100%)",
           }}
         />
         <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center gap-4">
@@ -179,7 +199,18 @@ export default async function ChampionshipPage({
               <WatchIntroButton />
             </div>
           )}
+          {champOver && team === "u11" && (
+            <div className="mt-4">
+              <WatchU11Button />
+            </div>
+          )}
+          {champOver && team === "u12" && (
+            <div className="mt-4">
+              <WatchU12Button />
+            </div>
+          )}
         </div>
+
       </section>
 
       {/* iPhone Duo split-view — hidden on regular screens, shown when unfolded */}
@@ -200,44 +231,48 @@ export default async function ChampionshipPage({
           {team === "u11" && PHOTOS.length > 0 ? (
             <ChampionshipPhotoCarousel photos={PHOTOS} heading={t("photosHeading")} />
           ) : team === "u12" ? (
-            <>
-              <h2 className="text-[var(--color-accent)] font-black uppercase tracking-widest text-sm mb-6">
-                {t("photosHeading")}
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { id: "N7wVKQVpnLI", label: "vs BYSO Inferno · Oct 25" },
-                  { id: "s0RzxId44ec", label: "vs Rattlers Gray · Oct 24 · Goal 5" },
-                  { id: "f4IPZ3F3Mok", label: "vs Rattlers Gray · Oct 24 · Goal 9" },
-                ].map(({ id, label }) => (
-                  <a
-                    key={id}
-                    href={`https://www.youtube.com/watch?v=${id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex flex-col gap-2"
-                  >
-                    <div className="relative w-full overflow-hidden rounded-xl" style={{ paddingBottom: "56.25%" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`}
-                        alt={label}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
-                          <span className="text-white text-lg ml-1">▶</span>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-white/40 text-xs text-center group-hover:text-white/70 transition-colors">{label}</p>
-                  </a>
-                ))}
-              </div>
-            </>
+            <U12MediaCarousel heading={t("photosHeading")} />
           ) : null}
         </div>
       </section>
+
+      {/* STX promo banner — U12 only */}
+      {team === "u12" && (
+        <section className="bg-[var(--color-navy)]">
+          <div className="max-w-4xl mx-auto px-6 pb-10">
+            <a
+              href="/championship/stx"
+              className="block rounded-2xl px-6 py-6 hover:opacity-90 active:opacity-80 transition-opacity"
+              style={{
+                background: "linear-gradient(135deg, rgba(10,15,40,0.9) 0%, rgba(20,30,70,0.9) 100%)",
+                border: "1px solid rgba(212,175,55,0.45)",
+                boxShadow: "0 0 40px rgba(212,175,55,0.08)",
+              }}
+            >
+              <p className="text-[var(--color-accent)] text-[10px] font-black uppercase tracking-[0.35em] mb-1">
+                {t("stxPromoEyebrow")}
+              </p>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h3
+                    className="text-white font-black text-xl leading-tight mb-1"
+                    style={{ fontFamily: "var(--font-anton), sans-serif" }}
+                  >
+                    {t("stxPromoHeadline")}
+                  </h3>
+                  <p className="text-white/50 text-xs">{t("stxPromoDates")}</p>
+                </div>
+                <span
+                  className="text-sm font-black shrink-0"
+                  style={{ color: "#d4af37" }}
+                >
+                  {t("stxPromoCta")}
+                </span>
+              </div>
+            </a>
+          </div>
+        </section>
+      )}
 
       {/* Group Stage Standings — hidden in fold mode (DuoLayout shows both) */}
       <div className="fold-hide">

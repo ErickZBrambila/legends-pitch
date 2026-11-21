@@ -25,6 +25,7 @@ interface Props {
   rank: number | null;
   team: string;
   splashVideo?: "goal" | "reel";
+  autoShow?: boolean;
 }
 
 function rankLabel(rank: number | null): string {
@@ -45,7 +46,7 @@ const PARTICLES = [
 
 type Phase = "video" | "flash" | "card" | "gone";
 
-export default function ChampionshipSplash({ wins, losses, draws, rank, team, splashVideo = "goal" }: Props) {
+export default function ChampionshipSplash({ wins, losses, draws, rank, team, splashVideo = "goal", autoShow = true }: Props) {
   const VIDEO_DESKTOP = VIDEOS[splashVideo].desktop;
   const VIDEO_MOBILE  = VIDEOS[splashVideo].mobile;
   const t = useTranslations("Championship");
@@ -85,6 +86,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
   }
 
   useEffect(() => {
+    if (!autoShow) return;
     if (!localStorage.getItem(key)) {
       const timer = setTimeout(() => {
         videoStartRef.current = Date.now();
@@ -92,7 +94,7 @@ export default function ChampionshipSplash({ wins, losses, draws, rank, team, sp
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [key]);
+  }, [key, autoShow]);
 
   useEffect(() => {
     function replay() {
